@@ -107,3 +107,28 @@ export const sources = sqliteTable("sources", {
 
 export type Source = typeof sources.$inferSelect;
 export type NewSource = typeof sources.$inferInsert;
+
+/**
+ * Tabla `tutorial_product_clicks` — fire-and-forget tracking de clicks
+ * desde MaterialsList / BuyAllButton hacia páginas de producto de la tienda.
+ *
+ * Spec sec 4.4: data anonimizada. No guardamos IP ni user agent — solo
+ * registramos el evento para construir el funnel tutorial→tienda.
+ *
+ * Source values:
+ *   - "material_list" → click en botón individual "Agregar al carrito"
+ *   - "buy_all"       → click en CTA "Comprar todo"
+ *   - "inline"        → click en link de paso (reservado, no usado en MVP)
+ */
+export const tutorialProductClicks = sqliteTable("tutorial_product_clicks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  tutorial_slug: text("tutorial_slug").notNull(),
+  product_id: text("product_id"),                            // SKU si conocido, NULL si link general
+  product_name: text("product_name"),                        // display name del material
+  source: text("source").notNull(),                          // material_list | buy_all | inline
+  ref_url: text("ref_url"),                                  // URL destino con UTMs
+  clicked_at: text("clicked_at").default(sql`(datetime('now'))`).notNull(),
+});
+
+export type TutorialProductClick = typeof tutorialProductClicks.$inferSelect;
+export type NewTutorialProductClick = typeof tutorialProductClicks.$inferInsert;
