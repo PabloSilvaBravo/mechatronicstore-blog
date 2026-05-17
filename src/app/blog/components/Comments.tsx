@@ -7,18 +7,14 @@ interface Props {
 
 /**
  * Giscus comentarios (GitHub Discussions backend).
- *
- * Setup pendiente (Pablo, 5 min en https://giscus.app):
- *   1. Habilitar Discussions en repo:
- *      https://github.com/PabloSilvaBravo/mechatronicstore-blog/settings#features
- *   2. Ir a https://giscus.app/ → escribir repo
- *   3. Copiar `repoId` y `categoryId` y reemplazar abajo.
+ * Repo: PabloSilvaBravo/mechatronicstore-blog
+ * Categoría: General (configurada 17-may-2026).
  */
 const GISCUS_CONFIG = {
   repo: "PabloSilvaBravo/mechatronicstore-blog",
-  repoId: "REPLACE_ME_REPO_ID",
+  repoId: "R_kgDOSfzoSg",
   category: "General",
-  categoryId: "REPLACE_ME_CATEGORY_ID",
+  categoryId: "DIC_kwDOSfzoSs4C9Qk_",
 };
 
 export default function Comments({ slug }: Props) {
