@@ -1,0 +1,51 @@
+{
+  "model": "claude-opus-4-7",
+  "ranked_at": "2026-05-17T08:47:52Z",
+  "config_snapshot": {
+    "threshold_cs": 0.78,
+    "dimensions": [
+      "pedagogy",
+      "code_quality",
+      "materials_clarity",
+      "step_completeness",
+      "image_quality",
+      "relevance_to_store_catalog",
+      "novelty"
+    ],
+    "weights": {
+      "pedagogy": 0.2,
+      "code_quality": 0.15,
+      "materials_clarity": 0.15,
+      "step_completeness": 0.15,
+      "image_quality": 0.1,
+      "relevance_to_store_catalog": 0.15,
+      "novelty": 0.1
+    },
+    "model": "claude-opus-4-7"
+  },
+  "rankings": [
+    {
+      "id": "e28a037dfbd9",
+      "scores": {
+        "pedagogy": 9,
+        "code_quality": 9,
+        "materials_clarity": 7,
+        "step_completeness": 9,
+        "image_quality": 5,
+        "relevance_to_store_catalog": 9,
+        "novelty": 8
+      },
+      "combined_score": 0.820,
+      "verdict": "Tutorial solido de Random Nerd sobre CYD usando display, touch y microSD simultaneamente. Explica el conflicto SPI y resuelve con SoftSPI. Codigo completo y reproducible. Lista de materiales algo implicita y pocas fotos paso a paso, pero pedagogia y relevancia al catalogo son altas.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32-2432S028R",
+        "Cheap Yellow Display CYD",
+        "ESP32",
+        "MicroSD card module",
+        "TFT 2.8 240x320"
+      ]
+    }
+  ]
+}
