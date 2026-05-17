@@ -45,3 +45,4 @@ coverage/
 *.db
 *.sqlite
 .vercel
+.venv/

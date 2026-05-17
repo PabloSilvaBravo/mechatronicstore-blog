@@ -1,0 +1,20 @@
+# Core
+feedparser>=6.0
+requests>=2.31
+beautifulsoup4>=4.12
+readability-lxml>=0.8.1
+lxml>=5.0
+lxml_html_clean>=0.4
+
+# Turso (libSQL) client
+libsql>=0.1.11
+python-dotenv>=1.0
+
+# Anthropic SDK (solo para test local del ranking — producción usa CCR)
+anthropic>=0.40
+
+# Image processing (extraer dims para hard filter)
+Pillow>=10.0
+
+# Testing
+pytest>=8.0
