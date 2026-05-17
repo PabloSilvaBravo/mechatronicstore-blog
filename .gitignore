@@ -46,3 +46,4 @@ coverage/
 *.sqlite
 .vercel
 .venv/
+__pycache__/
