@@ -87,3 +87,8 @@ USAR LITERALMENTE:
 ```
 git push origin HEAD:main
 ```
+
+## Trigger ID asignado
+
+`trig_018awZKUDjfX8JqWmh5x5Mi4` — creado 17-may-2026 vía RemoteTrigger.
+Modificar via `RemoteTrigger action=update` con ese trigger_id.
