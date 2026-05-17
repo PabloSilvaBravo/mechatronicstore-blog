@@ -6,11 +6,29 @@ interface Props {
   slug: string;
 }
 
-export default function MaterialsList({ materials, linkedProducts }: Props) {
-  const productIndex = new Map(
-    linkedProducts.map((p) => [p.name_original.toLowerCase(), p])
+// Pablo 17-may: matching exacto fallaba cuando el LLM usa wording
+// distinto en materials_list vs linked_products (ej. "Cable USB (Tipo C
+// o micro USB...)" vs "Cable USB Tipo C 1m"). Cambio a fuzzy: comparte
+// ≥2 tokens de ≥4 chars con el name del material.
+function findProduct(
+  materialName: string,
+  products: Props["linkedProducts"],
+): Props["linkedProducts"][number] | undefined {
+  const ml = materialName.toLowerCase();
+  const exact = products.find((p) => p.name_original.toLowerCase() === ml);
+  if (exact) return exact;
+  const mlTokens = new Set(
+    ml.split(/[^a-záéíóúñ0-9]+/i).filter((t) => t.length >= 4),
   );
+  return products.find((p) => {
+    const pl = p.name_original.toLowerCase();
+    const plTokens = pl.split(/[^a-záéíóúñ0-9]+/i).filter((t) => t.length >= 4);
+    const overlap = plTokens.filter((t) => mlTokens.has(t)).length;
+    return overlap >= 2;
+  });
+}
 
+export default function MaterialsList({ materials, linkedProducts }: Props) {
   return (
     <div className="rounded-lg border border-[color:var(--border)] p-5 bg-[color:var(--background)] my-8">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -19,7 +37,7 @@ export default function MaterialsList({ materials, linkedProducts }: Props) {
       </h2>
       <ul className="space-y-3">
         {materials.map((m, i) => {
-          const product = productIndex.get(m.name.toLowerCase());
+          const product = findProduct(m.name, linkedProducts);
           return (
             <li
               key={i}
