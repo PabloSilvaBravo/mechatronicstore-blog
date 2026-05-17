@@ -27,7 +27,13 @@ export default function BlogLayout({
 
       <footer className="border-t border-[color:var(--border)] mt-24">
         <div className="mx-auto max-w-5xl px-4 py-6 text-sm text-[color:var(--muted)]">
-          © 2026 MechatronicStore · Blog de tutoriales · v0.1.0 dummy
+          © 2026 MechatronicStore · Tutoriales de electrónica, robótica y DIY ·{" "}
+          <Link
+            href="https://www.mechatronicstore.cl"
+            className="hover:underline"
+          >
+            Tienda online
+          </Link>
         </div>
       </footer>
     </>
