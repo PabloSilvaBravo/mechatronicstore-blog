@@ -165,7 +165,55 @@ Si diff vs `now()` > 48h, enviar email vía Resend a Pablo.
 
 ---
 
-## 10. Comandos útiles
+## 11. Instalar/actualizar WP plugin mecha-blog-tutorials
+
+El plugin vive en el repo bajo `wp-plugin/mecha-blog-tutorials/`.
+
+### Primera instalación
+
+1. Descargar la carpeta del repo:
+   ```bash
+   cd /tmp && git clone --depth=1 https://github.com/PabloSilvaBravo/mechatronicstore-blog
+   cp -r mechatronicstore-blog/wp-plugin/mecha-blog-tutorials .
+   tar czf mbt-1.0.0.tar.gz mecha-blog-tutorials/
+   ```
+2. SCP / SFTP a `/home/mechatro/public_html/wp-content/plugins/` (cPanel File Manager también sirve).
+3. Descomprimir en `wp-content/plugins/mecha-blog-tutorials/`.
+4. wp-admin → Plugins → activar "Mecha Blog Tutorials Widget".
+5. Verificar: abrir https://www.mechatronicstore.cl/esp32-wroom-con-pantalla-lcd-tactil-2-8-lvgl/
+   (este producto tiene SKU `D-517`, linkeado al tutorial ESP32 CYD).
+   Debería aparecer el widget "📚 1 tutorial con este producto" al final del summary.
+
+### Update
+
+```bash
+# En el VPS:
+cd /home/mechatro/public_html/wp-content/plugins
+rm -rf mecha-blog-tutorials.bak
+mv mecha-blog-tutorials mecha-blog-tutorials.bak
+# Subir nuevo
+# Recargar plugin: deactivate → activate en wp-admin (limpia opcache)
+```
+
+### Invalidar cache de un SKU
+
+wp-admin → Settings → Mecha Blog Tutorials → input SKU → "Limpiar cache de un SKU".
+
+Útil después de:
+- Publicar un nuevo tutorial que linkea este SKU (cache aún tiene la lista vieja)
+- Cambiar el `linked_products_json` de un tutorial existente
+- Despublicar un tutorial (cache aún lo muestra)
+
+### Troubleshooting
+
+- **Widget no aparece**: verificar que el producto tenga SKU. Sin SKU, el plugin retorna early.
+- **Widget vacío pero el producto tiene tutorial**: verificar que el SKU del producto WP coincida exactamente con el `product_id` del JSON `linked_products_json` del tutorial.
+- **Plugin lento**: verificar que el endpoint Vercel responde en <500ms (`curl -w '%{time_total}' .../api/blog/tutorials?product_id=X`).
+- **Cache stale después de invalidar**: WP Object Cache (Redis/Memcached) puede tener su propia capa. `wp cache flush` por SSH limpia todo.
+
+---
+
+## 12. Comandos útiles
 
 ```bash
 # Ver últimos tutoriales publicados
