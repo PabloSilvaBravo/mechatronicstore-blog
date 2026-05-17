@@ -1,5 +1,5 @@
 import { eq, desc, and } from "drizzle-orm";
-import { getDb, tutorials } from "@/lib/db";
+import { getDb, getClient, tutorials } from "@/lib/db";
 
 export interface TutorialPublished {
   id: string;
@@ -97,4 +97,54 @@ export async function getPublishedTutorials(
     .limit(limit);
 
   return rows.map(rowToTutorial);
+}
+
+export interface TutorialByProduct {
+  slug: string;
+  title_es: string;
+  subtitle_es: string;
+  hero_image_url: string | null;
+  published_at: string;
+  category: string | null;
+}
+
+/**
+ * Tutoriales publicados que linkean a un product_id específico (SKU).
+ * Usa SQLite json_each para iterar el array linked_products_json y
+ * matchear product_id sin tener que parsear JSON en TypeScript.
+ *
+ * Caso de uso (Week 8): WP plugin consulta este endpoint desde la página
+ * de cada producto WooCommerce para mostrar "Tutoriales con este producto".
+ * Crea link juice bidireccional con el blog.
+ */
+export async function tutorialsByProductId(
+  productId: string,
+  limit: number = 5,
+): Promise<TutorialByProduct[]> {
+  const client = getClient();
+  const result = await client.execute({
+    sql: `
+      SELECT DISTINCT
+        t.slug,
+        t.title_es,
+        t.subtitle_es,
+        t.hero_image_url,
+        t.published_at,
+        t.category
+      FROM tutorials t, json_each(t.linked_products_json) jp
+      WHERE t.status = 'published'
+        AND json_extract(jp.value, '$.product_id') = ?
+      ORDER BY t.published_at DESC
+      LIMIT ?
+    `,
+    args: [productId, limit],
+  });
+  return result.rows.map((r) => ({
+    slug: String(r.slug),
+    title_es: r.title_es === null ? "" : String(r.title_es),
+    subtitle_es: r.subtitle_es === null ? "" : String(r.subtitle_es),
+    hero_image_url: r.hero_image_url === null ? null : String(r.hero_image_url),
+    published_at: String(r.published_at),
+    category: r.category === null ? null : String(r.category),
+  }));
 }
