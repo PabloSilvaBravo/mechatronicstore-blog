@@ -13,7 +13,7 @@
 //
 // Pablo 16-may-2026.
 
-const BLOG_BACKEND = "https://mecha-blog.vercel.app";
+const BLOG_BACKEND = "https://mechatronicstore-blog.vercel.app";
 
 function isBlogPath(pathname) {
   return (
