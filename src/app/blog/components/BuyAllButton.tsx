@@ -1,4 +1,5 @@
 import type { TutorialPublished } from "@/lib/db/queries";
+import TrackableLink from "./TrackableLink";
 
 interface Props {
   linkedProducts: TutorialPublished["linked_products"];
@@ -15,13 +16,14 @@ export default function BuyAllButton({ linkedProducts, slug }: Props) {
     `&utm_source=blog&utm_medium=tutorial&utm_campaign=${encodeURIComponent(slug)}&utm_content=buy_all`;
 
   return (
-    <a
+    <TrackableLink
       href={cartUrl}
-      target="_blank"
-      rel="noopener"
+      slug={slug}
+      source="buy_all"
+      productName={`Comprar todo (${linkedProducts.length} productos)`}
       className="block w-full text-center py-4 my-6 bg-[color:var(--primary)] text-black font-bold text-lg rounded-lg hover:opacity-90 transition-opacity"
     >
       🛒 Comprar todo: CLP ${total.toLocaleString("es-CL")}
-    </a>
+    </TrackableLink>
   );
 }

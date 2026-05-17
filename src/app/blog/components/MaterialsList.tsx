@@ -1,9 +1,27 @@
 import type { TutorialPublished } from "@/lib/db/queries";
+import TrackableLink from "./TrackableLink";
 
 interface Props {
   materials: TutorialPublished["materials_list"];
   linkedProducts: TutorialPublished["linked_products"];
   slug: string;
+}
+
+function buildProductUrl(
+  rawUrl: string,
+  slug: string,
+  productId: number,
+): string {
+  try {
+    const u = new URL(rawUrl);
+    u.searchParams.set("utm_source", "blog");
+    u.searchParams.set("utm_medium", "tutorial");
+    u.searchParams.set("utm_campaign", slug);
+    u.searchParams.set("utm_content", String(productId));
+    return u.toString();
+  } catch {
+    return rawUrl;
+  }
 }
 
 // Pablo 17-may: matching exacto fallaba cuando el LLM usa wording
@@ -28,7 +46,7 @@ function findProduct(
   });
 }
 
-export default function MaterialsList({ materials, linkedProducts }: Props) {
+export default function MaterialsList({ materials, linkedProducts, slug }: Props) {
   return (
     <div className="rounded-lg border border-[color:var(--border)] p-5 bg-[color:var(--background)] my-8">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -57,14 +75,16 @@ export default function MaterialsList({ materials, linkedProducts }: Props) {
                   <span className="text-sm font-semibold">
                     CLP ${product.price_clp.toLocaleString("es-CL")}
                   </span>
-                  <a
-                    href={product.product_url}
-                    target="_blank"
-                    rel="noopener"
+                  <TrackableLink
+                    href={buildProductUrl(product.product_url, slug, product.product_id)}
+                    slug={slug}
+                    source="material_list"
+                    productId={String(product.product_id)}
+                    productName={product.name_original}
                     className="text-xs px-3 py-1.5 bg-[color:var(--primary)] text-black font-semibold rounded hover:opacity-90"
                   >
                     Agregar al carrito
-                  </a>
+                  </TrackableLink>
                 </div>
               ) : (
                 <span className="text-xs text-[color:var(--muted)]">
