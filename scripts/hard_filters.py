@@ -1,0 +1,136 @@
+"""
+Hard filters pre-LLM para drafts de tutoriales.
+
+Spec sec 3.2: cualquier candidate que falle CUALQUIERA de estos filtros
+se rechaza sin gastar Opus. Eficiencia esperada: ~70% se rechazan acá.
+"""
+import re
+
+_RE_CODE_BLOCK = re.compile(r"```\w*\n.*?```", re.DOTALL)
+_RE_INLINE_CODE = re.compile(r"<code[^>]*>.*?</code>|`[^`]+`", re.DOTALL)
+_RE_CODE_LANG_HINT = re.compile(
+    r"\b(import\s+\w+|#include\s*<|void\s+\w+\s*\(|def\s+\w+\s*\(|"
+    r"function\s+\w+\s*\(|class\s+\w+|public\s+class|Serial\.begin|"
+    r"pinMode|digitalWrite|analogRead)\b"
+)
+
+_RE_STEP_NUMERIC = re.compile(r"^\s*(\d+)[\.\)]\s+", re.MULTILINE)
+_RE_STEP_HEADER = re.compile(r"^#+\s*(?:step\s+\d+|paso\s+\d+|\d+[\.\):])",
+                              re.IGNORECASE | re.MULTILINE)
+_RE_STEP_BOLD = re.compile(r"\*\*step\s+\d+", re.IGNORECASE)
+
+_RE_IMG_MD = re.compile(r"!\[[^\]]*\]\([^)]+\)")
+_RE_IMG_HTML = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
+
+_RE_MATERIALS_KEYWORDS = re.compile(
+    r"\b(materials?|components?|parts?\s+list|bill\s+of\s+materials|bom|"
+    r"what\s+you\'?ll\s+need|what\s+you\s+need|necesit[áa]s|necesitar[áa]s|"
+    r"lista\s+de\s+materiales|componentes?\s+necesarios|herramientas)\b\s*:?",
+    re.IGNORECASE,
+)
+
+
+def has_code(body: str) -> bool:
+    """¿El body tiene algún bloque de código o señal de código?"""
+    if not body:
+        return False
+    if _RE_CODE_BLOCK.search(body):
+        return True
+    if _RE_INLINE_CODE.search(body):
+        return True
+    if _RE_CODE_LANG_HINT.search(body):
+        return True
+    return False
+
+
+def count_steps(body: str) -> int:
+    """Cuenta cuántos pasos identificables hay (3 patrones distintos)."""
+    if not body:
+        return 0
+    numeric_steps = len(set(int(m.group(1)) for m in _RE_STEP_NUMERIC.finditer(body)))
+    header_steps = len(_RE_STEP_HEADER.findall(body))
+    bold_steps = len(_RE_STEP_BOLD.findall(body))
+    return max(numeric_steps, header_steps, bold_steps)
+
+
+def count_images(body: str) -> int:
+    """Imágenes embebidas (markdown + HTML)."""
+    if not body:
+        return 0
+    md = len(_RE_IMG_MD.findall(body))
+    html = len(_RE_IMG_HTML.findall(body))
+    return md + html
+
+
+def word_count(body: str) -> int:
+    """Palabras útiles — STRIP de code blocks y imágenes antes de contar."""
+    if not body:
+        return 0
+    clean = _RE_CODE_BLOCK.sub("", body)
+    clean = _RE_INLINE_CODE.sub("", clean)
+    clean = _RE_IMG_MD.sub("", clean)
+    clean = _RE_IMG_HTML.sub("", clean)
+    clean = re.sub(r"^#+\s+", "", clean, flags=re.MULTILINE)
+    clean = re.sub(r"\*+", "", clean)
+    return len(clean.split())
+
+
+def has_materials_list(body: str) -> bool:
+    """¿Hay una sección identificable de 'materiales / components / necesitás'?"""
+    if not body:
+        return False
+    return bool(_RE_MATERIALS_KEYWORDS.search(body))
+
+
+def matches_excluded_keyword(body: str, excluded: list[str]) -> str | None:
+    """Si alguna keyword del body matchea, devuelve la keyword. None si no."""
+    if not body or not excluded:
+        return None
+    body_lower = body.lower()
+    for kw in excluded:
+        kw_lc = kw.lower().strip()
+        if not kw_lc:
+            continue
+        if kw_lc in body_lower:
+            return kw
+    return None
+
+
+def apply_all(
+    body: str,
+    excluded_keywords: list[str] | None = None,
+    min_steps: int = 5,
+    min_images: int = 3,
+    min_words: int = 800,
+) -> dict:
+    """Aplica los 6 hard filters. Devuelve resumen."""
+    excluded_keywords = excluded_keywords or []
+    reasons: list[str] = []
+    stats = {
+        "has_code": has_code(body),
+        "steps": count_steps(body),
+        "images": count_images(body),
+        "words": word_count(body),
+        "has_materials": has_materials_list(body),
+    }
+
+    if not stats["has_code"]:
+        reasons.append("no_code")
+    if stats["steps"] < min_steps:
+        reasons.append(f"steps_below_{min_steps}")
+    if stats["images"] < min_images:
+        reasons.append(f"images_below_{min_images}")
+    if stats["words"] < min_words:
+        reasons.append(f"words_below_{min_words}")
+    if not stats["has_materials"]:
+        reasons.append("no_materials_list")
+
+    matched_kw = matches_excluded_keyword(body, excluded_keywords)
+    if matched_kw:
+        reasons.append(f"excluded_keyword:{matched_kw[:40]}")
+
+    return {
+        "passed": len(reasons) == 0,
+        "reasons": reasons,
+        "stats": stats,
+    }
