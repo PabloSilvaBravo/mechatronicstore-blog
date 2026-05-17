@@ -75,3 +75,35 @@ export const tutorials = sqliteTable("tutorials", {
 
 export type Tutorial = typeof tutorials.$inferSelect;
 export type NewTutorial = typeof tutorials.$inferInsert;
+
+/**
+ * Tabla `sources` — configuración de cada feed RSS/HTML que ingesta tutoriales.
+ *
+ * `parser_id` indica qué módulo Python procesa esta fuente:
+ *   - "generic_rss"        → scripts/sources/generic_rss.py
+ *   - "instructables"      → scripts/sources/instructables.py
+ *   - "adafruit_learn"     → scripts/sources/adafruit_learn.py
+ *   - "sparkfun"           → scripts/sources/sparkfun.py
+ *   - "all_about_circuits" → scripts/sources/all_about_circuits.py
+ */
+export const sources = sqliteTable("sources", {
+  id: text("id").primaryKey(),                              // slug: "instructables", "hackaday-howto"
+  name: text("name").notNull(),                             // display name
+  feed_url: text("feed_url").notNull(),                     // RSS feed o página listing
+  homepage: text("homepage").notNull(),                     // landing URL para atribución
+  parser_id: text("parser_id").notNull(),                   // qué parser Python aplica
+  tier: integer("tier").notNull().default(1),               // 1 (top) o 2 (secondary)
+
+  // Operación
+  is_active: integer("is_active", { mode: "boolean" }).default(true),
+  last_polled_at: text("last_polled_at"),
+  last_success_at: text("last_success_at"),
+  consecutive_failures: integer("consecutive_failures").default(0),
+
+  // Metadatos
+  created_at: text("created_at").default(sql`(datetime('now'))`),
+  updated_at: text("updated_at").default(sql`(datetime('now'))`),
+});
+
+export type Source = typeof sources.$inferSelect;
+export type NewSource = typeof sources.$inferInsert;
