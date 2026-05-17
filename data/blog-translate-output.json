@@ -1,0 +1,92 @@
+{
+  "model": "claude-opus-4-7",
+  "translated_at": "2026-05-17T15:05:00+00:00",
+  "translations": [
+    {
+      "id": "e28a037dfbd9",
+      "slug": "esp32-cyd-pantalla-touchscreen-microsd-simultaneo",
+      "title_es": "ESP32 CYD: pantalla, touchscreen y microSD funcionando juntos sin conflictos",
+      "subtitle_es": "Aprende a usar pantalla, touchscreen y tarjeta microSD al mismo tiempo en la placa ESP32 CYD evitando los conflictos del bus SPI.",
+      "body_es": "## Introducción\n\nLa placa **ESP32 CYD (Cheap Yellow Display)** —también conocida como ESP32-2432S028R— integra en un solo módulo un ESP32 WROOM, una pantalla TFT de 2.8\" con resolución 240x320 y touchscreen resistivo, además de una ranura para tarjeta microSD. El detalle: usar las tres funciones a la vez no es tan directo como parece, porque todas comparten el protocolo SPI y se pelean por los mismos pines.\n\nEn esta guía vamos a armar un ejemplo simple que muestra en pantalla las coordenadas del punto que tocas y, al mismo tiempo, las guarda en un archivo dentro de la microSD. Una base sólida para que después puedas construir loggers de datos, interfaces con guardado de configuración o cualquier proyecto que requiera las tres funciones operando en paralelo.\n\n> **Probado en:** ESP32-2432S028R 2.8\" 240x320 con touchscreen resistivo. Si recién partes con esta placa, te conviene revisar primero un tutorial introductorio del CYD antes de seguir.\n\n## Por qué se produce el conflicto SPI\n\nEl ESP32 cuenta con dos buses SPI por hardware: **VSPI** y **HSPI**. Los pines por defecto son:\n\n| SPI  | MOSI    | MISO    | SCLK    | CS     |\n|------|---------|---------|---------|--------|\n| VSPI | GPIO 23 | GPIO 19 | GPIO 18 | GPIO 5 |\n| HSPI | GPIO 13 | GPIO 12 | GPIO 14 | GPIO 15 |\n\nEn el CYD la microSD usa los pines por defecto de VSPI (MOSI 23 / MISO 19 / SCLK 18 / CS 5). En nuestros ejemplos, la pantalla se configura en HSPI y el touchscreen también queda en VSPI. Acá está el problema: el touchscreen escucha eventos de toque de manera continua, así que no es buena idea desactivarlo cada vez que escribimos en la microSD. Y aunque en teoría varios dispositivos pueden compartir un bus SPI usando distintos CS, en la práctica este enfoque falla con frecuencia.\n\n## La solución: Software SPI para el touchscreen\n\nEl truco es **separar al touchscreen del bus VSPI por hardware** y hacer que se comunique vía Software SPI (SoftSPI) en pines libres. Para eso usamos una versión modificada de la librería `XPT2046_Touchscreen` que llamaremos `XPT2046_TouchscreenSOFTSPI`, junto con una librería auxiliar `SoftSPI`.\n\nDe esa forma:\n- La **pantalla** sigue en HSPI.\n- La **microSD** se queda con los pines hardware de VSPI.\n- El **touchscreen** corre por software, sin tocar ningún bus hardware.\n\n## Prerrequisitos\n\nAntes de avanzar, deja todo listo:\n\n1. **Arduino IDE 2.x** instalado.\n2. **Placas ESP32** agregadas al Arduino IDE (vía Board Manager).\n3. **Librería TFT_eSPI** instalada y configurada con el `User_Setup.h` correcto para CYD (no uses los User_Setup que circulan por internet: usa el de la guía oficial de Random Nerd Tutorials).\n4. **Librería LVGL 9.x** de kisvegabor instalada, con su `lv_conf.h` adaptado.\n5. **Librerías XPT2046_TouchscreenSOFTSPI y SoftSPI**: descarga el .zip con los 4 archivos (.cpp y .h de ambas librerías) desde el enlace del tutorial original.\n\n## Paso 1 — Preparar la carpeta del sketch\n\nLas librerías SoftSPI y la versión modificada del touchscreen las vamos a instalar **localmente en la carpeta del sketch**, no globalmente.\n\n1. Abre Arduino IDE y guarda un sketch nuevo (`Archivo > Guardar como…`) en la ubicación que prefieras.\n2. Ve a `Programa > Mostrar carpeta del programa` para abrirla en el explorador.\n3. Copia ahí los 4 archivos:\n   - `XPT2046_TouchscreenSOFTSPI.cpp`\n   - `XPT2046_TouchscreenSOFTSPI.h`\n   - `SoftSPI.cpp`\n   - `SoftSPI.h`\n4. Reinicia Arduino IDE. Los archivos deberían aparecer como pestañas adicionales del proyecto.\n\n## Paso 2 — Conexiones físicas\n\nEn la placa CYD no necesitas cablear nada externo: pantalla, touchscreen y lector microSD ya están integrados en el PCB. Solo necesitas:\n\n- **CYD conectada al PC** con un cable USB (micro USB o tipo C según versión).\n- **Tarjeta microSD** formateada en FAT32 insertada en la ranura trasera de la placa.\n\nLos pines internos quedan así:\n\n| Función     | Pin GPIO     | Notas              |\n|-------------|--------------|--------------------|\n| MicroSD MOSI| 23           | VSPI hardware      |\n| MicroSD MISO| 19           | VSPI hardware      |\n| MicroSD SCLK| 18           | VSPI hardware      |\n| MicroSD CS  | 5            | VSPI hardware      |\n| Touch T_DIN | 32           | SoftSPI MOSI       |\n| Touch T_OUT | 39           | SoftSPI MISO       |\n| Touch T_CLK | 25           | SoftSPI CLK        |\n| Touch T_CS  | 33           | Chip Select        |\n| Touch T_IRQ | 36           | Interrupción touch |\n\n## Paso 3 — Subir el sketch\n\nCon todo en su lugar, sube el código a la placa CYD. El sketch hace tres cosas:\n\n1. **Inicializa la microSD** en VSPI y crea un archivo `/touch_points.txt` con encabezado `x,y,z` si no existe.\n2. **Inicializa el touchscreen** con SoftSPI usando los pines T_DIN/T_OUT/T_CLK.\n3. **Inicializa la pantalla TFT** vía TFT_eSPI + LVGL para mostrar un label con la posición tocada.\n\nCada vez que tocas el touchscreen, el callback `touchscreen_read()` lee las coordenadas calibradas, las muestra en pantalla y las añade como una nueva línea al archivo de la microSD.\n\n## Paso 4 — Probar\n\nDespués de subir el código:\n\n1. Abre el Monitor Serial a 115200 baudios para ver el log de inicialización (tipo de tarjeta, capacidad, archivos existentes).\n2. Toca varios puntos en la pantalla. Verás las coordenadas X, Y y la presión Z actualizándose en vivo.\n3. Apaga la placa, extrae la microSD e insértala en tu PC.\n4. Abre `touch_points.txt`: deberías ver todas las coordenadas guardadas en formato CSV.\n\n## ¿Cuándo NO necesitas la librería modificada?\n\nSolo necesitas usar `XPT2046_TouchscreenSOFTSPI` cuando vas a usar **las tres funciones a la vez** (pantalla + touch + microSD). Si tu proyecto solo combina pantalla y touchscreen, o pantalla y microSD, puedes seguir con la librería estándar `XPT2046_Touchscreen`.\n\n## Cierre\n\nCon este truco de mover el touchscreen a Software SPI, el CYD se vuelve realmente útil para proyectos que requieren guardar datos en local: loggers de sensores con UI, interfaces con guardado de configuración, juegos con high scores persistentes o lo que se te ocurra.\n\nSi estás recién entrando al mundo del CYD y LVGL, esta es una de las habilidades clave que vale la pena dominar. Felices proyectos.",
+      "materials_list": [
+        {"name": "ESP32-2432S028R (CYD - Cheap Yellow Display 2.8\")", "qty": 1, "role": "core"},
+        {"name": "Tarjeta microSD 8GB o más (formato FAT32)", "qty": 1, "role": "almacenamiento"},
+        {"name": "Cable USB (Tipo C o micro USB según versión de la placa)", "qty": 1, "role": "alimentación y programación"},
+        {"name": "PC con Arduino IDE 2.x instalado", "qty": 1, "role": "entorno de desarrollo"}
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Preparar entorno y librerías",
+          "text": "Instala las placas ESP32 en Arduino IDE, la librería TFT_eSPI de Bodmer con el User_Setup.h específico para CYD, y la librería LVGL 9.x. Descarga el .zip con los archivos de XPT2046_TouchscreenSOFTSPI y SoftSPI."
+        },
+        {
+          "position": 2,
+          "name": "Copiar librerías a la carpeta del sketch",
+          "text": "Guarda un sketch nuevo, abre su carpeta vía Programa > Mostrar carpeta del programa, y copia ahí los 4 archivos: XPT2046_TouchscreenSOFTSPI.cpp/.h y SoftSPI.cpp/.h. Reinicia Arduino IDE."
+        },
+        {
+          "position": 3,
+          "name": "Insertar microSD y conectar la CYD",
+          "text": "Formatea una tarjeta microSD en FAT32, insértala en la ranura trasera de la CYD y conecta la placa al PC mediante el cable USB correspondiente."
+        },
+        {
+          "position": 4,
+          "name": "Cargar el sketch principal",
+          "text": "Pega el código del ejemplo, selecciona la placa ESP32 Dev Module en Arduino IDE y sube el sketch. El código inicializa microSD, touchscreen vía SoftSPI y pantalla TFT con LVGL."
+        },
+        {
+          "position": 5,
+          "name": "Probar y verificar guardado",
+          "text": "Abre el Monitor Serial a 115200 baudios y toca puntos en la pantalla. Las coordenadas X, Y, Z se mostrarán en pantalla y se guardarán en /touch_points.txt. Extrae la microSD y abre el archivo en tu PC para confirmar."
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "cpp",
+          "caption": "Sketch completo: pantalla + touchscreen (SoftSPI) + microSD en CYD",
+          "code": "#include <SPI.h>\n#include <TFT_eSPI.h>\n#include <XPT2046_TouchscreenSOFTSPI.h>\n\n// Pines del touchscreen (SoftSPI)\n#define XPT2046_IRQ 36   // T_IRQ\n#define XPT2046_MOSI 32  // T_DIN\n#define XPT2046_MISO 39  // T_OUT\n#define XPT2046_CLK 25   // T_CLK\n#define XPT2046_CS 33    // T_CS\n\nSoftSPI *tsSoftSpi;\nXPT2046_TouchscreenSOFTSPI touchscreen(XPT2046_CS, XPT2046_IRQ);\n\n#include <lvgl.h>\n#include \"FS.h\"\n#include \"SD.h\"\n\n// Pines de la microSD (VSPI hardware)\n#define SD_MISO  19\n#define SD_MOSI  23\n#define SD_SCK   18\n#define SD_CS    5\nSPIClass Sd_spi = SPIClass(VSPI);\n\n#define SCREEN_WIDTH 240\n#define SCREEN_HEIGHT 320\n\nint x, y, z;\n\n#define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))\nuint32_t draw_buf[DRAW_BUF_SIZE / 4];\n\nstatic lv_obj_t * text_label_touch;\n\nvoid appendFile(fs::FS &fs, const char * path, const char * message){\n  File file = fs.open(path, FILE_APPEND);\n  if(!file){ Serial.println(\"Failed to open file for appending\"); return; }\n  file.print(message);\n  file.close();\n}\n\nvoid writeFile(fs::FS &fs, const char * path, const char * message){\n  File file = fs.open(path, FILE_WRITE);\n  if(!file){ Serial.println(\"Failed to open file for writing\"); return; }\n  file.print(message);\n  file.close();\n}\n\nvoid touchscreen_read(lv_indev_t * indev, lv_indev_data_t * data) {\n  if(touchscreen.tirqTouched() && touchscreen.touched(tsSoftSpi)) {\n    TS_Point p = touchscreen.getPoint(tsSoftSpi);\n    x = map(p.x, 200, 3700, 1, SCREEN_WIDTH);\n    y = map(p.y, 240, 3800, 1, SCREEN_HEIGHT);\n    z = p.z;\n    data->state = LV_INDEV_STATE_PRESSED;\n    data->point.x = x;\n    data->point.y = y;\n\n    String touch_data = \"X = \" + String(x) + \"\\nY = \" + String(y) + \"\\nZ = \" + String(z);\n    lv_label_set_text(text_label_touch, touch_data.c_str());\n\n    String sdMessage = String(x) + \",\" + String(y) + \",\" + String(z) + \"\\n\";\n    appendFile(SD, \"/touch_points.txt\", sdMessage.c_str());\n  } else {\n    data->state = LV_INDEV_STATE_RELEASED;\n  }\n}\n\nvoid lv_create_main_gui(void) {\n  text_label_touch = lv_label_create(lv_screen_active());\n  lv_label_set_text(text_label_touch, \"Toca la pantalla para probar\");\n  lv_obj_align(text_label_touch, LV_ALIGN_CENTER, 0, 0);\n\n  static lv_style_t style_text_label;\n  lv_style_init(&style_text_label);\n  lv_style_set_text_font(&style_text_label, &lv_font_montserrat_18);\n  lv_obj_add_style(text_label_touch, &style_text_label, 0);\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n\n  // Inicializa microSD en VSPI hardware\n  Sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);\n  if (!SD.begin(SD_CS, Sd_spi, 55000000)) {\n    Serial.println(\"Card Mount Failed\");\n  }\n\n  uint8_t cardType = SD.cardType();\n  if(cardType == CARD_NONE){ Serial.println(\"No SD card attached\"); return; }\n\n  // Crea archivo si no existe\n  File file = SD.open(\"/touch_points.txt\");\n  if(!file) {\n    writeFile(SD, \"/touch_points.txt\", \"x,y,z\\r\\n\");\n  }\n  file.close();\n\n  // Inicializa LVGL\n  lv_init();\n\n  // Touchscreen vía SoftSPI (la clave para evitar el conflicto con microSD)\n  tsSoftSpi = new SoftSPI(XPT2046_MOSI, XPT2046_MISO, XPT2046_CLK);\n  touchscreen.begin(tsSoftSpi);\n  touchscreen.setRotation(2);\n\n  // Pantalla TFT vía LVGL\n  lv_display_t * disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));\n  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);\n\n  lv_indev_t * indev = lv_indev_create();\n  lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);\n  lv_indev_set_read_cb(indev, touchscreen_read);\n\n  lv_create_main_gui();\n}\n\nvoid loop() {\n  lv_task_handler();\n  lv_tick_inc(5);\n  delay(5);\n}"
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "ESP32-2432S028R (CYD - Cheap Yellow Display 2.8\")",
+          "product_id": "D-517",
+          "product_url": "https://www.mechatronicstore.cl/esp32-wroom-con-pantalla-lcd-tactil-2-8-lvgl/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd-simultaneo&utm_content=D-517",
+          "price_clp": 24990,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Tarjeta microSD 8GB o más (formato FAT32)",
+          "product_id": "B-450V1",
+          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=8gb&utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd-simultaneo&utm_content=B-450V1",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Cable USB Tipo C 1m",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd-simultaneo&utm_content=B-101",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.78
+        }
+      ],
+      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials",
+      "download_urls": [
+        {
+          "label": "Librerías XPT2046_TouchscreenSOFTSPI + SoftSPI + sketch principal (.zip)",
+          "url": "https://randomnerdtutorials.com/esp32-cyd-display-touchscreen-microsd-card/",
+          "kind": "external"
+        }
+      ],
+      "category": "esp32",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 60,
+      "estimated_cost_clp": 35170,
+      "tags": ["esp32", "cyd", "touchscreen", "microsd", "lvgl", "tft", "softspi"]
+    }
+  ]
+}
