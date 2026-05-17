@@ -16,11 +16,14 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
     "drizzle-orm": "^0.45.2",
     "marked": "^18.0.3",
     "next": "^16.2.6",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "resend": "^6.12.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
