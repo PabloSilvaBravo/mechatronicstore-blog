@@ -1,6 +1,6 @@
 # Routine F — Blog Weekly Digest
 
-**Trigger ID**: (a generar en Task 13 vía RemoteTrigger)
+**Trigger ID**: `trig_016Sdy532XtZq8d3khNY9SKi`
 **Cron**: `30 11 * * 1` (lunes 11:30 UTC = 08:30 CL típicamente)
 **Modelo**: claude-opus-4-7
 **Environment**: `env_01KH9dE3iry9ZaZhbrW59Gxm` (mechanoticias-prod-v4)
