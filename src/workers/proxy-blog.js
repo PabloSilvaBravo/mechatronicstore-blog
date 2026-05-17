@@ -19,7 +19,9 @@ function isBlogPath(pathname) {
   return (
     pathname === "/blog" ||
     pathname.startsWith("/blog/") ||
+    pathname === "/api/blog" ||
     pathname.startsWith("/api/blog/") ||
+    pathname === "/admin/blog" ||
     pathname.startsWith("/admin/blog/")
   );
 }
