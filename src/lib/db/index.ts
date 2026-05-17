@@ -6,6 +6,10 @@ import * as schema from "./schema";
  * Pablo 16-may: lazy init para no romper build cuando TURSO_DATABASE_URL
  * no está en el env (e.g., Vercel build inicial sin env vars). El error
  * solo se tira al primer uso del client, no al import.
+ *
+ * IMPORTANTE: NO usamos Proxy aquí porque rompe el binding del `this`
+ * en el cliente libsql (tiene private members con #). Usar las funciones
+ * `getClient()` / `getDb()` directamente en el código.
  */
 let _client: Client | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -30,18 +34,5 @@ export function getDb() {
   }
   return _db;
 }
-
-// Backwards-compat exports (preferir getClient() / getDb() en código nuevo)
-export const client = new Proxy({} as Client, {
-  get(_, prop) {
-    return getClient()[prop as keyof Client];
-  },
-});
-
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(_, prop) {
-    return getDb()[prop as keyof ReturnType<typeof drizzle>];
-  },
-});
 
 export * from "./schema";

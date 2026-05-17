@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { client } from "@/lib/db";
+import { getClient } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const started = Date.now();
   try {
-    const r = await client.execute("SELECT COUNT(*) AS n FROM tutorials");
+    const r = await getClient().execute("SELECT COUNT(*) AS n FROM tutorials");
     const tutorialCount = Number(r.rows[0]?.n ?? 0);
     return NextResponse.json({
       ok: true,
