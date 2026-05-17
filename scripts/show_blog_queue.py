@@ -6,12 +6,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import db
 
+BASE_URL = "https://www.mechatronicstore.cl"
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--status", default=None)
     parser.add_argument("--limit", type=int, default=20)
+    parser.add_argument("--published", action="store_true",
+                        help="Shortcut: --status=published con info extra (slug, URL)")
     args = parser.parse_args()
+
+    if args.published:
+        args.status = "published"
 
     where = "WHERE 1=1"
     args_sql: list = []
@@ -22,7 +29,8 @@ def main():
     rows = db.execute(
         f"""SELECT id, status, COALESCE(combined_score, 0) AS cs,
                    COALESCE(title_es, title_en) AS title,
-                   source_id, ingested_at, ranked_at
+                   slug, source_id, ingested_at, ranked_at, published_at,
+                   category, difficulty, estimated_time_minutes
             FROM tutorials
             {where}
             ORDER BY combined_score DESC, ingested_at DESC
@@ -30,11 +38,22 @@ def main():
         args_sql + [args.limit],
     ).fetchall()
 
-    print(f"\n{'STATUS':10} {'CS':>5} {'SOURCE':22} {'TITLE'}")
-    print("-" * 110)
-    for r in rows:
-        title = (r[3] or "")[:55]
-        print(f"{r[1]:10} {r[2]:>5.2f} {r[4]:22} {title}")
+    if args.published:
+        print(f"\n{'STATUS':10} {'CS':>5} {'CAT':12} {'DIFF':12} {'TIME':>5} TITLE")
+        print("-" * 130)
+        for r in rows:
+            title = (r[3] or "")[:50]
+            cat = (r[9] or "?")[:10]
+            diff = (r[10] or "?")[:10]
+            mins = r[11] or 0
+            print(f"{r[1]:10} {r[2]:>5.2f} {cat:12} {diff:12} {mins:>5}m {title}")
+            print(f"           URL: {BASE_URL}/blog/{r[4]}")
+    else:
+        print(f"\n{'STATUS':10} {'CS':>5} {'SOURCE':22} {'TITLE'}")
+        print("-" * 110)
+        for r in rows:
+            title = (r[3] or "")[:55]
+            print(f"{r[1]:10} {r[2]:>5.2f} {r[5]:22} {title}")
     print(f"\nTotal: {len(rows)}")
 
     summary = db.execute(

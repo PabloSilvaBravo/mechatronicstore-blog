@@ -43,15 +43,27 @@ jobs:
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: python3 scripts/dump_blog_rank_input.py --limit 30
 
-      - name: Commit + push rank input
+      - name: Dump translate input (post-ranking)
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: python3 scripts/dump_blog_translate_input.py --limit 10
+
+      - name: Commit + push rank+translate inputs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet data/blog-rank-input.json; then
-            echo "::notice::No changes in rank input — skip commit"
+          changes=0
+          for f in data/blog-rank-input.json data/blog-translate-input.json; do
+            if [ -f "$f" ] && ! git diff --quiet "$f"; then
+              git add "$f"
+              changes=1
+            fi
+          done
+          if [ "$changes" -eq 0 ]; then
+            echo "::notice::No changes — skip commit"
             exit 0
           fi
           ts=$(date -u +%Y-%m-%dT%H:%MZ)
-          git add data/blog-rank-input.json
-          git commit -m "chore(blog-ingest): refresh rank input ${ts}"
+          git commit -m "chore(blog-ingest): refresh rank+translate inputs ${ts}"
           git push origin HEAD:main
