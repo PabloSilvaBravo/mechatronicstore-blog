@@ -18,6 +18,12 @@ _RE_STEP_NUMERIC = re.compile(r"^\s*(\d+)[\.\)]\s+", re.MULTILINE)
 _RE_STEP_HEADER = re.compile(r"^#+\s*(?:step\s+\d+|paso\s+\d+|\d+[\.\):])",
                               re.IGNORECASE | re.MULTILINE)
 _RE_STEP_BOLD = re.compile(r"\*\*step\s+\d+", re.IGNORECASE)
+# HTML-aware patterns (cuando body es HTML, no markdown)
+_RE_STEP_HTML_HEADER = re.compile(
+    r"<h[1-6][^>]*>[^<]*(?:step\s+\d+|paso\s+\d+|\d+\s*[\.\):])",
+    re.IGNORECASE,
+)
+_RE_PRE_CODE = re.compile(r"<pre\b[^>]*>", re.IGNORECASE)
 
 _RE_IMG_MD = re.compile(r"!\[[^\]]*\]\([^)]+\)")
 _RE_IMG_HTML = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
@@ -31,12 +37,14 @@ _RE_MATERIALS_KEYWORDS = re.compile(
 
 
 def has_code(body: str) -> bool:
-    """¿El body tiene algún bloque de código o señal de código?"""
+    """¿El body tiene algún bloque de código o señal de código? Detecta MD y HTML."""
     if not body:
         return False
     if _RE_CODE_BLOCK.search(body):
         return True
     if _RE_INLINE_CODE.search(body):
+        return True
+    if _RE_PRE_CODE.search(body):
         return True
     if _RE_CODE_LANG_HINT.search(body):
         return True
@@ -44,13 +52,16 @@ def has_code(body: str) -> bool:
 
 
 def count_steps(body: str) -> int:
-    """Cuenta cuántos pasos identificables hay (3 patrones distintos)."""
+    """Cuenta cuántos pasos identificables hay (MD + HTML headers + numeric list)."""
     if not body:
         return 0
     numeric_steps = len(set(int(m.group(1)) for m in _RE_STEP_NUMERIC.finditer(body)))
     header_steps = len(_RE_STEP_HEADER.findall(body))
     bold_steps = len(_RE_STEP_BOLD.findall(body))
-    return max(numeric_steps, header_steps, bold_steps)
+    html_header_steps = len(_RE_STEP_HTML_HEADER.findall(body))
+    # Conteo H2/H3 total como proxy de pasos (cualquier tutorial estructurado los tiene)
+    all_h2_h3 = len(re.findall(r"<h[23]\b[^>]*>", body, re.IGNORECASE))
+    return max(numeric_steps, header_steps, bold_steps, html_header_steps, all_h2_h3)
 
 
 def count_images(body: str) -> int:
