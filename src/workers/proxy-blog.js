@@ -22,7 +22,12 @@ function isBlogPath(pathname) {
     pathname === "/api/blog" ||
     pathname.startsWith("/api/blog/") ||
     pathname === "/admin/blog" ||
-    pathname.startsWith("/admin/blog/")
+    pathname.startsWith("/admin/blog/") ||
+    // Next.js assets necesarios para que el cliente React hidrate.
+    // Las rutas /_next/* las genera Next.js con paths absolutos en el HTML;
+    // si no las forwardamos, WordPress devuelve 403 y la página se queda
+    // sin JS → no se montan componentes client-side (Comments, etc.).
+    pathname.startsWith("/_next/")
   );
 }
 
