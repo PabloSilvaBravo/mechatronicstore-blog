@@ -1,0 +1,57 @@
+name: Blog Ingest (RSS + filters)
+
+# Ingest diario de 10 sources del blog. Sin LLM.
+# Después dumpea data/blog-rank-input.json para que CCR ranking lo lea.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+
+      - name: Run ingest
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: python3 scripts/ingest_blog.py
+
+      - name: Dump ranking input
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: python3 scripts/dump_blog_rank_input.py --limit 30
+
+      - name: Commit + push rank input
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet data/blog-rank-input.json; then
+            echo "::notice::No changes in rank input — skip commit"
+            exit 0
+          fi
+          ts=$(date -u +%Y-%m-%dT%H:%MZ)
+          git add data/blog-rank-input.json
+          git commit -m "chore(blog-ingest): refresh rank input ${ts}"
+          git push origin HEAD:main
