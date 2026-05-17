@@ -120,13 +120,38 @@ export default async function TutorialPage({ params }: Props) {
     mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
   };
 
+  // Breadcrumb: agrega nivel de categoría si el tutorial tiene una.
+  // El categoria/[cat] page existe desde Week 7 — antes esta línea
+  // hubiera roto el schema (404 detectado por Google).
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Inicio", item: BASE_URL + "/" },
       { "@type": "ListItem", position: 2, name: "Blog", item: BASE_URL + "/blog" },
-      { "@type": "ListItem", position: 3, name: tutorial.title_es, item: canonical },
+      ...(tutorial.category
+        ? [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: categoryLabel(tutorial.category),
+              item: `${BASE_URL}/blog/categoria/${tutorial.category}`,
+            },
+            {
+              "@type": "ListItem",
+              position: 4,
+              name: tutorial.title_es,
+              item: canonical,
+            },
+          ]
+        : [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: tutorial.title_es,
+              item: canonical,
+            },
+          ]),
     ],
   };
 
