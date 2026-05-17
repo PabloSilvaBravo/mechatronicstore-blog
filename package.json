@@ -1,0 +1,35 @@
+{
+  "name": "mechatronicstore-blog",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "worker:deploy": "node scripts/deploy-worker.mjs"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "drizzle-orm": "^0.45.2",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^25.8.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.6",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
+  }
+}
