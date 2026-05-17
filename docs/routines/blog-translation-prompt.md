@@ -150,3 +150,7 @@ USAR LITERALMENTE:
 ```
 git push origin HEAD:main
 ```
+
+## Trigger ID asignado
+
+`trig_012SUx3X96ndwjTdzWs4RKZp` — creado 17-may-2026 vía RemoteTrigger.
