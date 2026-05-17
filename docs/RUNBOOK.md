@@ -151,17 +151,45 @@ git commit --allow-empty -m "chore: rotate digest token" && git push origin HEAD
 
 ---
 
-## 9. Silent-failure alerts (TODO post-MVP)
+## 9. Silent-failure alerts (implementado v0.8.1)
 
-Spec sec 7.2: si Routine C (translate) no escribe en >48h, debería disparar
-email CRIT. **Implementación pendiente** — escribir healthcheck cron en
-GH Actions que consulte:
+GH Actions workflow `.github/workflows/pipeline-healthcheck.yml` corre
+cada 6h (`0 */6 * * *`) y ejecuta `scripts/pipeline_healthcheck.py`.
 
-```sql
-SELECT MAX(translated_at) FROM tutorials WHERE status = 'published'
+### Reglas de alerta
+
+| Severidad | Trigger | Acción |
+|-----------|---------|--------|
+| **CRIT** | sin publicaciones en >7 días | email a Pablo |
+| **CRIT** | sin ingest en >48h | email a Pablo |
+| **CRIT** | ≥5 tutoriales en `ranked` esperando >48h | email a Pablo |
+| **WARN** | ≥50 drafts acumulados | solo log stdout (no email) |
+
+Si hay 1+ CRIT, manda UN solo email con todos los problemas listados +
+estado del pipeline + próximos pasos.
+
+### Trigger manual
+
+Para correr el healthcheck ad-hoc:
+```bash
+gh workflow run pipeline-healthcheck.yml -R PabloSilvaBravo/mechatronicstore-blog
 ```
 
-Si diff vs `now()` > 48h, enviar email vía Resend a Pablo.
+O desde GitHub UI: Actions → Pipeline Healthcheck → "Run workflow".
+
+### Secrets requeridos
+
+Ya configurados en repo settings:
+- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+- `RESEND_API_KEY`, `DIGEST_TO_EMAIL`, `DIGEST_FROM_EMAIL`
+
+### Ajustar thresholds
+
+Editar `scripts/pipeline_healthcheck.py` función `evaluate_alerts()`:
+- `h_pub > 168` → 7 días sin publish (bajar a 96 = 4d si querés más agresivo)
+- `h_ing > 48` → 2 días sin ingest
+- `pending_ranked >= 5` + `h_pub > 48` → translation atascada
+- `pending_drafts >= 50` → backlog excesivo
 
 ---
 
