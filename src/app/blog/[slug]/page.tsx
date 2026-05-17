@@ -9,6 +9,7 @@ import StepCard from "../components/StepCard";
 import CodeBlock from "../components/CodeBlock";
 import DownloadLinks from "../components/DownloadLinks";
 import AttributionFooter from "../components/AttributionFooter";
+import Comments from "../components/Comments";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -252,6 +253,8 @@ export default async function TutorialPage({ params }: Props) {
         sourceUrl={tutorial.source_url}
         sourceName={tutorial.source_name}
       />
+
+      <Comments slug={tutorial.slug} />
     </article>
   );
 }
