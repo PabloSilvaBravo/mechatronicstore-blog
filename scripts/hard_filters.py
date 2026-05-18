@@ -29,9 +29,22 @@ _RE_IMG_MD = re.compile(r"!\[[^\]]*\]\([^)]+\)")
 _RE_IMG_HTML = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 
 _RE_MATERIALS_KEYWORDS = re.compile(
-    r"\b(materials?|components?|parts?\s+list|bill\s+of\s+materials|bom|"
-    r"what\s+you\'?ll\s+need|what\s+you\s+need|necesit[áa]s|necesitar[áa]s|"
-    r"lista\s+de\s+materiales|componentes?\s+necesarios|herramientas)\b\s*:?",
+    r"\b("
+    r"materials?|"
+    r"components?|"
+    r"parts?\s+(?:list|required|needed)|"  # acepta "Parts List" + "Parts Required" + "Parts Needed"
+    r"hardware\s+(?:list|required|needed)|"  # "Hardware Required"
+    r"prerequisites?|"  # "Prerequisites"
+    r"requirements?|"  # "Requirements"
+    r"bill\s+of\s+materials|"
+    r"bom|"
+    r"what\s+you\'?ll\s+need|"
+    r"what\s+you\s+need|"
+    r"necesit[áa]s|necesitar[áa]s|"
+    r"lista\s+de\s+materiales|"
+    r"componentes?\s+necesarios|"
+    r"herramientas"
+    r")\b\s*:?",
     re.IGNORECASE,
 )
 
