@@ -27,7 +27,7 @@ export default function Logo({ className = "", size = "md" }: LogoProps) {
       style={{ lineHeight: 1 }}
     >
       <img
-        src="/logo-mechastore-blog.svg?v=1"
+        src="/blog/logo-mechastore-blog.svg?v=1"
         alt="Blog MechatronicStore"
         style={{ height: `${imgH}px`, width: "auto", display: "block" }}
       />
