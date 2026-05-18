@@ -255,7 +255,7 @@ export default async function TutorialPage({ params }: Props) {
 
         {/* Title serif */}
         <h1
-          className="font-serif font-bold mb-4 tracking-tight"
+          className="font-headline mb-4 tracking-tight"
           style={{
             fontSize: "clamp(2rem, 1.5rem + 3vw, 3.25rem)",
             lineHeight: "1.1",
@@ -382,7 +382,7 @@ export default async function TutorialPage({ params }: Props) {
               Paso a paso
             </div>
             <h2
-              className="font-serif font-bold"
+              className="font-headline"
               style={{
                 fontSize: "clamp(1.5rem, 1.2rem + 1.4vw, 2rem)",
                 color: "var(--text)",
@@ -417,7 +417,7 @@ export default async function TutorialPage({ params }: Props) {
               Código fuente
             </div>
             <h2
-              className="font-serif font-bold"
+              className="font-headline"
               style={{
                 fontSize: "clamp(1.5rem, 1.2rem + 1.4vw, 2rem)",
                 color: "var(--text)",

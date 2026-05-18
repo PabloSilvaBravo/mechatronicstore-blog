@@ -21,7 +21,7 @@ export default function StepCard({ position, name, text, imageUrl }: Props) {
         aria-hidden
       >
         <div
-          className="font-serif font-bold leading-none"
+          className="font-headline leading-none"
           style={{
             fontSize: "clamp(2.5rem, 2rem + 2vw, 3.5rem)",
             color: "var(--brand-purple)",

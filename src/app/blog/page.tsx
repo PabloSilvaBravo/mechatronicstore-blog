@@ -56,7 +56,7 @@ export default async function BlogHomePage() {
             Tutoriales
           </div>
           <h1
-            className="font-serif font-bold mb-4 tracking-tight"
+            className="font-headline mb-4 tracking-tight"
             style={{
               fontSize: "clamp(2.25rem, 1.75rem + 3.5vw, 4rem)",
               lineHeight: 1.05,
@@ -83,7 +83,7 @@ export default async function BlogHomePage() {
         >
           <div className="text-4xl mb-3" aria-hidden>🚧</div>
           <h2
-            className="font-serif font-bold text-2xl mb-2"
+            className="font-headline text-2xl mb-2"
             style={{ color: "var(--text)" }}
           >
             Sin tutoriales aún
@@ -111,7 +111,7 @@ export default async function BlogHomePage() {
           Tutoriales · Electrónica · DIY
         </div>
         <h1
-          className="font-serif font-bold mb-4 tracking-tight"
+          className="font-headline mb-4 tracking-tight"
           style={{
             fontSize: "clamp(2.25rem, 1.75rem + 3.5vw, 4rem)",
             lineHeight: 1.05,
@@ -173,7 +173,7 @@ export default async function BlogHomePage() {
                 )}
               </div>
               <h2
-                className="font-serif font-bold tracking-tight mb-3 group-hover:text-[color:var(--text-accent)] transition-colors"
+                className="font-headline tracking-tight mb-3 group-hover:text-[color:var(--text-accent)] transition-colors"
                 style={{
                   fontSize: "clamp(1.75rem, 1.4rem + 2vw, 2.75rem)",
                   lineHeight: 1.1,
@@ -297,7 +297,7 @@ function TutorialCard({
           )}
         </div>
         <h3
-          className={`font-serif font-bold leading-tight mb-2 group-hover:text-[color:var(--text-accent)] transition-colors ${
+          className={`font-headline leading-tight mb-2 group-hover:text-[color:var(--text-accent)] transition-colors ${
             variant === "feature" ? "text-2xl" : "text-lg"
           }`}
           style={{

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BlogHeader from "./components/BlogHeader";
+import Logo from "../components/Logo";
 
 export default function BlogLayout({
   children,
@@ -24,36 +25,11 @@ export default function BlogLayout({
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <Link
-              href="/blog"
-              className="flex items-center gap-2.5 mb-3"
-            >
-              <div
-                className="flex items-center justify-center w-8 h-8 rounded-md flex-shrink-0"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--brand-purple), var(--brand-purple-light))",
-                }}
-              >
-                <span style={{ color: "white" }} aria-hidden>📚</span>
-              </div>
-              <div>
-                <div
-                  className="font-serif font-bold text-sm leading-none"
-                  style={{ color: "var(--text)" }}
-                >
-                  Blog
-                </div>
-                <div
-                  className="text-[10px] font-bold uppercase tracking-[0.12em]"
-                  style={{ color: "var(--text-accent)" }}
-                >
-                  MechatronicStore
-                </div>
-              </div>
+            <Link href="/blog" className="inline-flex items-center mb-3">
+              <Logo size="sm" />
             </Link>
             <p
-              className="text-sm leading-relaxed"
+              className="text-sm leading-relaxed mt-3"
               style={{ color: "var(--text-muted)" }}
             >
               Tutoriales de electrónica, robótica y DIY adaptados al maker

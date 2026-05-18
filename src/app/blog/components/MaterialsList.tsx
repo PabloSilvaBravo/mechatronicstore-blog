@@ -98,7 +98,7 @@ export default function MaterialsList({
             Necesitás
           </div>
           <h2
-            className="font-serif font-bold text-xl"
+            className="font-headline text-xl"
             style={{ color: "var(--text)" }}
           >
             Lista de materiales

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
+import Logo from "../../components/Logo";
 
 const CATEGORIES = [
   { slug: "arduino", label: "Arduino", icon: "🔌" },
@@ -69,36 +70,13 @@ export default function BlogHeader() {
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-4 py-3 sm:py-4">
-          {/* Logo / título */}
+          {/* Logo SVG mechatronic + BLOG */}
           <Link
             href="/blog"
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+            className="flex items-center hover:opacity-80 transition-opacity"
             aria-label="Blog MechatronicStore"
           >
-            <div
-              className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--brand-purple), var(--brand-purple-light))",
-                boxShadow: "0 4px 12px var(--shadow-glow)",
-              }}
-            >
-              <span style={{ color: "white", fontSize: "1.1rem" }} aria-hidden>📚</span>
-            </div>
-            <div>
-              <div
-                className="font-serif font-bold text-base sm:text-lg leading-none"
-                style={{ color: "var(--text)", letterSpacing: "-0.01em" }}
-              >
-                Blog
-              </div>
-              <div
-                className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] leading-tight"
-                style={{ color: "var(--text-accent)" }}
-              >
-                MechatronicStore
-              </div>
-            </div>
+            <Logo size="md" />
           </Link>
 
           {/* Desktop nav */}

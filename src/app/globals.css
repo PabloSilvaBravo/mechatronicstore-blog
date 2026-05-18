@@ -87,7 +87,9 @@
 @theme inline {
   --font-sans: var(--font-montserrat), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-serif: Georgia, "Times New Roman", serif;
+  /* font-serif eliminado (Pablo 18-may-2026): el blog usa Montserrat
+     en todo. Para diferenciar headlines, usar font-weight 800 +
+     letter-spacing -0.02em en vez de cambio de fuente. */
 }
 
 html {
@@ -139,8 +141,12 @@ input, textarea, select {
  * line-height generoso para lectura larga.
  * ────────────────────────────────────────────────────────────── */
 
-.font-serif {
-  font-family: var(--font-serif);
+/* Helper para headlines editoriales — solo cambia weight/letter-spacing,
+   NO la fuente (Pablo 18-may-2026: Montserrat en todo). */
+.font-headline {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .font-mono {
@@ -166,28 +172,28 @@ input, textarea, select {
 }
 
 .article-body h2 {
-  font-family: var(--font-serif);
+  /* Montserrat 800 — la jerarquía la da el peso + tracking, no la fuente */
+  font-weight: 800;
   font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem);
-  font-weight: 700;
   line-height: 1.25;
   margin-top: 2.5rem;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--brand-purple);
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .article-body h3 {
-  font-family: var(--font-serif);
+  font-weight: 800;
   font-size: clamp(1.25rem, 1rem + 1vw, 1.5rem);
-  font-weight: 700;
   line-height: 1.3;
   margin-top: 2rem;
   margin-bottom: 0.5rem;
   padding-left: 0.75rem;
   border-left: 3px solid var(--brand-yellow);
   color: var(--text);
+  letter-spacing: -0.015em;
 }
 
 .article-body h4 {

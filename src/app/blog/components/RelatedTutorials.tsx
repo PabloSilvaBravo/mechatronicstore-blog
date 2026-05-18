@@ -47,7 +47,7 @@ export default async function RelatedTutorials({
             Más sobre {label}
           </div>
           <h2
-            className="font-serif font-bold"
+            className="font-headline"
             style={{
               fontSize: "clamp(1.5rem, 1.2rem + 1.4vw, 2rem)",
               color: "var(--text)",
