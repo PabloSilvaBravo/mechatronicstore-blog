@@ -47,3 +47,4 @@ coverage/
 .vercel
 .venv/
 __pycache__/
+wp-plugin/*.zip

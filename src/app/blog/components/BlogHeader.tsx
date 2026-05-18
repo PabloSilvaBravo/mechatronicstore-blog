@@ -1,36 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
 
 const CATEGORIES = [
-  { slug: "arduino", label: "Arduino" },
-  { slug: "esp32", label: "ESP32" },
-  { slug: "rpi", label: "Raspberry Pi" },
-  { slug: "robotica", label: "Robótica" },
-  { slug: "sensores", label: "Sensores" },
-  { slug: "3d", label: "Impresión 3D" },
-  { slug: "otros", label: "Otros" },
+  { slug: "arduino", label: "Arduino", icon: "🔌" },
+  { slug: "esp32", label: "ESP32", icon: "📡" },
+  { slug: "rpi", label: "Raspberry Pi", icon: "🍓" },
+  { slug: "robotica", label: "Robótica", icon: "🤖" },
+  { slug: "sensores", label: "Sensores", icon: "📊" },
+  { slug: "3d", label: "Impresión 3D", icon: "🖨️" },
+  { slug: "otros", label: "Otros", icon: "⚙️" },
 ];
 
 /**
- * Header del blog con navegación de categorías (desktop dropdown +
- * mobile hamburger) y ThemeToggle.
+ * Header sticky con branding, nav categorías (click-to-open dropdown),
+ * theme toggle y mobile hamburger.
  *
- * Estructura espejada de mechanews EditorialHeader v2 pero adaptada
- * para blog (foco en categorías de tutoriales, no breaking news).
+ * Pablo 18-may-2026 audit visual: el dropdown hover-only era inutilizable
+ * en mobile + se cerraba antes de poder hacer click en desktop. Ahora es
+ * click-controlled con click-outside listener para cerrar.
  */
 export default function BlogHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [catsOpen, setCatsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside para cerrar dropdown
+  useEffect(() => {
+    if (!catsOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setCatsOpen(false);
+      }
+    };
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCatsOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", escHandler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", escHandler);
+    };
+  }, [catsOpen]);
+
+  // Cerrar mobile menu al cambiar de ruta (best effort via popstate)
+  useEffect(() => {
+    const close = () => setMobileOpen(false);
+    window.addEventListener("popstate", close);
+    return () => window.removeEventListener("popstate", close);
+  }, []);
 
   return (
     <header
-      className="sticky top-0 z-40 border-b backdrop-blur-md"
+      className="sticky top-0 z-40 border-b"
       style={{
         borderColor: "var(--border-subtle)",
-        backgroundColor: "color-mix(in srgb, var(--bg) 85%, transparent)",
+        backgroundColor: "var(--bg-overlay)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
       }}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -38,39 +72,61 @@ export default function BlogHeader() {
           {/* Logo / título */}
           <Link
             href="/blog"
-            className="flex items-center gap-2 font-bold text-lg sm:text-xl hover:opacity-80"
-            style={{ color: "var(--text)" }}
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+            aria-label="Blog MechatronicStore"
           >
-            <span aria-hidden>📚</span>
-            <span>Blog MechatronicStore</span>
+            <div
+              className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--brand-purple), var(--brand-purple-light))",
+                boxShadow: "0 4px 12px var(--shadow-glow)",
+              }}
+            >
+              <span style={{ color: "white", fontSize: "1.1rem" }} aria-hidden>📚</span>
+            </div>
+            <div>
+              <div
+                className="font-serif font-bold text-base sm:text-lg leading-none"
+                style={{ color: "var(--text)", letterSpacing: "-0.01em" }}
+              >
+                Blog
+              </div>
+              <div
+                className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] leading-tight"
+                style={{ color: "var(--text-accent)" }}
+              >
+                MechatronicStore
+              </div>
+            </div>
           </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1 text-sm">
             <Link
               href="/blog"
-              className="px-3 py-1.5 rounded hover:bg-[color:var(--bg-hover)]"
+              className="px-3 py-2 rounded-md transition-colors hover:bg-[color:var(--bg-hover)]"
               style={{ color: "var(--text-muted)" }}
             >
               Inicio
             </Link>
 
-            {/* Categorías dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setCatsOpen(true)}
-              onMouseLeave={() => setCatsOpen(false)}
-            >
+            {/* Categorías dropdown — click-controlled */}
+            <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setCatsOpen((v) => !v)}
-                className="px-3 py-1.5 rounded hover:bg-[color:var(--bg-hover)] inline-flex items-center gap-1"
-                style={{ color: "var(--text-muted)" }}
+                className="px-3 py-2 rounded-md transition-colors hover:bg-[color:var(--bg-hover)] inline-flex items-center gap-1.5"
+                style={{
+                  color: catsOpen ? "var(--text)" : "var(--text-muted)",
+                  backgroundColor: catsOpen ? "var(--bg-hover)" : "transparent",
+                }}
                 aria-expanded={catsOpen}
+                aria-haspopup="menu"
               >
                 Categorías
                 <svg
-                  className="h-3 w-3"
+                  className={`h-3.5 w-3.5 transition-transform ${catsOpen ? "rotate-180" : ""}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -86,21 +142,34 @@ export default function BlogHeader() {
               </button>
               {catsOpen && (
                 <div
-                  className="absolute top-full left-0 mt-1 min-w-[180px] rounded-lg border shadow-lg py-2"
+                  role="menu"
+                  className="absolute top-full right-0 mt-1.5 w-64 rounded-xl border shadow-2xl py-2 z-50"
                   style={{
                     borderColor: "var(--border)",
                     backgroundColor: "var(--bg-elevated)",
+                    boxShadow: "0 12px 40px var(--shadow-color)",
                   }}
                 >
+                  <div
+                    className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] border-b mb-1"
+                    style={{
+                      color: "var(--text-dim)",
+                      borderColor: "var(--border-subtle)",
+                    }}
+                  >
+                    Por temática
+                  </div>
                   {CATEGORIES.map((c) => (
                     <Link
                       key={c.slug}
                       href={`/blog/categoria/${c.slug}`}
-                      className="block px-4 py-2 text-sm hover:bg-[color:var(--bg-hover)]"
+                      role="menuitem"
+                      className="flex items-center gap-3 px-3 py-2.5 mx-1 rounded-md text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
                       style={{ color: "var(--text)" }}
                       onClick={() => setCatsOpen(false)}
                     >
-                      {c.label}
+                      <span className="text-base" aria-hidden>{c.icon}</span>
+                      <span className="font-medium">{c.label}</span>
                     </Link>
                   ))}
                 </div>
@@ -109,30 +178,45 @@ export default function BlogHeader() {
 
             <a
               href="https://www.mechatronicstore.cl"
-              className="px-3 py-1.5 rounded hover:bg-[color:var(--bg-hover)]"
+              className="px-3 py-2 rounded-md transition-colors hover:bg-[color:var(--bg-hover)] inline-flex items-center gap-1.5"
               style={{ color: "var(--text-muted)" }}
             >
               Tienda
+              <svg
+                className="h-3 w-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                />
+              </svg>
             </a>
           </nav>
 
-          {/* Right cluster: theme toggle + mobile menu */}
+          {/* Right cluster */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg border"
+              className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg border transition-colors"
               style={{
                 borderColor: "var(--border)",
-                backgroundColor: "var(--bg-elevated)",
+                backgroundColor: mobileOpen ? "var(--bg-hover)" : "var(--bg-elevated)",
                 color: "var(--text)",
               }}
               aria-label="Menú"
               aria-expanded={mobileOpen}
             >
               <svg
-                className="h-5 w-5"
+                className="h-5 w-5 transition-transform"
+                style={{ transform: mobileOpen ? "rotate(90deg)" : "none" }}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -157,45 +241,53 @@ export default function BlogHeader() {
           </div>
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Mobile menu */}
         {mobileOpen && (
-          <nav
-            className="md:hidden border-t pb-4 pt-2"
+          <div
+            ref={mobileMenuRef}
+            className="md:hidden border-t pb-4 pt-3 fade-in-up"
             style={{ borderColor: "var(--border-subtle)" }}
           >
             <Link
               href="/blog"
-              className="block px-3 py-2 text-sm rounded hover:bg-[color:var(--bg-hover)]"
+              className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-[color:var(--bg-hover)]"
               style={{ color: "var(--text)" }}
               onClick={() => setMobileOpen(false)}
             >
-              Inicio
+              📰 Inicio
             </Link>
             <div
-              className="mt-2 px-3 text-[11px] font-bold uppercase tracking-wider"
+              className="mt-3 px-3 text-[10px] font-bold uppercase tracking-[0.12em]"
               style={{ color: "var(--text-dim)" }}
             >
               Categorías
             </div>
-            {CATEGORIES.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/blog/categoria/${c.slug}`}
-                className="block px-3 py-2 text-sm rounded hover:bg-[color:var(--bg-hover)]"
-                style={{ color: "var(--text-muted)" }}
-                onClick={() => setMobileOpen(false)}
-              >
-                {c.label}
-              </Link>
-            ))}
+            <div className="mt-1 grid grid-cols-2 gap-1">
+              {CATEGORIES.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/blog/categoria/${c.slug}`}
+                  className="flex items-center gap-2 px-3 py-2.5 text-sm rounded-md hover:bg-[color:var(--bg-hover)]"
+                  style={{ color: "var(--text-muted)" }}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span aria-hidden>{c.icon}</span>
+                  <span className="font-medium">{c.label}</span>
+                </Link>
+              ))}
+            </div>
             <a
               href="https://www.mechatronicstore.cl"
-              className="mt-2 block px-3 py-2 text-sm rounded hover:bg-[color:var(--bg-hover)]"
-              style={{ color: "var(--text-muted)" }}
+              className="mt-3 flex items-center justify-center gap-2 mx-3 py-3 text-sm font-bold rounded-lg"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--brand-purple), var(--brand-purple-light))",
+                color: "white",
+              }}
             >
-              ← Tienda
+              Visitar la tienda →
             </a>
-          </nav>
+          </div>
         )}
       </div>
     </header>
