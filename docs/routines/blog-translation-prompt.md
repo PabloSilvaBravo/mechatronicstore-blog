@@ -102,28 +102,77 @@ la última sílaba).
 - Subtitle: 1 oración clara de 100-150 chars que resuma el proyecto
 - Body en markdown limpio: headers ##, listas, code blocks ``` ```, links
 
-## Detección de productos (interlinking)
+## Detección de productos (interlinking) — REGLA CRÍTICA
 
-Para CADA material mencionado en el tutorial, llamar:
+Pablo 18-may-2026: hubo bug de "no disponible" en tutoriales con
+componentes BÁSICOS (LED 5mm, Resistencia 220Ω, Cable USB) que SÍ
+existen en el catálogo. La routine antes solo llamaba a `buscar_productos`
+1 vez por material y descartaba si no había match exacto.
 
+### Procedimiento exhaustivo (obligatorio para cada material)
+
+**Paso 1 — Búsqueda inicial:**
 ```
-buscar_productos(query="ESP32 DevKit", limit=3)
+buscar_productos(query="LED 5mm", limite=5)
+buscar_productos(query="ESP32 DevKit", limite=5)
+buscar_productos(query="Resistencia 220 ohm", limite=5)
 ```
 
-Si devuelve resultado con `relevancia >= 0.7`, agregar a `linked_products`:
+**Paso 2 — Si NO hay match razonable, reintentar con variantes:**
+- Quitar paréntesis/aclaraciones: "Placa ESP32 (DevKit, WROOM)" → "ESP32 DevKit"
+- Probar nombre técnico genérico: "Tarjeta microSD 8GB" → "microSD card"
+- Probar palabra clave única del componente: "Resistencia 220 Ω" → "resistencia 220"
+- Probar plural ↔ singular
+- Quitar marcas/versiones que el catálogo MS no usa
+
+**Paso 3 — Componentes BÁSICOS siempre buscar** (alta probabilidad de
+existir en catálogo MS, son productos core):
+- Microcontroladores: ESP32, ESP8266, Arduino Uno/Nano/Mega, RPi Pico, etc.
+- Displays: TM1637, MAX7219, OLED, LCD 16x2, TFT
+- Sensores: DHT11/22, DS18B20, BME280, MPU6050, HC-SR04, PIR, LDR
+- Componentes pasivos: LED 5mm, Resistencias 220Ω/1kΩ/10kΩ, Capacitores,
+  Diodos, Transistores
+- Cables y prototipado: Protoboard, Jumpers, Cable USB
+- Drivers motor: L298N, A4988
+
+**Paso 4 — Match_score:**
+- `match_score >= 0.85` → ✅ agregar a linked_products
+- `match_score 0.70-0.85` → ⚠️ agregar pero name_original debe usar el
+  mismo wording del material (para que el frontend matchee fuzzy)
+- `match_score < 0.70` → ❌ omitir (probable falso positivo)
+
+### Formato linked_products
 
 ```json
 {
   "name_original": "ESP32 DevKit V1",
-  "product_id": 12345,
-  "product_url": "https://www.mechatronicstore.cl/producto/esp32-devkit-v1?utm_source=blog&utm_medium=tutorial&utm_campaign={slug}&utm_content=12345",
-  "price_clp": 4990,
+  "product_id": "X2-10V2",
+  "product_url": "https://www.mechatronicstore.cl/<slug-producto>/?utm_source=blog&utm_medium=tutorial&utm_campaign={tutorial_slug}&utm_content={product_id}",
+  "price_clp": 7990,
   "stock_available": true,
-  "match_score": 0.85
+  "match_score": 0.92
 }
 ```
 
-Si NO hay match en la tienda, el material queda en `materials_list` pero SIN `product_id`/`product_url` (texto plano).
+### `name_original` debe imitar el wording del material
+
+El frontend tiene fuzzy matching que compara `material.name` ↔
+`linked_products[i].name_original`. Reglas para asegurar match:
+- Si material es "LED 5 mm" → name_original debería contener "LED" y "5mm"
+- Si material es "Placa ESP32" → name_original empezar con "Placa ESP32"
+  o "ESP32" + categoría
+- Si material es "Resistencia 220 Ω" → name_original contener
+  "Resistencia 220" o "220Ω"
+- NO traducir nombres al inglés: si el catálogo lo llama "Placa ESP32",
+  usar "Placa ESP32" (no "ESP32 board" / "development board" / etc.)
+
+### Si NO hay match real (después de Paso 2)
+
+El material queda en `materials_list` sin entry en `linked_products` →
+frontend lo muestra como "(no disponible)". Eso debe ser EXCEPCIONAL —
+solo para items que MS realmente no vende (PC del usuario, herramientas
+especiales, software, etc.). Componentes electrónicos básicos siempre
+tienen match.
 
 ## Esquema output
 
