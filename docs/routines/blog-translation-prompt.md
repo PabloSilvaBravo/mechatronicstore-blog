@@ -189,7 +189,19 @@ Si NO hay match en la tienda, el material queda en `materials_list` pero SIN `pr
   Ejemplo BUENO: `esp32-tm1637-temperatura-weatherapi-display-7-segmentos`
   Ejemplo MALO: `mit-green-building-neopixel-tetris-4fbf47` (con hash sufijo)
 - `subtitle_es`: 100-150 chars (importante SEO)
-- `body_es`: markdown limpio sin HTML, code blocks con lang hint
+- `body_es`: markdown limpio (NO HTML, NO `<img>` tags), code blocks con
+  lang hint. **CRÍTICO — preservar TODAS las imágenes inline del body
+  original** (Pablo 18-may-2026): el `body_en` viene en HTML con `<img
+  src="URL" alt="texto">`. Convertir cada imagen al formato markdown
+  `![alt traducido al español](URL_original_exacta)` y mantenerla en la
+  MISMA posición que tenía en el HTML original (después del párrafo
+  correspondiente, NO al final del body). Excepción: NO repetir la
+  imagen de portada (`hero_image_url`) — si la primera imagen del body
+  es igual o variante del hero, omitirla (la portada se renderea aparte).
+  Ejemplos:
+  - HTML: `<p>Conecta el TM1637 al ESP32.</p><img src="https://x.com/wiring.jpg" alt="diagrama">`
+  - Markdown: `Conecta el TM1637 al ESP32.\n\n![Diagrama de conexión TM1637 ESP32](https://x.com/wiring.jpg)`
+  Sin imágenes inline el blog se ve hueco (compare con mecha noticias).
 - `hero_image_url`: OBLIGATORIO. Buscar en input ingest `main_image_url` o
   re-extraer og:image del `source_url`. Si NO hay og:image, usar la primera
   imagen grande (>800x450) del body. NULL solo si genuinamente no hay imagen.
