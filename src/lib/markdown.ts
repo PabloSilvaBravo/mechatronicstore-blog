@@ -1,21 +1,20 @@
 import { marked } from "marked";
+import { highlightCode } from "./syntax-highlight";
 
 /**
- * Render markdown a HTML con `<pre><code class="language-X">` mejorado.
+ * Render markdown a HTML con syntax highlighting via Shiki.
  *
- * Pablo 17-may-2026 audit-blog B6-B8: el body_es de tutoriales contiene
- * code blocks (```cpp\nvoid setup()...\n```) que marked renderea como
- * <pre><code class="language-cpp">...</code></pre> plain — sin label,
- * sin copy button, sin font-mono ni colors theme-aware.
+ * Pablo 18-may-2026: "el código cuando hay no tiene colores como tiene en
+ * un editor de código, arregla para que sea más amigable de leer".
  *
- * Esta función post-procesa el HTML para que los <pre> tengan:
- * - Header con label del lenguaje (Python, Arduino, JSON, etc)
- * - Botón "Copiar" (data-copy attribute, hidratado por <MarkdownEnhancer>)
- * - Container con border + bg theme-aware
+ * Cambio respecto al renderer anterior: ahora es ASYNC. Marked sigue
+ * generando el HTML inicial, después detectamos cada `<pre><code class=
+ * "language-X">` y lo reemplazamos por el output de shiki + header con
+ * lang label + botón copiar (hidratado por MarkdownEnhancer cliente).
  *
- * No usamos React aquí porque marked-rendered body se inserta vía
- * dangerouslySetInnerHTML (SSR string). El componente cliente
- * <MarkdownEnhancer> se encarga de wirear los copy buttons después.
+ * Server-side: el HTML highlighted llega al cliente como string, cero
+ * runtime JS de highlighting. Shiki carga grammars una sola vez via
+ * singleton (ver lib/syntax-highlight.ts).
  */
 
 marked.setOptions({ gfm: true, breaks: false });
@@ -81,39 +80,56 @@ const CODE_BLOCK_HEAD_TPL = (label: string) => `
 
 const CODE_BLOCK_TAIL = `</div>`;
 
+const CODE_BLOCK_RE = /<pre><code(\s+class="language-([^"]+)")?>([\s\S]*?)<\/code><\/pre>/g;
+
 /**
- * Post-process HTML para envolver cada <pre><code class="language-X"> con
- * el header de language + copy. Atributo data-code guarda el texto plano
- * para que el botón pueda copiarlo (decoded de entities).
+ * Async post-process: cada <pre><code> es reemplazado por
+ * <header + shiki rendered + button copiar>.
  */
-function enhanceCodeBlocks(html: string): string {
-  // Regex para detectar <pre><code class="language-X">...contenido...</code></pre>
-  // Como el HTML viene de marked, el orden y atributos son estables.
-  return html.replace(
-    /<pre><code(\s+class="language-([^"]+)")?>([\s\S]*?)<\/code><\/pre>/g,
-    (_match, _classAttr, lang, body) => {
-      const label = prettyLang(lang || "");
-      const head = CODE_BLOCK_HEAD_TPL(label);
+async function enhanceCodeBlocks(html: string): Promise<string> {
+  // Recolectar todos los matches primero, después hacer las async calls en paralelo
+  const matches: Array<{ match: string; lang: string; body: string; decoded: string }> = [];
+  let m: RegExpExecArray | null;
+  CODE_BLOCK_RE.lastIndex = 0;
+  while ((m = CODE_BLOCK_RE.exec(html)) !== null) {
+    const lang = m[2] || "";
+    const body = m[3] || "";
+    const decoded = body
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    matches.push({ match: m[0], lang, body, decoded });
+  }
 
-      // body viene HTML-escaped por marked. Lo dejamos así para el <pre>
-      // visible, pero también lo necesitamos en data-code para clipboard
-      // (decoded a texto plano).
-      const decoded = body
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'");
-      const dataAttr = `data-code="${escapeHtml(decoded)}"`;
+  if (matches.length === 0) return html;
 
-      const pre = `<pre class="m-0 overflow-x-auto p-3 sm:p-4" style="background-color:var(--bg)" ${dataAttr}><code class="block whitespace-pre font-mono text-[12.5px] leading-[1.55] sm:text-[13px]" style="color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace">${body}</code></pre>`;
-
-      return head + pre + CODE_BLOCK_TAIL;
-    },
+  // Highlight todos en paralelo
+  const highlighted = await Promise.all(
+    matches.map((x) => highlightCode(x.decoded, x.lang, false)),
   );
+
+  // Reemplazar
+  let out = html;
+  for (let i = 0; i < matches.length; i++) {
+    const { match, lang, decoded } = matches[i];
+    const label = prettyLang(lang);
+    const dataAttr = `data-code="${escapeHtml(decoded)}"`;
+    // shiki HTML viene como `<pre class="shiki ..."><code>...</code></pre>`
+    // Lo envolvemos con nuestro div + header.
+    const shikiHtml = highlighted[i].replace(
+      "<pre ",
+      `<pre ${dataAttr} `,
+    );
+    const replacement =
+      CODE_BLOCK_HEAD_TPL(label) + shikiHtml + CODE_BLOCK_TAIL;
+    out = out.replace(match, replacement);
+  }
+  return out;
 }
 
-export function renderMarkdown(md: string): string {
+export async function renderMarkdown(md: string): Promise<string> {
   if (!md) return "";
   const raw = marked.parse(md, { async: false }) as string;
   return enhanceCodeBlocks(raw);

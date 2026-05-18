@@ -107,7 +107,7 @@ export default async function TutorialPage({ params }: Props) {
   const tutorial = await getTutorialBySlug(slug);
   if (!tutorial) notFound();
 
-  const bodyHtml = renderMarkdown(tutorial.body_es);
+  const bodyHtml = await renderMarkdown(tutorial.body_es);
   const canonical = `${BASE_URL}/blog/${tutorial.slug}`;
 
   const howToSchema = {
@@ -424,7 +424,7 @@ export default async function TutorialPage({ params }: Props) {
                 lineHeight: 1.2,
               }}
             >
-              Los snippets que necesitás
+              Los snippets que necesitas
             </h2>
           </div>
           {tutorial.code_blocks.map((cb, i) => (
