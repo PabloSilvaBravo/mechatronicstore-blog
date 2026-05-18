@@ -111,6 +111,36 @@ export async function getPublishedTutorials(
  * tokens en al menos uno de los campos (relevancia básica). Para
  * relevancia avanzada, FTS5 con bm25.
  */
+/**
+ * Conteo de tutoriales publicados por categoría.
+ *
+ * Pablo 18-may-2026 (Fase 2 header): el mega menú "Categorías" muestra
+ * conteo dinámico al lado de cada item ("Arduino · 12 tutoriales").
+ * Esto da escala visible cuando crezcamos a 50/100+ tutoriales.
+ *
+ * Cacheado por React cache() en el caller. Esta función pega 1 query
+ * SQL barata (COUNT GROUP BY).
+ */
+export async function getCategoryCounts(): Promise<Record<string, number>> {
+  const client = getClient();
+  const result = await client.execute({
+    sql: `
+      SELECT category, COUNT(*) AS n
+      FROM tutorials
+      WHERE status = 'published' AND category IS NOT NULL
+      GROUP BY category
+    `,
+    args: [],
+  });
+  const counts: Record<string, number> = {};
+  for (const row of result.rows) {
+    const cat = row.category as string | null;
+    if (!cat) continue;
+    counts[cat] = Number(row.n);
+  }
+  return counts;
+}
+
 export async function searchPublishedTutorials(
   q: string,
   limit = 50,

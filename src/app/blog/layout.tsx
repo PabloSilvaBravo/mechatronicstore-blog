@@ -3,16 +3,30 @@ import BlogHeader from "./components/BlogHeader";
 import BackToTop from "./components/BackToTop";
 import UtilityBar from "./components/UtilityBar";
 import Logo from "../components/Logo";
+import { getCategoryCounts } from "@/lib/db/queries";
 
-export default function BlogLayout({
+// Revalidate counts cada 10 min — los conteos no necesitan ser
+// realtime, solo dirigir tráfico.
+export const revalidate = 600;
+
+export default async function BlogLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Fetch en server, pasamos plain JSON al BlogHeader (client).
+  // Si la DB falla, fallback a {} para no romper el render.
+  let categoryCounts: Record<string, number> = {};
+  try {
+    categoryCounts = await getCategoryCounts();
+  } catch (e) {
+    console.error("[blog/layout] getCategoryCounts failed", e);
+  }
+
   return (
     <>
       <UtilityBar />
-      <BlogHeader />
+      <BlogHeader categoryCounts={categoryCounts} />
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
         {children}

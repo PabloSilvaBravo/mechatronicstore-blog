@@ -6,6 +6,7 @@ import ThemeToggle from "../../components/ThemeToggle";
 import Logo from "../../components/Logo";
 import SearchBar from "./SearchBar";
 import HeaderActions from "./HeaderActions";
+import CategoryIcon from "./CategoryIcon";
 
 /**
  * Placeholder visual de SearchBar mientras Suspense resuelve. Mismo
@@ -30,15 +31,61 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   );
 }
 
+/**
+ * Categorías del blog — definición compartida con descripción corta
+ * para el mega menú (Pablo 18-may-2026 Fase 2 header). El icono
+ * dinámico viene del componente CategoryIcon (SVG outline).
+ */
 const CATEGORIES = [
-  { slug: "arduino", label: "Arduino", icon: "🔌" },
-  { slug: "esp32", label: "ESP32", icon: "📡" },
-  { slug: "rpi", label: "Raspberry Pi", icon: "🍓" },
-  { slug: "robotica", label: "Robótica", icon: "🤖" },
-  { slug: "sensores", label: "Sensores", icon: "📊" },
-  { slug: "3d", label: "Impresión 3D", icon: "🖨️" },
-  { slug: "otros", label: "Otros", icon: "⚙️" },
+  {
+    slug: "arduino",
+    label: "Arduino",
+    description: "Placas, kits y proyectos clásicos",
+    icon: "🔌", // mobile menu fallback
+  },
+  {
+    slug: "esp32",
+    label: "ESP32",
+    description: "WiFi, Bluetooth y proyectos IoT",
+    icon: "📡",
+  },
+  {
+    slug: "rpi",
+    label: "Raspberry Pi",
+    description: "SBCs, Pico y proyectos avanzados",
+    icon: "🍓",
+  },
+  {
+    slug: "robotica",
+    label: "Robótica",
+    description: "Motores, drivers y autonomía",
+    icon: "🤖",
+  },
+  {
+    slug: "sensores",
+    label: "Sensores",
+    description: "Temperatura, distancia, movimiento",
+    icon: "📊",
+  },
+  {
+    slug: "3d",
+    label: "Impresión 3D",
+    description: "Filamentos, slicer y piezas",
+    icon: "🖨️",
+  },
+  {
+    slug: "otros",
+    label: "Otros",
+    description: "Herramientas y proyectos varios",
+    icon: "⚙️",
+  },
 ];
+
+interface BlogHeaderProps {
+  /** Conteo de tutoriales publicados por categoría — viene del server
+   *  via blog/layout.tsx. Default empty object si la DB falla. */
+  categoryCounts?: Record<string, number>;
+}
 
 /**
  * BlogHeader v3 — harmonizado con mechatronicstore.cl (Pablo 18-may-2026).
@@ -56,10 +103,16 @@ const CATEGORIES = [
  * BlogHeader para que se mantenga arriba aunque el header sticky
  * cambie de comportamiento.
  */
-export default function BlogHeader() {
+export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [catsOpen, setCatsOpen] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
+  // Total de tutoriales (suma de todas las categorías) — para el
+  // header del mega menú.
+  const totalTutorials = Object.values(categoryCounts).reduce(
+    (s, n) => s + n,
+    0,
+  );
 
   // Click-outside para cerrar dropdown
   useEffect(() => {
@@ -238,36 +291,124 @@ export default function BlogHeader() {
               {catsOpen && (
                 <div
                   role="menu"
-                  className="absolute top-full left-0 mt-2 w-64 rounded-xl border shadow-2xl py-2 z-50"
+                  className="absolute top-full left-0 mt-2 rounded-xl border shadow-2xl z-50 overflow-hidden"
                   style={{
+                    width: "min(640px, calc(100vw - 2rem))",
                     borderColor: "var(--border)",
                     backgroundColor: "var(--bg-elevated)",
-                    boxShadow: "0 12px 40px var(--shadow-color)",
+                    boxShadow: "0 20px 60px var(--shadow-color)",
                   }}
                 >
+                  {/* Header del mega menú */}
                   <div
-                    className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] border-b mb-1"
+                    className="px-5 py-3 border-b flex items-center justify-between gap-4"
                     style={{
-                      color: "var(--text-dim)",
                       borderColor: "var(--border-subtle)",
+                      backgroundColor:
+                        "color-mix(in srgb, var(--brand-purple) 6%, transparent)",
                     }}
                   >
-                    Por temática
+                    <div>
+                      <div
+                        className="text-[10px] font-bold uppercase tracking-[0.14em]"
+                        style={{ color: "var(--brand-yellow)" }}
+                      >
+                        Explorar por temática
+                      </div>
+                      <div
+                        className="text-sm font-semibold mt-0.5"
+                        style={{ color: "var(--text)" }}
+                      >
+                        Categorías del blog
+                      </div>
+                    </div>
+                    {totalTutorials > 0 && (
+                      <div
+                        className="text-[11px] font-mono tabular-nums"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {totalTutorials}{" "}
+                        {totalTutorials === 1 ? "tutorial" : "tutoriales"}
+                      </div>
+                    )}
                   </div>
-                  {CATEGORIES.map((c) => (
+
+                  {/* Grid 2-cols con cards de categoría */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
+                    {CATEGORIES.map((c) => {
+                      const n = categoryCounts[c.slug] || 0;
+                      return (
+                        <Link
+                          key={c.slug}
+                          href={`/blog/categoria/${c.slug}`}
+                          role="menuitem"
+                          onClick={() => setCatsOpen(false)}
+                          className="group flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-[color:var(--bg-hover)]"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {/* Icon container con bg sutil purple */}
+                          <div
+                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
+                            style={{
+                              backgroundColor:
+                                "color-mix(in srgb, var(--brand-purple) 10%, transparent)",
+                              color: "var(--text-accent)",
+                            }}
+                          >
+                            <CategoryIcon slug={c.slug} size={22} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span
+                                className="font-semibold text-sm normal-case tracking-normal group-hover:text-[color:var(--text-accent)] transition-colors"
+                                style={{ color: "var(--text)" }}
+                              >
+                                {c.label}
+                              </span>
+                              {n > 0 && (
+                                <span
+                                  className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded normal-case tracking-normal"
+                                  style={{
+                                    color: "var(--text-muted)",
+                                    backgroundColor: "var(--bg-hover)",
+                                  }}
+                                >
+                                  {n}
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className="text-[12px] normal-case tracking-normal font-normal leading-snug line-clamp-1"
+                              style={{ color: "var(--text-dim)" }}
+                            >
+                              {c.description}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* Footer: Ver todos los tutoriales → */}
+                  <div
+                    className="border-t px-5 py-3 flex items-center justify-between"
+                    style={{ borderColor: "var(--border-subtle)" }}
+                  >
                     <Link
-                      key={c.slug}
-                      href={`/blog/categoria/${c.slug}`}
-                      role="menuitem"
-                      className="accent-bar block px-3 py-2 mx-1 rounded-md text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
-                      style={{ color: "var(--text)" }}
+                      href="/blog/tutoriales"
                       onClick={() => setCatsOpen(false)}
+                      className="underlink text-xs font-bold uppercase tracking-[0.08em]"
+                      style={{ color: "var(--text-accent)" }}
                     >
-                      <span className="font-medium normal-case tracking-normal">
-                        {c.label}
-                      </span>
+                      Ver todos los tutoriales →
                     </Link>
-                  ))}
+                    <span
+                      className="text-[10px] font-mono"
+                      style={{ color: "var(--text-dim)" }}
+                    >
+                      ESC para cerrar
+                    </span>
+                  </div>
                 </div>
               )}
             </li>
