@@ -142,11 +142,28 @@ so we have at least 800 useful words. """ + ("Foo bar baz qux. " * 200)
     assert result["passed"], f"Should pass but: {result['reasons']}"
 
 
-def test_apply_all_fails_no_code():
-    body = "Materials:\n- Arduino UNO\n\n## Step 1\n## Step 2\n## Step 3\n## Step 4\n## Step 5\n" + ("word " * 1000)
+def test_apply_all_fails_no_code_with_few_steps():
+    """Pablo 17-may-2026: la regla `no_code` ya no bloquea por sí sola.
+    Ahora rechaza solo si TAMBIÉN hay <5 steps (tutorial corto sin código =
+    probable artículo de noticia disfrazado). Tutoriales largos sin
+    código (e.g. soldadura, calibración) SÍ pasan."""
+    body = "Materials:\n- Arduino UNO\n\n## Step 1\n## Step 2\n## Step 3\n" + ("word " * 1000)
     result = apply_all(body, excluded_keywords=[])
     assert not result["passed"]
-    assert "no_code" in result["reasons"]
+    # Antes era "no_code"; ahora es la regla combinada con threshold
+    assert any("no_code_and_steps_below" in r for r in result["reasons"])
+
+
+def test_apply_all_allows_no_code_with_many_steps():
+    """Tutorial largo (5+ steps) sin código pasa: e.g. soldadura, mecánica."""
+    body = (
+        "Materials:\n- Soldador\n- Estaño\n\n"
+        "## Step 1\n## Step 2\n## Step 3\n## Step 4\n## Step 5\n"
+        "![img1](u)\n![img2](u)\n![img3](u)\n"
+        + ("word " * 1000)
+    )
+    result = apply_all(body, excluded_keywords=[])
+    assert result["passed"], f"Esperado pass, falló: {result['reasons']}"
 
 
 def test_apply_all_fails_excluded_kw():

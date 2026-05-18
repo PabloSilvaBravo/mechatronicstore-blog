@@ -110,11 +110,30 @@ def matches_excluded_keyword(body: str, excluded: list[str]) -> str | None:
 def apply_all(
     body: str,
     excluded_keywords: list[str] | None = None,
-    min_steps: int = 5,
+    min_steps: int = 3,
     min_images: int = 3,
     min_words: int = 800,
+    code_required_unless_steps: int = 5,
 ) -> dict:
-    """Aplica los 6 hard filters. Devuelve resumen."""
+    """Aplica los hard filters. Devuelve resumen.
+
+    Pablo 17-may-2026 (post-Week 8): los filtros estaban demasiado
+    estrictos — 46 rejected / 1 published. Tutoriales válidos como
+    "soldadura SMD", "calibración impresora 3D", "montaje mecánico"
+    fueron rechazados por no tener bloques de código, aunque tenían
+    materiales claros + pasos + imágenes.
+
+    Reglas relajadas:
+    - `min_steps` 5→3 (acepta tutoriales más cortos)
+    - `has_code` ya NO es bloqueante absoluto: solo rechaza si TAMBIÉN
+       tiene <`code_required_unless_steps` (default 5) pasos. Un tutorial
+       extenso (5+ steps) sin código sigue siendo válido si tiene
+       materiales + imágenes + palabras suficientes.
+
+    Si después de relajar entran demasiados spam, subir thresholds:
+       apply_all(body, min_steps=5, code_required_unless_steps=99)
+       restaura el comportamiento original estricto.
+    """
     excluded_keywords = excluded_keywords or []
     reasons: list[str] = []
     stats = {
@@ -125,8 +144,13 @@ def apply_all(
         "has_materials": has_materials_list(body),
     }
 
-    if not stats["has_code"]:
-        reasons.append("no_code")
+    # Code-or-many-steps: rechaza solo si NO hay código Y los steps son pocos.
+    # Tutoriales largos sin código (soldadura, calibración, montaje) → permitir.
+    if not stats["has_code"] and stats["steps"] < code_required_unless_steps:
+        reasons.append(
+            f"no_code_and_steps_below_{code_required_unless_steps}"
+        )
+
     if stats["steps"] < min_steps:
         reasons.append(f"steps_below_{min_steps}")
     if stats["images"] < min_images:
