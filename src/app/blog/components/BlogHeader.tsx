@@ -205,20 +205,27 @@ export default function BlogHeader() {
               <button
                 type="button"
                 onClick={() => setCatsOpen((v) => !v)}
-                className="inline-flex items-center gap-1 underlink py-1"
+                className="inline-flex items-center gap-1.5 underlink py-1 whitespace-nowrap"
                 style={{
                   color: catsOpen ? "var(--text)" : "var(--text-muted)",
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.08em",
+                  fontFamily: "inherit",
                 }}
                 aria-expanded={catsOpen}
                 aria-haspopup="menu"
               >
-                Categorías
+                <span>Categorías</span>
                 <svg
-                  className={`h-3 w-3 transition-transform ${catsOpen ? "rotate-180" : ""}`}
-                  fill="none"
+                  className={`flex-shrink-0 transition-transform ${catsOpen ? "rotate-180" : ""}`}
+                  width="10"
+                  height="10"
                   viewBox="0 0 24 24"
+                  fill="none"
                   stroke="currentColor"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   aria-hidden
                 >
                   <path
