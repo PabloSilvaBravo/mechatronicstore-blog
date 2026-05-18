@@ -1,0 +1,225 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { cache } from "react";
+import {
+  tutorialsByTag,
+  countTutorialsByTag,
+  relatedTags,
+} from "@/lib/db/queries";
+
+const BASE_URL = "https://www.mechatronicstore.cl";
+const MIN_TUTORIALS_FOR_INDEX = 3;
+
+interface PageProps {
+  params: Promise<{ tag: string }>;
+}
+
+// React cache() dedup: generateMetadata + page run en el mismo request
+const getCached = cache(async (tag: string, limit: number) =>
+  tutorialsByTag(tag, limit),
+);
+
+export const revalidate = 600;
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { tag } = await params;
+  const decoded = decodeURIComponent(tag);
+  const label = decoded.replace(/-/g, " ");
+  const url = `${BASE_URL}/blog/tag/${tag}`;
+  const items = await getCached(decoded, 60);
+  const noindex = items.length < MIN_TUTORIALS_FOR_INDEX;
+
+  return {
+    title: `#${decoded}`,
+    description: `Tutoriales sobre ${label} en MechatronicStore Blog. ${items.length} tutoriales publicados.`,
+    robots: noindex
+      ? { index: false, follow: true, googleBot: { index: false, follow: true } }
+      : undefined,
+    alternates: {
+      canonical: url,
+      languages: {
+        "es-CL": url,
+        "es-419": url,
+        es: url,
+        "x-default": url,
+      },
+    },
+    openGraph: {
+      title: `#${decoded} · Blog MechatronicStore`,
+      description: `Tutoriales sobre ${label}.`,
+      type: "website",
+      url,
+      siteName: "MechatronicStore Blog",
+      locale: "es_CL",
+    },
+  };
+}
+
+export default async function TagPage({ params }: PageProps) {
+  const { tag } = await params;
+  const decoded = decodeURIComponent(tag);
+
+  const [items, related, totalCount] = await Promise.all([
+    getCached(decoded, 60),
+    relatedTags(decoded, 8),
+    countTutorialsByTag(decoded),
+  ]);
+
+  if (items.length === 0) notFound();
+
+  const label = decoded.replace(/-/g, " ");
+
+  const collectionLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${BASE_URL}/blog/tag/${tag}`,
+    name: `#${label}`,
+    description: `Tutoriales sobre ${label}`,
+    url: `${BASE_URL}/blog/tag/${tag}`,
+    inLanguage: "es-CL",
+    dateModified: items[0]?.published_at || new Date().toISOString(),
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: Math.min(items.length, 12),
+      itemListElement: items.slice(0, 12).map((t, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${BASE_URL}/blog/${t.slug}`,
+        name: t.title_es,
+      })),
+    },
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: BASE_URL + "/" },
+      { "@type": "ListItem", position: 2, name: "Blog", item: BASE_URL + "/blog" },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `#${label}`,
+        item: `${BASE_URL}/blog/tag/${tag}`,
+      },
+    ],
+  };
+
+  return (
+    <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+
+      <nav
+        className="text-sm mb-6"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <Link href="/blog" className="hover:underline">← Blog</Link>
+      </nav>
+
+      <header className="mb-8">
+        <div
+          className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
+          style={{ color: "var(--brand-yellow)" }}
+        >
+          Etiqueta
+        </div>
+        <h1
+          className="text-3xl sm:text-4xl font-bold mb-2"
+          style={{ color: "var(--text)" }}
+        >
+          #{decoded}
+        </h1>
+        <p
+          className="text-sm uppercase tracking-wider"
+          style={{ color: "var(--text-dim)" }}
+        >
+          {totalCount} {totalCount === 1 ? "tutorial publicado" : "tutoriales publicados"}
+        </p>
+      </header>
+
+      <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {items.map((t) => (
+          <li
+            key={t.slug}
+            className="border rounded-lg overflow-hidden transition-colors hover:border-[color:var(--brand-yellow)]"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <Link href={`/blog/${t.slug}`} className="block">
+              {t.hero_image_url && (
+                <img
+                  src={t.hero_image_url}
+                  alt={t.title_es}
+                  className="w-full h-40 object-cover"
+                />
+              )}
+              <div className="p-4">
+                <h2
+                  className="font-bold mb-1 line-clamp-2"
+                  style={{ color: "var(--text)" }}
+                >
+                  {t.title_es}
+                </h2>
+                <p
+                  className="text-sm line-clamp-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t.subtitle_es}
+                </p>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      {related.length >= 3 && (
+        <section
+          className="border-t pt-8 mt-12"
+          style={{ borderColor: "var(--border-subtle)" }}
+        >
+          <h2
+            className="text-lg font-bold mb-3"
+            style={{ color: "var(--text)" }}
+          >
+            Etiquetas relacionadas
+          </h2>
+          <p
+            className="text-sm mb-4"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Otros temas que aparecen junto a #{decoded} en tutoriales.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {related.map((r) => (
+              <Link
+                key={r.tag}
+                href={`/blog/tag/${encodeURIComponent(r.tag)}`}
+                className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                <span style={{ color: "var(--text-dim)" }}>#</span>
+                <span className="font-medium">{r.tag}</span>
+                <span
+                  className="text-[11px] tabular-nums"
+                  style={{ color: "var(--text-dim)" }}
+                >
+                  {r.count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -99,6 +99,79 @@ export async function getPublishedTutorials(
   return rows.map(rowToTutorial);
 }
 
+/**
+ * Tutoriales publicados que tienen un tag específico en su tags_json.
+ * Usa SQLite json_each para iterar el array sin parsear JSON en TS.
+ *
+ * Caso de uso: `/blog/tag/[tag]/page.tsx` listing por etiqueta.
+ */
+export async function tutorialsByTag(
+  tag: string,
+  limit: number = 50,
+): Promise<TutorialPublished[]> {
+  const client = getClient();
+  const result = await client.execute({
+    sql: `
+      SELECT DISTINCT t.*
+      FROM tutorials t, json_each(t.tags_json) jt
+      WHERE t.status = 'published'
+        AND lower(jt.value) = lower(?)
+      ORDER BY t.published_at DESC
+      LIMIT ?
+    `,
+    args: [tag, limit],
+  });
+  return result.rows.map((r) => rowToTutorial(r as unknown as typeof tutorials.$inferSelect));
+}
+
+/**
+ * Cuenta total de tutoriales publicados con un tag (para metadata noindex
+ * threshold y para mostrar "N publicados" en el header de la página).
+ */
+export async function countTutorialsByTag(tag: string): Promise<number> {
+  const client = getClient();
+  const result = await client.execute({
+    sql: `
+      SELECT COUNT(DISTINCT t.id) AS n
+      FROM tutorials t, json_each(t.tags_json) jt
+      WHERE t.status = 'published'
+        AND lower(jt.value) = lower(?)
+    `,
+    args: [tag],
+  });
+  return Number(result.rows[0]?.n ?? 0);
+}
+
+/**
+ * Tags relacionados (co-ocurrencia): otros tags que aparecen junto al
+ * tag dado en los mismos tutoriales. Útil para interlinking hub & spoke.
+ */
+export async function relatedTags(
+  tag: string,
+  limit: number = 8,
+): Promise<Array<{ tag: string; count: number }>> {
+  const client = getClient();
+  const result = await client.execute({
+    sql: `
+      SELECT jt2.value AS tag, COUNT(*) AS count
+      FROM tutorials t
+      , json_each(t.tags_json) jt1
+      , json_each(t.tags_json) jt2
+      WHERE t.status = 'published'
+        AND lower(jt1.value) = lower(?)
+        AND lower(jt2.value) <> lower(?)
+      GROUP BY lower(jt2.value)
+      ORDER BY count DESC
+      LIMIT ?
+    `,
+    args: [tag, tag, limit],
+  });
+  return result.rows.map((r) => ({
+    tag: String(r.tag),
+    count: Number(r.count),
+  }));
+}
+
 export interface TutorialByProduct {
   slug: string;
   title_es: string;

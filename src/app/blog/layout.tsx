@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BlogHeader from "./components/BlogHeader";
 
 export default function BlogLayout({
   children,
@@ -7,26 +8,18 @@ export default function BlogLayout({
 }) {
   return (
     <>
-      <header className="border-b border-[color:var(--border)]">
-        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/blog"
-            className="font-bold text-lg hover:opacity-80"
-          >
-            MechatronicStore Blog
-          </Link>
-          <nav className="text-sm text-[color:var(--muted)]">
-            <Link href="https://www.mechatronicstore.cl" className="hover:underline">
-              ← Tienda
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <BlogHeader />
 
       <main className="mx-auto max-w-5xl px-4 py-12">{children}</main>
 
-      <footer className="border-t border-[color:var(--border)] mt-24">
-        <div className="mx-auto max-w-5xl px-4 py-6 text-sm text-[color:var(--muted)]">
+      <footer
+        className="border-t mt-24"
+        style={{ borderColor: "var(--border-subtle)" }}
+      >
+        <div
+          className="mx-auto max-w-5xl px-4 py-6 text-sm"
+          style={{ color: "var(--text-muted)" }}
+        >
           © 2026 MechatronicStore · Tutoriales de electrónica, robótica y DIY ·{" "}
           <Link
             href="https://www.mechatronicstore.cl"

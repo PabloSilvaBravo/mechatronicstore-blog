@@ -10,6 +10,7 @@ import CodeBlock from "../components/CodeBlock";
 import DownloadLinks from "../components/DownloadLinks";
 import AttributionFooter from "../components/AttributionFooter";
 import Comments from "../components/Comments";
+import MarkdownEnhancer from "../components/MarkdownEnhancer";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -226,10 +227,12 @@ export default async function TutorialPage({ params }: Props) {
       <BuyAllButton linkedProducts={tutorial.linked_products} slug={tutorial.slug} />
 
       {tutorial.body_es && (
-        <div
-          className="prose dark:prose-invert max-w-none my-8"
-          dangerouslySetInnerHTML={{ __html: bodyHtml }}
-        />
+        <MarkdownEnhancer>
+          <div
+            className="prose dark:prose-invert max-w-none my-8"
+            dangerouslySetInnerHTML={{ __html: bodyHtml }}
+          />
+        </MarkdownEnhancer>
       )}
 
       {tutorial.steps.length > 0 && (
@@ -262,15 +265,29 @@ export default async function TutorialPage({ params }: Props) {
       />
 
       {tutorial.tags.length > 0 && (
-        <div className="my-8 flex flex-wrap gap-2">
-          {tutorial.tags.map((t) => (
-            <span
-              key={t}
-              className="px-2 py-1 text-xs rounded bg-[color:var(--border)] text-[color:var(--muted)]"
-            >
-              #{t}
-            </span>
-          ))}
+        <div className="my-8">
+          <div
+            className="text-xs uppercase tracking-wider mb-2 font-semibold"
+            style={{ color: "var(--text-dim)" }}
+          >
+            Etiquetas
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tutorial.tags.map((t) => (
+              <Link
+                key={t}
+                href={`/blog/tag/${encodeURIComponent(t)}`}
+                className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-full border transition-colors hover:bg-[color:var(--bg-hover)]"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                <span style={{ color: "var(--text-dim)" }}>#</span>
+                <span className="font-medium">{t}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
