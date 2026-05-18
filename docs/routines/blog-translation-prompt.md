@@ -83,6 +83,7 @@ Si NO hay match en la tienda, el material queda en `materials_list` pero SIN `pr
       "slug": "esp32-cyd-pantalla-touchscreen-microsd",
       "title_es": "ESP32 CYD: Pantalla, touchscreen y microSD juntos",
       "subtitle_es": "Aprende a usar las 3 funciones del módulo barato Cheap Yellow Display sin conflicto.",
+      "hero_image_url": "https://randomnerdtutorials.com/wp-content/uploads/.../hero.jpg",
       "body_es": "## Paso 1: Conexiones\n\n...markdown completo en español...",
 
       "materials_list": [
@@ -128,18 +129,27 @@ Si NO hay match en la tienda, el material queda en `materials_list` pero SIN `pr
 
 ## Reglas estrictas
 
-- `slug`: kebab-case en español, max 70 chars
+- `slug`: kebab-case en ESPAÑOL (no inglés), max 70 chars. SIN sufijo hash
+  (`-abc123`) ni sufijo `-1`/`-2` — usá título limpio. Si hay colisión,
+  parchá el título (e.g. agregar "con ESP32" o el componente principal).
+  Ejemplo BUENO: `esp32-tm1637-temperatura-weatherapi-display-7-segmentos`
+  Ejemplo MALO: `mit-green-building-neopixel-tetris-4fbf47` (con hash sufijo)
 - `subtitle_es`: 100-150 chars (importante SEO)
 - `body_es`: markdown limpio sin HTML, code blocks con lang hint
+- `hero_image_url`: OBLIGATORIO. Buscar en input ingest `main_image_url` o
+  re-extraer og:image del `source_url`. Si NO hay og:image, usar la primera
+  imagen grande (>800x450) del body. NULL solo si genuinamente no hay imagen.
 - `materials_list` SIEMPRE ≥ 1 item
-- `steps` ≥ 3 (sintetizar si tutorial tiene menos)
+- `steps` ≥ 3 (sintetizar si tutorial tiene menos). Cada step puede tener
+  `image_url` opcional si el tutorial original muestra foto del paso.
 - `code_blocks`: solo código real
 - `linked_products`: SOLO con `match_score ≥ 0.7`
 - `category` ∈ {"arduino", "esp32", "rpi", "robotica", "sensores", "3d", "otros"}
 - `difficulty` ∈ {"beginner", "intermediate", "advanced"}
 - `estimated_time_minutes`: tiempo EJECUCIÓN (no lectura)
 - `estimated_cost_clp`: suma de prices linked_products + estimación no-linked
-- `tags`: 3-7 keywords técnicas
+- `tags`: 3-7 keywords técnicas en español o inglés según uso común
+  (ej. "esp32", "tm1637", "weatherapi", "display"). NO repetir el slug.
 
 ## Push DIRECTO a main (no PR)
 

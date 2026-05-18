@@ -5,6 +5,11 @@ Para cada translation:
   - UPDATE tutorials con todas las columnas estructuradas
   - status='published'
   - published_at = now UTC
+  - hero_image_url: usa el del output si viene, sino fallback a re-fetch
+    del source_url (og:image extraction).
+
+Pablo 17-may-2026 audit-blog B9: el persist no estaba capturando
+hero_image_url, dejando tutoriales sin foto.
 """
 import json
 import sys
@@ -16,6 +21,16 @@ import db
 
 ROOT = Path(__file__).parent.parent
 INPUT = ROOT / "data" / "blog-translate-output.json"
+
+
+def fetch_og_image(source_url: str) -> str | None:
+    """Fallback: extrae og:image del source_url si la translation no lo trae."""
+    try:
+        from scraper import fetch_full_page
+        page = fetch_full_page(source_url)
+        return page.main_image_url
+    except Exception:
+        return None
 
 
 def utc_now_sqlite() -> str:
@@ -43,11 +58,22 @@ def main():
             continue
 
         existing = db.execute(
-            "SELECT id, status FROM tutorials WHERE id = ?", [tid]
+            "SELECT id, status, source_url, hero_image_url FROM tutorials WHERE id = ?",
+            [tid],
         ).fetchone()
         if not existing:
             stats["missing_tutorial"] += 1
             continue
+        existing_source_url = existing[2]
+        existing_hero = existing[3]
+
+        # Hero image: prioridad output > existente > fallback fetch og:image
+        hero_url = tr.get("hero_image_url") or existing_hero
+        if not hero_url and existing_source_url:
+            print(f"  → fallback fetch og:image desde {existing_source_url[:70]}")
+            hero_url = fetch_og_image(existing_source_url)
+            if hero_url:
+                print(f"    ✓ recovered: {hero_url[:80]}")
 
         try:
             db.execute(
@@ -57,6 +83,7 @@ def main():
                        title_es = ?,
                        subtitle_es = ?,
                        body_es = ?,
+                       hero_image_url = COALESCE(?, hero_image_url),
                        materials_list_json = ?,
                        steps_json = ?,
                        code_blocks_json = ?,
@@ -77,6 +104,7 @@ def main():
                     tr.get("title_es"),
                     tr.get("subtitle_es"),
                     tr.get("body_es"),
+                    hero_url,
                     json.dumps(tr.get("materials_list") or [], ensure_ascii=False),
                     json.dumps(tr.get("steps") or [], ensure_ascii=False),
                     json.dumps(tr.get("code_blocks") or [], ensure_ascii=False),
