@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Mecha Blog Tutorials Widget
  * Plugin URI:  https://github.com/PabloSilvaBravo/mechatronicstore-blog
- * Description: Muestra "Tutoriales con este producto" en cada página de producto WooCommerce, consultando el blog Next.js en /api/blog/tutorials. Crea link juice bidireccional tienda → blog.
- * Version:     1.0.0
+ * Description: Muestra "Tutoriales con este producto" en cada página de producto WooCommerce + endpoint bundle add-to-cart (?mecha_bundle=SKU1,SKU2,SKU3). Crea link juice bidireccional tienda ↔ blog.
+ * Version:     1.1.0
  * Author:      Pablo Silva Bravo
  * License:     MIT
  * Requires PHP: 7.4
@@ -17,6 +17,94 @@ define('MBT_API_BASE', 'https://www.mechatronicstore.cl/api/blog');
 define('MBT_BLOG_BASE', 'https://www.mechatronicstore.cl/blog');
 define('MBT_CACHE_SECONDS', 6 * HOUR_IN_SECONDS);
 define('MBT_HTTP_TIMEOUT', 5);
+
+/**
+ * Bundle add-to-cart handler (v1.1.0, Pablo 18-may-2026).
+ *
+ * Problema: WooCommerce default no soporta multi-add via ?add-to-cart=A,B,C
+ * — espera un solo ID. El blog generaba URLs así desde el botón "Comprar todo"
+ * de tutoriales que linkean 2+ productos → 404.
+ *
+ * Fix: este handler escucha ?mecha_bundle=SKU1,SKU2,SKU3 en cualquier
+ * página WP, resuelve SKU → product_id via wc_get_product_id_by_sku(),
+ * los agrega TODOS al carrito de la sesión actual, y redirige a /carrito/
+ * preservando los UTMs originales para tracking del blog.
+ *
+ * Seguridad: SKU sanitizado, max 20 SKUs por bundle (anti-abuse),
+ * skip productos no-purchasable / sin stock con warning visible.
+ */
+function mbt_handle_bundle_add() {
+    if (empty($_GET['mecha_bundle']) || !function_exists('WC')) {
+        return;
+    }
+    $cart = WC()->cart;
+    if (!$cart) return;
+
+    $raw = sanitize_text_field(wp_unslash($_GET['mecha_bundle']));
+    $skus = array_slice(
+        array_filter(array_map('trim', explode(',', $raw))),
+        0, 20
+    );
+    if (empty($skus)) return;
+
+    $added = 0;
+    $skipped = [];
+    foreach ($skus as $sku) {
+        // Validación básica del SKU (alfanumérico + dash/underscore)
+        if (!preg_match('/^[A-Za-z0-9_-]{1,32}$/', $sku)) {
+            $skipped[] = $sku . ' (formato inválido)';
+            continue;
+        }
+        $product_id = wc_get_product_id_by_sku($sku);
+        if (!$product_id) {
+            $skipped[] = $sku . ' (SKU no encontrado)';
+            continue;
+        }
+        $product = wc_get_product($product_id);
+        if (!$product || !$product->is_purchasable()) {
+            $skipped[] = $sku . ' (no disponible)';
+            continue;
+        }
+        $cart_item_key = $cart->add_to_cart($product_id, 1);
+        if ($cart_item_key) {
+            $added++;
+        } else {
+            $skipped[] = $sku . ' (error al agregar)';
+        }
+    }
+
+    // Notice flash: WC los muestra arriba del carrito
+    if ($added > 0) {
+        wc_add_notice(
+            sprintf(
+                _n('%d producto del tutorial agregado al carrito.', '%d productos del tutorial agregados al carrito.', $added, 'mbt'),
+                $added
+            ),
+            'success'
+        );
+    }
+    if (!empty($skipped)) {
+        wc_add_notice(
+            'Productos del tutorial no agregados: ' . implode(', ', $skipped),
+            'notice'
+        );
+    }
+
+    // Redirect preservando UTMs (utm_source, utm_medium, utm_campaign, utm_content)
+    $cart_url = wc_get_cart_url();
+    $utms = [];
+    foreach (['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'] as $k) {
+        if (!empty($_GET[$k])) {
+            $utms[$k] = sanitize_text_field(wp_unslash($_GET[$k]));
+        }
+    }
+    if (!empty($utms)) {
+        $cart_url = add_query_arg($utms, $cart_url);
+    }
+    wp_safe_redirect($cart_url);
+    exit;
+}
+add_action('wp_loaded', 'mbt_handle_bundle_add', 20);
 
 /**
  * Resuelve el SKU del producto WooCommerce actual.

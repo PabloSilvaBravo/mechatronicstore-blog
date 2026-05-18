@@ -234,6 +234,10 @@ wp-admin → Settings → Mecha Blog Tutorials → input SKU → "Limpiar cache 
 
 ### Troubleshooting
 
+- **404 al clickear "Comprar todo" en tutorial**: requiere plugin v1.1.0+
+  con el handler `mecha_bundle`. Si tenés v1.0.0, el botón genera URL
+  `?add-to-cart=A,B,C` que WC default rechaza → 404. Actualizar plugin
+  (ver sección "Update" abajo).
 - **Widget no aparece**: verificar que el producto tenga SKU. Sin SKU, el plugin retorna early.
 - **Widget vacío pero el producto tiene tutorial**: verificar que el SKU del producto WP coincida exactamente con el `product_id` del JSON `linked_products_json` del tutorial.
 - **Plugin lento**: verificar que el endpoint Vercel responde en <500ms (`curl -w '%{time_total}' .../api/blog/tutorials?product_id=X`).

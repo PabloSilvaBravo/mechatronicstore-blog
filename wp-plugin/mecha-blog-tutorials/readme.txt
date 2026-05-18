@@ -4,7 +4,7 @@ Tags: woocommerce, tutorials, mechatronicstore
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: MIT
 
 Muestra "Tutoriales con este producto" en cada página de producto WooCommerce.
@@ -40,6 +40,14 @@ invalidar manualmente: Settings → Mecha Blog Tutorials → "Limpiar cache de u
 `[mecha_blog_tutorials sku="D-517"]` — usa un SKU específico
 
 == Changelog ==
+
+= 1.1.0 (18-may-2026) =
+* NEW: bundle add-to-cart handler `?mecha_bundle=SKU1,SKU2,SKU3` que
+  resuelve cada SKU, los agrega TODOS al carrito y redirige a /carrito/
+  preservando UTMs del blog. Soluciona 404 del botón "Comprar todo" de
+  tutoriales con múltiples productos (WC default no soporta multi-add).
+* Max 20 SKUs por bundle (anti-abuse). Sanitización SKU regex.
+* Skip productos no-purchasable + warning notice con lista de skipped.
 
 = 1.0.0 (17-may-2026) =
 * Initial release: hook woocommerce_after_single_product_summary,
