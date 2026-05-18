@@ -1,130 +1,464 @@
 @import "tailwindcss";
 
 /*
- * Theme system theme-aware (Pablo 17-may-2026 audit-blog B3).
- * Variables CSS responden a [data-theme="dark|light"] aplicado por
- * ThemeProvider — NO usar @media (prefers-color-scheme) porque eso solo
- * permite tema pasivo (sistema), no toggle manual del usuario.
+ * Design system Blog MechatronicStore — alineado con MechatronicStore.cl
+ * y mechanews (purple #6017b1 + yellow #FFD700). Pablo 18-may-2026 audit
+ * visual: el branding y la tipografía deben ser consistentes entre las
+ * 3 propiedades (tienda, blog tutoriales, mechanoticias).
  *
- * Fallback: si JS está deshabilitado, html tiene data-theme="dark" por
- * default (script inline en layout que se ejecuta antes de hydration).
+ * Decisiones:
+ * - Fondo dark NO es negro puro (#0E0F14) — reduce fatiga retinal en
+ *   sesiones largas de lectura técnica.
+ * - Bg en layers: bg / bg-elevated / bg-hover / bg-card → jerarquía clara.
+ * - Borders sutiles purple-tinted en dark, purple-tinted en light.
+ * - Tipografía: Montserrat sans para body + UI, Georgia serif para
+ *   HEADLINES editoriales (titulares de tutoriales, h1/h2). Mono
+ *   ui-monospace para código.
  */
 
 :root,
 [data-theme="dark"] {
-  --bg: #0a0a0a;
-  --bg-elevated: #18181b;
-  --bg-hover: #27272a;
-  --text: #fafafa;
-  --text-muted: #a1a1aa;
-  --text-dim: #71717a;
-  --border: #27272a;
-  --border-subtle: #1c1c1f;
-  --primary: #facc15;
-  --brand-yellow: #facc15;
+  --bg: #0e0f14;
+  --bg-elevated: #16171d;
+  --bg-hover: #1d1e25;
+  --bg-card: rgba(22, 23, 29, 0.9);
+  --bg-overlay: rgba(14, 15, 20, 0.88);
 
-  /* Aliases retro-compat con código existente */
+  --text: #ececee;
+  --text-muted: #a8a9b1;
+  --text-dim: #7a7b84;
+  --text-faint: #555560;
+
+  --border: rgba(96, 23, 177, 0.30);
+  --border-strong: rgba(96, 23, 177, 0.55);
+  --border-subtle: rgba(140, 120, 180, 0.12);
+
+  --shadow-color: rgba(0, 0, 0, 0.55);
+  --shadow-glow: rgba(96, 23, 177, 0.22);
+
+  --brand-purple: #6017b1;
+  --brand-purple-light: #8a3fd6;
+  --brand-yellow: #ffd700;
+  --brand-yellow-dark: #e6c200;
+  --text-accent: #b084e8; /* lila claro AA-contrast sobre dark */
+  --text-on-purple: #ffffff;
+  --text-on-yellow: #000000;
+
+  /* Aliases retro-compat */
   --background: var(--bg);
   --foreground: var(--text);
   --muted: var(--text-muted);
+  --primary: var(--brand-yellow);
 }
 
 [data-theme="light"] {
-  --bg: #ffffff;
-  --bg-elevated: #f7f8fa;
-  --bg-hover: #e5e7eb;
-  --text: #0a0a0a;
-  --text-muted: #6b7280;
-  --text-dim: #9ca3af;
-  --border: #e5e7eb;
-  --border-subtle: #f3f4f6;
-  --primary: #d97706;
-  --brand-yellow: #d97706;
+  --bg: #fafafa;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f4f4f5;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-overlay: rgba(250, 250, 250, 0.88);
+
+  --text: #09090b;
+  --text-muted: #52525b;
+  --text-dim: #71717a;
+  --text-faint: #a1a1aa;
+
+  --border: rgba(96, 23, 177, 0.20);
+  --border-strong: rgba(96, 23, 177, 0.45);
+  --border-subtle: rgba(96, 23, 177, 0.10);
+
+  --shadow-color: rgba(96, 23, 177, 0.08);
+  --shadow-glow: rgba(96, 23, 177, 0.15);
+
+  --brand-purple: #6017b1;
+  --brand-purple-light: #8a3fd6;
+  --brand-yellow: #d4a017;
+  --brand-yellow-dark: #b38600;
+  --text-accent: #6017b1;
+  --text-on-purple: #ffffff;
+  --text-on-yellow: #000000;
 
   --background: var(--bg);
   --foreground: var(--text);
   --muted: var(--text-muted);
+  --primary: var(--brand-yellow);
+}
+
+@theme inline {
+  --font-sans: var(--font-montserrat), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: Georgia, "Times New Roman", serif;
 }
 
 html {
-  /* Anti-FOUC: el script de ThemeProvider corre antes de body. */
+  scroll-behavior: smooth;
   background: var(--bg);
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    Cantarell, Helvetica, Arial, sans-serif;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  font-family: var(--font-sans);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* Prose theme-aware — para markdown rendered con dangerouslySetInnerHTML */
-.prose {
+input, textarea, select {
+  font-size: 16px;
+}
+@media (min-width: 640px) {
+  input, textarea, select {
+    font-size: inherit;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-purple);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-purple-light);
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Typography: headlines editoriales serif + body sans
+ * Inspirado en NYT / The Verge — letras grandes con jerarquía clara,
+ * line-height generoso para lectura larga.
+ * ────────────────────────────────────────────────────────────── */
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Prose: estilo editorial rico para body markdown rendered.
+ * Pablo 18-may-2026 audit visual: el .prose default de Tailwind no
+ * tiene jerarquía visible — todos los párrafos pegados, headers
+ * casi indistinguibles. Esta override fuerza estilo periodístico.
+ * ────────────────────────────────────────────────────────────── */
+
+.article-body {
   color: var(--text);
+  font-size: 17px;
+  line-height: 1.75;
+  max-width: 72ch;
 }
 
-.prose a {
-  color: var(--brand-yellow);
-  text-decoration: none;
+.article-body > * + * {
+  margin-top: 1.2em;
 }
 
-.prose a:hover {
-  text-decoration: underline;
-}
-
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4 {
+.article-body h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--brand-purple);
   color: var(--text);
+  letter-spacing: -0.01em;
 }
 
-.prose code {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  padding: 0.1em 0.35em;
-  border-radius: 0.25rem;
-  font-size: 0.9em;
-}
-
-.prose pre {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  overflow-x: auto;
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 0.825rem;
-  line-height: 1.55;
-}
-
-.prose pre code {
-  background: transparent;
-  border: none;
-  padding: 0;
-  font-size: inherit;
-  color: var(--text);
-}
-
-.prose img {
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-subtle);
-  margin: 1.5rem auto;
-}
-
-.prose blockquote {
+.article-body h3 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  padding-left: 0.75rem;
   border-left: 3px solid var(--brand-yellow);
-  padding-left: 1rem;
+  color: var(--text);
+}
+
+.article-body h4 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.95rem;
+}
+
+.article-body p {
+  margin-block: 0;
+  line-height: 1.75;
+}
+
+.article-body strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.article-body em {
   color: var(--text-muted);
   font-style: italic;
 }
 
-.prose hr {
+.article-body a {
+  color: var(--text-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--text-accent) 40%, transparent);
+  transition: text-decoration-color 0.15s ease;
+}
+
+.article-body a:hover {
+  text-decoration-color: var(--text-accent);
+}
+
+/* Lists con bullets custom purple */
+.article-body ul,
+.article-body ol {
+  padding-left: 0;
+  margin-top: 1.25rem;
+}
+
+.article-body ul li,
+.article-body ol li {
+  position: relative;
+  padding-left: 1.75rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+
+.article-body ul li::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0.7em;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--brand-purple);
+}
+
+.article-body ol {
+  counter-reset: list-counter;
+}
+
+.article-body ol li {
+  counter-increment: list-counter;
+}
+
+.article-body ol li::before {
+  content: counter(list-counter) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.5rem;
+  color: var(--brand-purple);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inline code (no bloque) */
+.article-body code:not(pre code) {
+  background: color-mix(in srgb, var(--brand-purple) 12%, var(--bg-elevated));
+  border: 1px solid var(--border-subtle);
+  padding: 0.12em 0.45em;
+  border-radius: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Pre blocks (los que vienen sin enhancer son rendered plain) */
+.article-body pre {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.825rem;
+  line-height: 1.6;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.article-body pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  white-space: pre;
+  color: var(--text);
+}
+
+/* Blockquote estilo periódico — barra purple a la izquierda */
+.article-body blockquote {
+  position: relative;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0 0.5rem 1.5rem;
+  border-left: 4px solid var(--brand-yellow);
+  font-style: italic;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--brand-yellow) 5%, transparent);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.article-body blockquote p {
+  margin: 0;
+}
+
+/* Imágenes inline en body */
+.article-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  margin: 1.5rem auto;
+  box-shadow: 0 4px 24px var(--shadow-color);
+}
+
+.article-body hr {
   border: 0;
-  border-top: 1px solid var(--border);
-  margin: 2rem 0;
+  height: 1px;
+  background: var(--border);
+  margin: 2.5rem 0;
+}
+
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95em;
+}
+
+.article-body th,
+.article-body td {
+  border: 1px solid var(--border);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+.article-body th {
+  background: var(--bg-elevated);
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Animations
+ * ────────────────────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.45s ease-out;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    var(--bg-hover) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Reading progress bar — fill que avanza con scroll */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-purple), var(--brand-yellow));
+  z-index: 50;
+  transition: width 0.08s ease-out;
+  pointer-events: none;
+  box-shadow: 0 0 12px var(--shadow-glow);
+}
+
+/* Subscribe pulse dot (live indicator) */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--brand-yellow);
+  animation: live-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--brand-yellow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .animate-shimmer,
+  .fade-in-up {
+    animation: none;
+  }
+}
+
+/* Selection: purple highlight */
+::selection {
+  background: var(--brand-purple);
+  color: var(--text-on-purple);
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--brand-yellow);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* Smooth pill (categoria chips, etc) */
+.pill {
+  transition: all 0.18s ease;
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
