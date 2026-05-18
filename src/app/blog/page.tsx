@@ -7,7 +7,7 @@ import RevealOnScroll from "./components/RevealOnScroll";
 export const metadata: Metadata = {
   title: "Inicio",
   description:
-    "Tutoriales de electrónica con componentes en stock en Chile. Despacho 24-48h, precios en CLP, sin importaciones. Arduino, ESP32, Raspberry Pi y más.",
+    "Tutoriales paso a paso de Arduino, ESP32, Raspberry Pi, robótica e impresión 3D. Código probado, esquemas claros y proyectos completos para makers.",
   alternates: { canonical: "https://www.mechatronicstore.cl/blog" },
 };
 
@@ -56,7 +56,7 @@ export default async function BlogHomePage() {
             className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
             style={{ color: "var(--brand-yellow)" }}
           >
-            Tutoriales · Stock local · Chile
+            Blog · Tutoriales · Maker
           </div>
           <h1
             className="font-headline mb-4 tracking-tight"
@@ -67,13 +67,13 @@ export default async function BlogHomePage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Construye electrónica sin esperar a que lleguen las piezas.
+            Electrónica y mecatrónica, explicadas paso a paso.
           </h1>
           <p
             className="subtitle-mono mt-2"
             style={{ maxWidth: "62ch", fontSize: "clamp(1rem, 0.9rem + 0.4vw, 1.1rem)" }}
           >
-            Componentes en stock en MechatronicStore. Despacho a Chile en 24-48 h.
+            Tutoriales con Arduino, ESP32, Raspberry Pi y más. Estamos preparando los primeros.
             <span className="typewriter-caret" aria-hidden />
           </p>
         </header>
@@ -102,10 +102,13 @@ export default async function BlogHomePage() {
   return (
     <div className="fade-in-up">
       {/* Masthead con decoración SVG de fondo.
-          Pablo 18-may-2026: propuesta de valor reenfocada al pain point
-          real del maker chileno — esperar 25-40 días por componentes
-          desde AliExpress/Amazon. El blog existe para resolver ESO,
-          no para "adaptar tutoriales al maker chileno" (vago). */}
+          Pablo 18-may-2026 v4: copy reenfocado al PROPÓSITO REAL del blog
+          (educar/compartir conocimiento técnico) y no a la logística de
+          la tienda. El visitante del blog NO viene a comprar — viene a
+          aprender. Si después aprende y necesita componentes, los va a
+          encontrar via los links de cada tutorial. El header (utility
+          bar + cart) ya provee el contexto comercial; el hero del blog
+          tiene que vender LO QUE VAS A APRENDER. */}
       <header className="relative mb-10 sm:mb-14 py-8 sm:py-12">
         <HeroDecor />
         <div className="relative">
@@ -114,7 +117,7 @@ export default async function BlogHomePage() {
             style={{ color: "var(--brand-yellow)" }}
           >
             <span className="live-dot" aria-hidden />
-            <span>Tutoriales · Stock local · Chile</span>
+            <span>Blog · Tutoriales · Maker</span>
           </div>
           <h1
             className="font-headline mb-4 tracking-tight"
@@ -125,22 +128,14 @@ export default async function BlogHomePage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Construye electrónica sin esperar a que lleguen las piezas.{" "}
-            <span className="wave" aria-hidden>👋</span>
+            Electrónica y mecatrónica, explicadas paso a paso.
           </h1>
           <p
             className="subtitle-mono mt-2 leading-relaxed"
             style={{ maxWidth: "62ch", fontSize: "clamp(1rem, 0.9rem + 0.4vw, 1.1rem)" }}
           >
-            Componentes en stock en{" "}
-            <a
-              href="https://www.mechatronicstore.cl"
-              className="underlink font-semibold"
-              style={{ color: "var(--text)" }}
-            >
-              MechatronicStore
-            </a>
-            . Despacho a Chile en 24-48 h, precios en CLP, sin importaciones.
+            Tutoriales con Arduino, ESP32, Raspberry Pi y más. Cada proyecto
+            con código probado, esquemas claros y la lista de materiales.
             <span className="typewriter-caret" aria-hidden />
           </p>
         </div>
