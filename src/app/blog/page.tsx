@@ -7,7 +7,7 @@ import RevealOnScroll from "./components/RevealOnScroll";
 export const metadata: Metadata = {
   title: "Inicio",
   description:
-    "Tutoriales de electrónica, robótica y DIY paso a paso. Adaptados al español Chile con productos linkeados a MechatronicStore.",
+    "Tutoriales de electrónica con componentes en stock en Chile. Despacho 24-48h, precios en CLP, sin importaciones. Arduino, ESP32, Raspberry Pi y más.",
   alternates: { canonical: "https://www.mechatronicstore.cl/blog" },
 };
 
@@ -56,7 +56,7 @@ export default async function BlogHomePage() {
             className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
             style={{ color: "var(--brand-yellow)" }}
           >
-            Tutoriales
+            Tutoriales · Stock local · Chile
           </div>
           <h1
             className="font-headline mb-4 tracking-tight"
@@ -67,14 +67,14 @@ export default async function BlogHomePage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Blog MechatronicStore
+            Construye electrónica sin esperar a que lleguen las piezas.
           </h1>
           <p
             className="text-lg sm:text-xl"
-            style={{ color: "var(--text-muted)", maxWidth: "60ch" }}
+            style={{ color: "var(--text-muted)", maxWidth: "62ch" }}
           >
-            Tutoriales paso a paso de electrónica, robótica y DIY adaptados al
-            maker chileno.
+            Cada tutorial usa componentes que ya están en stock en MechatronicStore.
+            Despacho a todo Chile en 24-48 horas, precios en CLP.
           </p>
         </header>
         <div
@@ -101,7 +101,11 @@ export default async function BlogHomePage() {
 
   return (
     <div className="fade-in-up">
-      {/* Masthead con decoración SVG de fondo */}
+      {/* Masthead con decoración SVG de fondo.
+          Pablo 18-may-2026: propuesta de valor reenfocada al pain point
+          real del maker chileno — esperar 25-40 días por componentes
+          desde AliExpress/Amazon. El blog existe para resolver ESO,
+          no para "adaptar tutoriales al maker chileno" (vago). */}
       <header className="relative mb-10 sm:mb-14 py-8 sm:py-12">
         <HeroDecor />
         <div className="relative">
@@ -110,7 +114,7 @@ export default async function BlogHomePage() {
             style={{ color: "var(--brand-yellow)" }}
           >
             <span className="live-dot" aria-hidden />
-            <span>Tutoriales · Electrónica · DIY</span>
+            <span>Tutoriales · Stock local · Chile</span>
           </div>
           <h1
             className="font-headline mb-4 tracking-tight"
@@ -121,16 +125,23 @@ export default async function BlogHomePage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Aprende, construye, compra.{" "}
+            Construye electrónica sin esperar a que lleguen las piezas.{" "}
             <span className="wave" aria-hidden>👋</span>
           </h1>
           <p
             className="text-lg sm:text-xl leading-relaxed"
-            style={{ color: "var(--text-muted)", maxWidth: "65ch" }}
+            style={{ color: "var(--text-muted)", maxWidth: "62ch" }}
           >
-            Tutoriales paso a paso adaptados al maker chileno. Cada proyecto
-            incluye lista de materiales linkeados al catálogo de MechatronicStore
-            con precios actualizados.
+            Cada tutorial usa componentes que ya están en stock en{" "}
+            <a
+              href="https://www.mechatronicstore.cl"
+              className="underlink font-semibold"
+              style={{ color: "var(--text)" }}
+            >
+              MechatronicStore
+            </a>
+            . Despacho a todo Chile en 24-48 horas, precios en CLP, sin
+            importaciones ni reemplazos.
           </p>
         </div>
       </header>

@@ -79,8 +79,24 @@ export default function BlogHeader() {
             <Logo size="md" />
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop nav
+              Pablo 18-may-2026: orden "Tienda primero" — el blog existe
+              para llevar tráfico a la tienda, así que el CTA principal
+              tiene que ser visible siempre. Sin icono external (se veía
+              feo). Sin underlink en Tienda — está estilizado como pill
+              destacado para diferenciarse del resto de la nav. */}
           <nav className="hidden md:flex items-center gap-4 text-sm">
+            <a
+              href="https://www.mechatronicstore.cl"
+              className="px-3.5 py-1.5 rounded-md text-xs font-bold uppercase tracking-[0.08em] transition-all"
+              style={{
+                background: "var(--brand-yellow)",
+                color: "var(--text-on-yellow)",
+              }}
+            >
+              Tienda
+            </a>
+
             <Link
               href="/blog"
               className="underlink px-1 py-2"
@@ -154,27 +170,6 @@ export default function BlogHeader() {
               )}
             </div>
 
-            <a
-              href="https://www.mechatronicstore.cl"
-              className="underlink inline-flex items-center gap-1.5 px-1 py-2"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Tienda
-              <svg
-                className="h-3 w-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                />
-              </svg>
-            </a>
           </nav>
 
           {/* Right cluster */}
