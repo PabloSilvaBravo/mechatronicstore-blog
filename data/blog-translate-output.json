@@ -1,192 +1,369 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-18T12:05:00+00:00",
+  "translated_at": "2026-05-18T12:15:13Z",
   "translations": [
     {
-      "id": "9d2b09690521",
-      "slug": "esp32-tm1637-temperatura-weatherapi-display-7-segmentos",
-      "title_es": "ESP32 + TM1637: muestra la temperatura de tu ciudad sin sensor",
-      "subtitle_es": "Arma un termómetro WiFi con ESP32 y display TM1637 que consulta la WeatherAPI cada hora y alterna entre °C y °F.",
-      "body_es": "## Introducción\n\nEn este proyecto vamos a armar un mini termómetro WiFi que muestra la temperatura actual de tu ciudad en un display **TM1637 de 4 dígitos y 7 segmentos**, sin necesidad de ningún sensor físico. La gracia es que la temperatura la pedimos vía HTTP a la **WeatherAPI**, así que la placa ESP32 solo necesita estar conectada a tu red WiFi.\n\nEl display alterna automáticamente entre la lectura en grados Celsius y en Fahrenheit cada 5 segundos, y la consulta a la API se refresca cada 1 hora para no quemar el cuota gratuita.\n\n> **Probado en:** ESP32 DevKit (cualquier modelo con WiFi sirve) + módulo TM1637 4 dígitos tipo reloj.\n\n## Lo que vas a aprender\n\n- Configurar el módulo TM1637 con el ESP32 usando solo 2 pines digitales.\n- Hacer peticiones HTTP GET desde el ESP32 a una API externa.\n- Parsear JSON con ArduinoJson para extraer campos puntuales.\n- Crear símbolos personalizados (°C, °F) en un display de 7 segmentos.\n\n## Prerrequisitos\n\nAntes de partir, asegúrate de tener:\n\n1. **Arduino IDE** instalado con el soporte para placas ESP32 agregado (vía Board Manager).\n2. Una **cuenta gratuita en WeatherAPI** (weatherapi.com) para obtener tu API key. El plan free es más que suficiente.\n3. Tu **SSID y contraseña WiFi** a mano.\n\n## Materiales\n\n- ESP32 DevKit (cualquier variante con WiFi).\n- Módulo display TM1637 de 4 dígitos y 7 segmentos.\n- Cables tipo dupont macho-macho para las conexiones.\n- Cable USB para alimentar y programar el ESP32.\n\n**Costo aproximado:** ~CLP $13.880 (aproximado, según componentes que tengas disponibles).\n\n## Conociendo el TM1637\n\nEl TM1637 es un módulo que combina **4 dígitos de 7 segmentos** en una sola placa, controlados por el chip driver TM1637. Los 4 dígitos están separados por dos puntos (`:`) entre el segundo y el tercero, lo que lo hace ideal para relojes y, en nuestro caso, para mostrar valores numéricos con símbolos.\n\nUna gran ventaja: el módulo se controla con apenas **2 pines digitales** (CLK y DIO) más alimentación, así que no acapara los GPIOs del ESP32.\n\n## Obtener tu API Key de WeatherAPI\n\n1. Entra a [weatherapi.com](https://www.weatherapi.com/) y crea una cuenta gratis.\n2. Verifica tu email e inicia sesión.\n3. En tu dashboard (weatherapi.com/my/) vas a encontrar tu API key. Aunque diga que el trial expira, la key sigue funcionando libremente en el tier free.\n4. Cópiala a un lugar seguro: la vas a necesitar dentro del código.\n\nPara probarla rápido, abre esta URL en tu navegador reemplazando los valores entre llaves:\n\n```\nhttps://api.weatherapi.com/v1/current.json?q={TU_CIUDAD}&key={TU_API_KEY}\n```\n\nLa API te devuelve un JSON con un montón de datos. Para este proyecto nos interesan dos campos: `current.temp_c` y `current.temp_f`.\n\n## Conexiones físicas\n\nCablear el TM1637 al ESP32 es directo. Solo 4 cables:\n\n| TM1637 | ESP32          |\n|--------|----------------|\n| CLK    | GPIO 19        |\n| DIO    | GPIO 18        |\n| VCC    | VIN (5V) o 3V3 |\n| GND    | GND            |\n\nPuedes usar otros GPIOs si los 18 y 19 ya los tienes ocupados; basta con cambiar los `#define` en el código.\n\n## Instalación de librerías\n\nDesde el **Library Manager** de Arduino IDE, instala:\n\n1. **TM1637** (de avishorp): para controlar el display. Es vieja pero anda perfecto.\n2. **ArduinoJson** (de bblanchon): para parsear el JSON que devuelve la WeatherAPI.\n\nLos headers nativos `WiFi.h` y `HTTPClient.h` ya vienen incluidos con el core de ESP32.\n\n## El código\n\nAntes de subir, reemplaza tres cosas en el código:\n\n- `REPLACE_WITH_YOUR_SSID` → nombre de tu red WiFi.\n- `REPLACE_WITH_YOUR_PASSWORD` → contraseña de la red.\n- `REPLACE_WITH_YOUR_WeatherAPI_API_Key` → tu API key.\n- `Oporto` → cambia por tu ciudad (Santiago, Valparaíso, Concepción, etc.).\n\n```cpp\n#include <WiFi.h>\n#include <HTTPClient.h>\n#include <ArduinoJson.h>\n#include <TM1637Display.h>\n\n// Credenciales WiFi\nconst char* ssid = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\n\nconst char* api_key = \"REPLACE_WITH_YOUR_WeatherAPI_API_Key\";\nconst char* location = \"Santiago\";\n\nString url = \"https://api.weatherapi.com/v1/current.json?q=\" + String(location) + \"&key=\" + String(api_key);\n\n// Pines del TM1637\n#define CLK 19\n#define DIO 18\n\nTM1637Display display(CLK, DIO);\n\n// Símbolo °C\nconst uint8_t Celsius[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,  // Círculo (grado)\n  SEG_A | SEG_D | SEG_E | SEG_F   // C\n};\n\n// Símbolo °F\nconst uint8_t Fahrenheit[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,  // Círculo (grado)\n  SEG_F | SEG_E | SEG_A | SEG_G   // F\n};\n\nfloat currentTempC = 9999;\nfloat currentTempF = 9999;\nunsigned long lastFetchTime = 0;\nconst unsigned long fetchInterval = 3600000UL;  // 1 hora\n\nvoid initWiFi() {\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(1000);\n    Serial.println(\"Conectando a WiFi..\");\n  }\n  Serial.println(\"Conexión exitosa\");\n  Serial.print(\"IP: \");\n  Serial.println(WiFi.localIP());\n}\n\nbool updateTemperatures() {\n  HTTPClient http;\n  http.begin(url);\n  int httpCode = http.GET();\n\n  if (httpCode == HTTP_CODE_OK) {\n    String payload = http.getString();\n    Serial.print(payload);\n\n    StaticJsonDocument<1024> doc;\n    DeserializationError error = deserializeJson(doc, payload);\n    if (error) {\n      Serial.print(\"Falló parseo JSON: \");\n      Serial.println(error.c_str());\n      http.end();\n      return false;\n    }\n\n    currentTempC = doc[\"current\"][\"temp_c\"];\n    currentTempF = doc[\"current\"][\"temp_f\"];\n    http.end();\n    return true;\n  } else {\n    Serial.print(\"Error en la petición: \");\n    Serial.println(httpCode);\n    http.end();\n    return false;\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n  initWiFi();\n  display.setBrightness(7);\n\n  if (updateTemperatures()) {\n    lastFetchTime = millis();\n  }\n}\n\nvoid loop() {\n  if (millis() - lastFetchTime >= fetchInterval) {\n    if (updateTemperatures()) {\n      lastFetchTime = millis();\n    } else {\n      Serial.println(\"Falló el refresco, mantengo valores anteriores.\");\n    }\n  }\n\n  // Mostrar Celsius\n  int roundedTempC = round(currentTempC);\n  display.showNumberDec(roundedTempC, false, 2, 0);\n  display.setSegments(Celsius, 2, 2);\n  delay(5000);\n\n  // Mostrar Fahrenheit\n  int roundedTempF = round(currentTempF);\n  display.showNumberDec(roundedTempF, false, 2, 0);\n  display.setSegments(Fahrenheit, 2, 2);\n  delay(5000);\n}\n```\n\n## Cómo funciona el código\n\n### Conexión WiFi\nLa función `initWiFi()` deja al ESP32 conectado a tu red WiFi. Si no logra conectarse, queda imprimiendo el aviso hasta que enganche.\n\n### Petición a WeatherAPI\n`updateTemperatures()` arma la URL, hace el GET, valida que el código de respuesta sea 200 y parsea el JSON con ArduinoJson. Si todo va bien, guarda `temp_c` y `temp_f` en variables globales.\n\n### Refresco cada hora\nUsamos `millis()` con un intervalo de 3.600.000 ms (1 hora). Sin esto, la WeatherAPI nos cortaría el servicio rápido en su plan free por demasiadas requests.\n\n### Símbolos °C y °F\nLos arrays `Celsius` y `Fahrenheit` definen, segmento por segmento, los caracteres especiales. El círculo del grado se forma encendiendo los segmentos A, B, F, G del primer dígito.\n\n### Loop alternado\nCada 5 segundos cambiamos entre los dos modos: primero muestra `roundedTempC + °C`, luego `roundedTempF + °F`, y vuelve a empezar.\n\n## Probando el proyecto\n\nUna vez subido el código, abre el **Monitor Serial a 115200 baudios**. Deberías ver:\n\n1. La conexión al WiFi y la IP asignada al ESP32.\n2. El payload completo del JSON que devuelve WeatherAPI.\n3. La temperatura actual de tu ciudad alternándose en el display TM1637.\n\nSi el display muestra `9999`, significa que la primera petición a la API falló — revisa la API key, el nombre de la ciudad y que tengas señal WiFi estable.\n\n## Ideas para extender\n\n- Agregar un sensor DHT22 local y comparar la temperatura medida vs la pronosticada.\n- Mostrar humedad o velocidad del viento alternando con la temperatura.\n- Encender un LED RGB según el rango de temperatura (azul si <10°C, verde 10-25°C, rojo >25°C).\n- Subir el dato a un dashboard con MQTT o Home Assistant.\n\n## Cierre\n\nCon menos de CLP $14.000 en componentes y unas pocas líneas de código, tienes un termómetro WiFi para tu escritorio. Es un proyecto ideal para entender cómo el ESP32 puede consumir APIs externas y desplegar datos en hardware de bajo costo. ¡Felices proyectos!",
+      "id": "584e9ad93cd6",
+      "slug": "raspberry-pi-pico-tm1637-display-7-segmentos-micropython",
+      "title_es": "Raspberry Pi Pico + TM1637: display de 7 segmentos con MicroPython",
+      "subtitle_es": "Aprende a conectar y programar el display TM1637 de 4 dígitos con la Raspberry Pi Pico usando MicroPython, paso a paso.",
+      "hero_image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/Raspberry-Pi-Pico-TM1637-Micropython-Tutorial.jpg",
+      "body_es": "## Introducción\n\nEn este tutorial vas a aprender a usar el display de 7 segmentos TM1637 de 4 dígitos con la Raspberry Pi Pico programada con MicroPython. Vemos cómo conectar el módulo a la placa, instalar la librería necesaria y los comandos básicos para controlar el display.\n\n## Requisitos previos: firmware MicroPython\n\nPara seguir este tutorial necesitas tener el firmware de MicroPython instalado en tu Raspberry Pi Pico. También necesitas un IDE para escribir y subir el código a la placa. El IDE recomendado para la Pico es **Thonny IDE**.\n\nSi todavía estás partiendo con la Raspberry Pi Pico, primero revisa una guía de inicio rápido para flashear el firmware MicroPython y subir código.\n\n## Conociendo el display TM1637 de 4 dígitos\n\nEl display LED TM1637 combina cuatro dígitos de 7 segmentos en un solo módulo que se controla mediante el driver TM1637. El módulo que usamos acá tiene cuatro dígitos separados por dos puntos (`:`) entre el segundo y el tercer dígito, ideal para mostrar la hora.\n\n![Display TM1637 de 4 dígitos y 7 segmentos](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/TM1637-Display.jpg)\n\nExisten variantes similares con puntos entre los dígitos en lugar de los dos puntos. También hay módulos con seis dígitos, pero requieren una librería distinta a la que vamos a usar acá.\n\n> **Nota:** Probé el módulo de seis dígitos, pero muchos vienen con fallas de fábrica. Por eso este tutorial es **solo** para el módulo de cuatro dígitos con dos puntos en el medio.\n\n### Materiales\n\n![Raspberry Pi Pico conectada al display TM1637](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/RPi-Pico-with-TM1637-Display.jpg)\n\nPara armar este proyecto necesitas:\n\n- **Raspberry Pi Pico** (cualquier modelo)\n- **Módulo display TM1637** de 7 segmentos, 4 dígitos\n- **Cables jumper** (macho-macho o macho-hembra)\n- **Cable micro USB** para alimentar y programar la Pico\n\nTodos estos componentes están disponibles en MechatronicStore (links al final del tutorial).\n\n## Conexiones: TM1637 a la Raspberry Pi Pico\n\nEl cableado es muy simple: solo necesitas dos pines digitales, **CLK** y **DIO**, más alimentación.\n\n![Pines del módulo TM1637](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/TM1637-Display-pins.jpg)\n\n| **TM1637** | **Raspberry Pi Pico** |\n|---|---|\n| CLK | Pin digital (ej. GPIO 21) |\n| DIO | Pin digital (ej. GPIO 20) |\n| VCC | VBUS o 3V3 |\n| GND | GND |\n\n> Puedes usar cualquier otro GPIO digital disponible. Revisa la guía de pinout de la Raspberry Pi Pico para más detalles.\n\n![Diagrama de conexión TM1637 con Raspberry Pi Pico](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/RPi-Pico-TM1637_bb.png)\n\n## Librería MicroPython para el TM1637\n\nPara facilitar la comunicación con el display, vamos a usar un fork de la librería `micropython-tm1637` de Mike Causer. Sigue estos pasos para instalarla:\n\n**1.** Descarga el archivo `tm1637.py` desde el repositorio oficial. El código completo de la librería es el siguiente:\n\n```python\n\"\"\"\nMicroPython TM1637 quad 7-segment LED display driver\nhttps://github.com/mcauser/micropython-tm1637\n\nMIT License\nCopyright (c) 2016-2023 Mike Causer\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\"\"\"\n\n__version__ = '1.3.0'\n\nfrom micropython import const\nfrom machine import Pin\nfrom time import sleep_us, sleep_ms\n\nTM1637_CMD1 = const(64)  # 0x40 data command\nTM1637_CMD2 = const(192) # 0xC0 address command\nTM1637_CMD3 = const(128) # 0x80 display control command\nTM1637_DSP_ON = const(8) # 0x08 display on\nTM1637_DELAY = const(10) # 10us delay between clk/dio pulses\nTM1637_MSB = const(128)  # msb is the decimal point or the colon depending on your display\n\n# 0-9, a-z, blank, dash, star\n_SEGMENTS = bytearray(b'\\x3F\\x06\\x5B\\x4F\\x66\\x6D\\x7D\\x07\\x7F\\x6F\\x77\\x7C\\x39\\x5E\\x79\\x71\\x3D\\x76\\x06\\x1E\\x76\\x38\\x55\\x54\\x3F\\x73\\x67\\x50\\x6D\\x78\\x3E\\x1C\\x2A\\x76\\x6E\\x5B\\x00\\x40\\x63')\n\nclass TM1637(object):\n    \"\"\"Library for quad 7-segment LED modules based on the TM1637 LED driver.\"\"\"\n    def __init__(self, clk, dio, brightness=7):\n        self.clk = clk\n        self.dio = dio\n\n        if not 0 > i) & 1)\n            sleep_us(TM1637_DELAY)\n            self.clk(1)\n            sleep_us(TM1637_DELAY)\n            self.clk(0)\n            sleep_us(TM1637_DELAY)\n        self.clk(0)\n        sleep_us(TM1637_DELAY)\n        self.clk(1)\n        sleep_us(TM1637_DELAY)\n        self.clk(0)\n        sleep_us(TM1637_DELAY)\n\n    def brightness(self, val=None):\n        \"\"\"Set the display brightness 0-7.\"\"\"\n        # brightness 0 = 1/16th pulse width\n        # brightness 7 = 14/16th pulse width\n        if val is None:\n            return self._brightness\n        if not 0 = 65 and o = 97 and o = 48 and o 4d}'.format(num)\n        self.write(self.encode_string(string))\n\n    def numbers(self, num1, num2, colon=True):\n        \"\"\"Display two numeric values -9 through 99, with leading zeros\n        and separated by a colon.\"\"\"\n        num1 = max(-9, min(num1, 99))\n        num2 = max(-9, min(num2, 99))\n        segments = self.encode_string('{0:0>2d}{1:0>2d}'.format(num1, num2))\n        if colon:\n            segments[1] |= 0x80 # colon on\n        self.write(segments)\n\n    def temperature(self, num):\n        if num  99:\n            self.show('hi') # high\n        else:\n            string = '{0: >2d}'.format(num)\n            self.write(self.encode_string(string))\n        self.write([_SEGMENTS[38], _SEGMENTS[12]], 2) # degrees C\n        \n    def temperature_f(self, num):\n        if num  99:\n            self.show('hi') # high\n        else:\n            string = '{0: >2d}'.format(num)\n            self.write(self.encode_string(string))\n        self.write([_SEGMENTS[38], _SEGMENTS[15]], 2) # degrees F\n\n    def show(self, string, colon=False):\n        segments = self.encode_string(string)\n        if len(segments) > 1 and colon:\n            segments[1] |= 128\n        self.write(segments[:4])\n\n    def scroll(self, string, delay=250):\n        segments = string if isinstance(string, list) else self.encode_string(string)\n        data = [0] * 8\n        data[4:0] = list(segments)\n        for i in range(len(segments) + 5):\n            self.write(data[0+i:4+i])\n            sleep_ms(delay)\n\n\nclass TM1637Decimal(TM1637):\n    \"\"\"Library for quad 7-segment LED modules based on the TM1637 LED driver.\n\n    This class is meant to be used with decimal display modules (modules\n    that have a decimal point after each 7-segment LED).\n    \"\"\"\n\n    def encode_string(self, string):\n        \"\"\"Convert a string to LED segments.\n\n        Convert an up to 4 character length string containing 0-9, a-z,\n        space, dash, star and '.' to an array of segments, matching the length of\n        the source string.\"\"\"\n        segments = bytearray(len(string.replace('.','')))\n        j = 0\n        for i in range(len(string)):\n            if string[i] == '.' and j > 0:\n                segments[j-1] |= TM1637_MSB\n                continue\n            segments[j] = self.encode_char(string[i])\n            j += 1\n        return segments\n```\n\n**2.** Copia el código a un archivo nuevo en Thonny IDE.\n\n**3.** Anda al menú **Archivo > Guardar como…**\n\n![Guardar archivo en Thonny IDE — opción Guardar como](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2020/10/Thonny-IDE-ESP32-ESP8266-MicroPython-Save-file-library-to-device-save-as.png)\n\n**4.** Selecciona guardar en la **Raspberry Pi Pico**:\n\n![Guardar archivo en la Raspberry Pi Pico desde Thonny IDE](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2023/05/Save-file-to-Raspberry-Pi-Pico.png)\n\n**5.** Guarda el archivo con el nombre **`tm1637.py`** (no cambies el nombre).\n\n![Librería TM1637 guardada en la Raspberry Pi Pico](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/save-tm1637-library-to-RPi-Pico.png)\n\nCon la librería cargada en la Pico, ya puedes usar sus funciones en tu propio código.\n\n## Probando el display: funciones básicas\n\nEl siguiente ejemplo muestra la mayoría de las funciones que ofrece la librería. Es una versión simplificada del ejemplo oficial:\n\n```python\n# Rui Santos & Sara Santos - Random Nerd Tutorials\n# Complete project details at https://RandomNerdTutorials.com/raspberry-pi-pico-tm1637-micropython/\n\nimport tm1637\nfrom machine import Pin\nfrom time import sleep\n\n# Initialize display (adjust pins if needed)\ndisplay = tm1637.TM1637(clk=Pin(21), dio=Pin(20))\n\n# Set display brightness\ndisplay.brightness(7)\n\nwhile True:\n    # all LEDS on \"88:88\"\n    display.write([127, 255, 127, 127])\n    sleep(1)\n\n    # all LEDS off\n    display.write([0, 0, 0, 0])\n    sleep(1)\n\n    # show \"0123\"\n    display.write([63, 6, 91, 79])\n    sleep(1)\n\n    # show \"COOL\"\n    display.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])\n    sleep(1)\n\n    # show \"HELP\"\n    display.show('help')\n    sleep(1)\n\n    # display \"dEAd\", \"bEEF\"\n    display.hex(0xdead)\n    sleep(1)\n    display.hex(0xbeef)\n    sleep(1)\n\n    # show \"12:59\"\n    display.numbers(12, 59)\n    sleep(1)\n\n    # show \"-123\"\n    display.number(-123)\n    sleep(1)\n\n    # show temperature '24*C'\n    display.temperature(24)\n    sleep(1)\n    \n    # show temperature '75*F'\n    display.temperature_f(75)\n    sleep(1)\n\n    # display scrolling text\n    display.scroll('Random Nerd Tutorials', delay=500)\n    sleep(1)\n```\n\n### Inicializar el display\n\nLa línea siguiente inicializa el display. Puedes cambiar los pines si lo necesitas:\n\n```python\ndisplay = tm1637.TM1637(clk=Pin(21), dio=Pin(20))\n```\n\n### Ajustar el brillo\n\nPara ajustar el brillo usa el método `brightness()` con un valor entre 0 (mínimo) y 7 (máximo):\n\n```python\ndisplay.brightness(7)\n```\n\n### Escribir segmentos individuales\n\nCon el método `write()` puedes controlar cada segmento de cada dígito. Cada byte (los 7 bits bajos) representa un segmento; el bit 8 (MSB) controla los dos puntos y solo aplica al segundo dígito.\n\n![Diagrama de un display de 7 segmentos con sus letras A-G](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/7-segment-display-labeled.png)\n\n| **Segmento** | **Bit** |\n|---|---|\n| A | 0 |\n| B | 1 |\n| C | 2 |\n| D | 3 |\n| E | 4 |\n| F | 5 |\n| G | 6 |\n\nUn bit en 1 enciende el segmento; en 0 lo apaga. Por ejemplo, `0b0000111` enciende los segmentos A, B y C.\n\n```python\n# Todos los LEDs encendidos \"88:88\"\ndisplay.write([127, 255, 127, 127])\n\n# Todos apagados\ndisplay.write([0, 0, 0, 0])\n\n# Mostrar \"0123\"\ndisplay.write([63, 6, 91, 79])\n\n# Mostrar \"COOL\"\ndisplay.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])\n```\n\n### Mostrar strings\n\nPara mostrar texto usa `show()` pasando el string que quieres mostrar:\n\n```python\ndisplay.show('help')\n```\n\n### Mostrar números\n\nUsa `numbers()` para mostrar dos números (de dos dígitos) separados por los dos puntos —ideal para una hora como `12:59`:\n\n```python\ndisplay.numbers(12, 59)\n```\n\nPara un solo número (incluso negativo, hasta 4 dígitos) usa `number()`:\n\n```python\ndisplay.number(-123)\n```\n\n### Mostrar temperatura\n\nPara mostrar valores de temperatura con el símbolo de grado y la letra C o F:\n\n```python\n# Mostrar '24*C'\ndisplay.temperature(24)\n\n# Mostrar '75*F'\ndisplay.temperature_f(75)\n```\n\n### Texto en movimiento\n\nSi necesitas mostrar texto con más de 4 caracteres, usa `scroll()` que mueve el texto de derecha a izquierda con la velocidad que tú definas:\n\n```python\ndisplay.scroll('Random Nerd Tutorials', delay=500)\n```\n\n## Demostración\n\nSube el código a tu Raspberry Pi Pico (**Archivo > Guardar como > Raspberry Pi Pico**, con el nombre `main.py`) o ejecútalo directamente desde Thonny con el botón verde de Run.\n\nCon esto ya tienes lo necesario para integrar un display TM1637 en cualquier proyecto: relojes, contadores, termómetros o cualquier indicador numérico que necesites.\n\n## Conclusión\n\nEl display TM1637 es una solución barata y simple para mostrar números en tus proyectos con Raspberry Pi Pico. Con solo dos pines digitales tienes 4 dígitos completos más control de brillo y soporte para texto y temperaturas. La librería `micropython-tm1637` te simplifica todo el trabajo de bajo nivel.",
       "materials_list": [
-        {"name": "Placa ESP32 DevKit (cualquier variante con WiFi)", "qty": 1, "role": "core"},
-        {"name": "Módulo display TM1637 4 dígitos 7 segmentos", "qty": 1, "role": "visualización"},
-        {"name": "Cables tipo dupont macho-macho", "qty": 4, "role": "conexiones"},
-        {"name": "Cable USB para alimentación y programación", "qty": 1, "role": "alimentación"}
+        {
+          "name": "Raspberry Pi Pico (cualquier modelo)",
+          "qty": 1,
+          "role": "microcontrolador"
+        },
+        {
+          "name": "Módulo display TM1637 de 7 segmentos, 4 dígitos",
+          "qty": 1,
+          "role": "display"
+        },
+        {
+          "name": "Cables jumper macho-macho",
+          "qty": 4,
+          "role": "cableado"
+        },
+        {
+          "name": "Cable micro USB",
+          "qty": 1,
+          "role": "alimentación y programación"
+        }
       ],
       "steps": [
         {
           "position": 1,
-          "name": "Obtener API key de WeatherAPI",
-          "text": "Crea una cuenta gratuita en weatherapi.com, verifica tu email y copia tu API key del dashboard. El plan free es suficiente para este proyecto."
+          "name": "Preparar el entorno",
+          "text": "Instala Thonny IDE en tu PC, flashea el firmware MicroPython a tu Raspberry Pi Pico y prueba que la placa responda desde el IDE.",
+          "image_url": null
         },
         {
           "position": 2,
-          "name": "Preparar Arduino IDE",
-          "text": "Instala Arduino IDE, agrega el soporte para placas ESP32 vía Board Manager, e instala las librerías TM1637 (de avishorp) y ArduinoJson (de bblanchon) desde el Library Manager."
+          "name": "Conectar el TM1637 a la Pico",
+          "text": "Cablea CLK al GPIO 21, DIO al GPIO 20, VCC a VBUS (5V) o 3V3 y GND a GND. Solo necesitas dos pines digitales más alimentación.",
+          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/RPi-Pico-TM1637_bb.png"
         },
         {
           "position": 3,
-          "name": "Cablear el TM1637 al ESP32",
-          "text": "Conecta CLK del display al GPIO 19, DIO al GPIO 18, VCC a VIN (5V) y GND a GND. Solo 4 cables tipo dupont son suficientes."
+          "name": "Instalar la librería tm1637.py",
+          "text": "Descarga el archivo tm1637.py, ábrelo en Thonny y guárdalo directamente en la Raspberry Pi Pico con el nombre exacto tm1637.py para que esté disponible como módulo.",
+          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/save-tm1637-library-to-RPi-Pico.png"
         },
         {
           "position": 4,
-          "name": "Personalizar el sketch",
-          "text": "Reemplaza el SSID, contraseña WiFi, API key y ciudad en las constantes del código. Sube el sketch a la placa ESP32 desde Arduino IDE."
+          "name": "Probar las funciones básicas",
+          "text": "Carga el script de ejemplo que recorre las funciones write(), show(), number(), numbers(), temperature() y scroll(). Verifica que el display encienda y muestre cada secuencia.",
+          "image_url": null
         },
         {
           "position": 5,
-          "name": "Verificar funcionamiento",
-          "text": "Abre el Monitor Serial a 115200 baudios para ver la conexión WiFi y la respuesta JSON. El display TM1637 mostrará la temperatura alternando entre °C y °F cada 5 segundos, refrescándose desde la WeatherAPI cada hora."
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Sketch principal: ESP32 + TM1637 + WeatherAPI",
-          "code": "#include <WiFi.h>\n#include <HTTPClient.h>\n#include <ArduinoJson.h>\n#include <TM1637Display.h>\n\nconst char* ssid = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\nconst char* api_key = \"REPLACE_WITH_YOUR_WeatherAPI_API_Key\";\nconst char* location = \"Santiago\";\n\nString url = \"https://api.weatherapi.com/v1/current.json?q=\" + String(location) + \"&key=\" + String(api_key);\n\n#define CLK 19\n#define DIO 18\nTM1637Display display(CLK, DIO);\n\nconst uint8_t Celsius[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,\n  SEG_A | SEG_D | SEG_E | SEG_F\n};\nconst uint8_t Fahrenheit[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,\n  SEG_F | SEG_E | SEG_A | SEG_G\n};\n\nfloat currentTempC = 9999;\nfloat currentTempF = 9999;\nunsigned long lastFetchTime = 0;\nconst unsigned long fetchInterval = 3600000UL;\n\nvoid initWiFi() {\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(1000);\n    Serial.println(\"Conectando a WiFi..\");\n  }\n  Serial.print(\"IP: \");\n  Serial.println(WiFi.localIP());\n}\n\nbool updateTemperatures() {\n  HTTPClient http;\n  http.begin(url);\n  int httpCode = http.GET();\n  if (httpCode == HTTP_CODE_OK) {\n    String payload = http.getString();\n    StaticJsonDocument<1024> doc;\n    if (deserializeJson(doc, payload)) { http.end(); return false; }\n    currentTempC = doc[\"current\"][\"temp_c\"];\n    currentTempF = doc[\"current\"][\"temp_f\"];\n    http.end();\n    return true;\n  }\n  http.end();\n  return false;\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n  initWiFi();\n  display.setBrightness(7);\n  if (updateTemperatures()) lastFetchTime = millis();\n}\n\nvoid loop() {\n  if (millis() - lastFetchTime >= fetchInterval) {\n    if (updateTemperatures()) lastFetchTime = millis();\n  }\n  int roundedTempC = round(currentTempC);\n  display.showNumberDec(roundedTempC, false, 2, 0);\n  display.setSegments(Celsius, 2, 2);\n  delay(5000);\n  int roundedTempF = round(currentTempF);\n  display.showNumberDec(roundedTempF, false, 2, 0);\n  display.setSegments(Fahrenheit, 2, 2);\n  delay(5000);\n}"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "Placa ESP32 DevKit (cualquier variante con WiFi)",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-tm1637-temperatura-weatherapi-display-7-segmentos&utm_content=X2-10V2",
-          "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Módulo display TM1637 4 dígitos 7 segmentos",
-          "product_id": "D-204",
-          "product_url": "https://www.mechatronicstore.cl/modulo-display-7-segmentos-4-digitos-0-36-tipo-reloj-4-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-tm1637-temperatura-weatherapi-display-7-segmentos&utm_content=D-204",
-          "price_clp": 2900,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Cables tipo dupont macho-macho",
-          "product_id": "C-417",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-tm1637-temperatura-weatherapi-display-7-segmentos&utm_content=C-417",
-          "price_clp": 2990,
-          "stock_available": true,
-          "match_score": 0.85
-        }
-      ],
-      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP32/ESP32_TM1637_Temperature_Display.ino",
-      "download_urls": [
-        {
-          "label": "Código fuente .ino (GitHub)",
-          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP32/ESP32_TM1637_Temperature_Display.ino",
-          "kind": "ino"
-        }
-      ],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 45,
-      "estimated_cost_clp": 13880,
-      "tags": ["esp32", "tm1637", "display", "weatherapi", "http", "arduino-ide", "tutorial"]
-    },
-    {
-      "id": "0abbbb441679",
-      "slug": "micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos",
-      "title_es": "MicroPython: TM1637 4 dígitos con ESP32 o ESP8266 paso a paso",
-      "subtitle_es": "Aprende a controlar el display TM1637 de 4 dígitos con ESP32 o ESP8266 en MicroPython: texto, números, temperatura y scroll.",
-      "body_es": "## Introducción\n\nEn este tutorial vamos a aprender a interfacear el módulo **TM1637 de 4 dígitos y 7 segmentos** con las placas **ESP32 y ESP8266 programadas en MicroPython**. Vamos a ver cómo cablearlo, instalar la librería y programar el display para mostrar texto, números, símbolos personalizados y hasta texto en scroll.\n\nComo proyecto final, vamos a construir un pronosticador de clima básico que muestra la temperatura en el display.\n\n> **Probado en:** ESP32 DevKit y NodeMCU ESP8266 con firmware MicroPython actualizado.\n\n## Lo que vas a aprender\n\n- Cablear el TM1637 a ESP32 y ESP8266 usando solo 2 pines digitales.\n- Instalar una librería MicroPython externa via Thonny IDE.\n- Mostrar números, hexadecimales, texto y temperatura en el display.\n- Hacer scroll horizontal de texto largo.\n- Crear caracteres personalizados con control byte a byte de los segmentos.\n\n## Prerrequisitos\n\nPara seguir este tutorial necesitas:\n\n1. **MicroPython** flasheado en tu ESP32 o ESP8266.\n2. Un IDE para escribir y subir código: **Thonny IDE** es la opción más simple. uPyCraft IDE también funciona bien.\n3. Conocimientos básicos de Python.\n\n## Materiales\n\n- ESP32 DevKit **o** NodeMCU ESP8266 (cualquiera de los dos).\n- Módulo display TM1637 de 4 dígitos y 7 segmentos.\n- Cables dupont macho-hembra (para conectar la placa al módulo).\n- Cable USB para alimentación y carga del código.\n\n**Costo aproximado:** ~CLP $13.880 con ESP32 o ~CLP $11.880 con ESP8266 (aproximado).\n\n## Conociendo el TM1637\n\nEl **TM1637** combina 4 dígitos de 7 segmentos en una sola placa, controlados por el chip driver del mismo nombre. El módulo más común trae los 4 dígitos separados por dos puntos (`:`) entre el segundo y el tercero, perfecto para relojes digitales o termómetros.\n\nExisten versiones con 6 dígitos pero requieren otra librería y muchas vienen con defectos de fábrica, así que en esta guía usamos la versión de 4 dígitos con dos puntos.\n\n## Conexiones físicas\n\nEl display requiere solo **2 pines digitales** (CLK y DIO) más alimentación. Eso lo hace ideal para combinar con otros sensores sin agotar los GPIOs.\n\n### Cableado en ESP32\n\n| TM1637 | ESP32          |\n|--------|----------------|\n| CLK    | GPIO 19        |\n| DIO    | GPIO 18        |\n| VCC    | VIN (5V)       |\n| GND    | GND            |\n\n### Cableado en ESP8266 (NodeMCU)\n\n| TM1637 | ESP8266            |\n|--------|--------------------|\n| CLK    | GPIO 14 (D5)       |\n| DIO    | GPIO 12 (D6)       |\n| VCC    | VIN (5V)           |\n| GND    | GND                |\n\nPuedes usar otros GPIOs si lo necesitas, basta con cambiar los pines al instanciar el objeto `TM1637`.\n\n## Instalar la librería TM1637 en MicroPython\n\nVamos a usar una versión derivada del driver `micropython-tm1637` de mcauser, ajustada para nuestro caso.\n\n1. Descarga el archivo `tm1637.py` desde el repositorio de Random Nerd Tutorials (link en la sección de descargas).\n2. Abre Thonny IDE conectado a tu placa.\n3. Pega el contenido en un archivo nuevo.\n4. Ve a **Archivo > Guardar como…** y selecciona **MicroPython Device**.\n5. Guarda el archivo con el nombre exacto **`tm1637.py`** (no cambies el nombre).\n\nCon la librería cargada en la placa, ya puedes importarla desde tu `main.py` o cualquier otro script.\n\n## Ejemplo básico: probar todas las funciones\n\nEste script muestra la mayoría de las funciones de la librería: mostrar segmentos individuales, números, hexadecimales, texto, temperatura y texto en scroll.\n\n```python\nimport tm1637\nfrom machine import Pin\nfrom time import sleep\n\n# Inicializa el display (ajusta los pines si es necesario)\ndisplay = tm1637.TM1637(clk=Pin(19), dio=Pin(18))\n# Para ESP8266:\n# display = tm1637.TM1637(clk=Pin(14), dio=Pin(12))\n\ndisplay.brightness(7)  # 0 (mínimo) a 7 (máximo)\n\nwhile True:\n    # Todos los segmentos ON: \"88:88\"\n    display.write([127, 255, 127, 127])\n    sleep(1)\n\n    # Todos los segmentos OFF\n    display.write([0, 0, 0, 0])\n    sleep(1)\n\n    # Mostrar \"0123\"\n    display.write([63, 6, 91, 79])\n    sleep(1)\n\n    # Mostrar \"COOL\"\n    display.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])\n    sleep(1)\n\n    # Mostrar texto \"HELP\"\n    display.show('help')\n    sleep(1)\n\n    # Mostrar hexadecimal: \"dEAd\", \"bEEF\"\n    display.hex(0xdead)\n    sleep(1)\n    display.hex(0xbeef)\n    sleep(1)\n\n    # Mostrar \"12:59\" (estilo reloj)\n    display.numbers(12, 59)\n    sleep(1)\n\n    # Mostrar número negativo: \"-123\"\n    display.number(-123)\n    sleep(1)\n\n    # Mostrar temperatura: '24*C'\n    display.temperature(24)\n    sleep(1)\n\n    # Mostrar temperatura: '75*F'\n    display.temperature_f(75)\n    sleep(1)\n\n    # Texto en scroll horizontal\n    display.scroll('MechatronicStore', delay=500)\n    sleep(1)\n```\n\n## Cómo funciona el código\n\n### Inicialización\n\n```python\ndisplay = tm1637.TM1637(clk=Pin(19), dio=Pin(18))\n```\n\nInstancia el objeto display indicando los pines CLK y DIO. Si usas ESP8266 cambia a `Pin(14)` y `Pin(12)`.\n\n### Brillo\n\n```python\ndisplay.brightness(7)\n```\n\nAcepta valores de 0 (mínimo) a 7 (máximo). En interiores con luz baja, 3 o 4 suele ser más cómodo a la vista.\n\n### Control byte a byte con `write()`\n\nCada dígito del display se controla con un byte. Los **7 bits bajos** controlan cada segmento (A=bit 0, B=bit 1, ..., G=bit 6), y el bit MSB del segundo dígito controla los dos puntos del medio.\n\n| Segmento | Bit |\n|----------|-----|\n| A        | 0   |\n| B        | 1   |\n| C        | 2   |\n| D        | 3   |\n| E        | 4   |\n| F        | 5   |\n| G        | 6   |\n\nUn `1` enciende el segmento, `0` lo apaga. Ejemplo: `0b0000110` enciende los segmentos C y B (dibuja un \"1\" reducido).\n\n### Strings cortos con `show()`\n\n```python\ndisplay.show('help')\n```\n\nMuestra hasta 4 caracteres directamente. Soporta `0-9`, `a-z`, espacio, guión y asterisco.\n\n### Números con `number()` y `numbers()`\n\n- `display.number(-123)` muestra un único valor entero entre -999 y 9999, alineado a la derecha.\n- `display.numbers(12, 59)` muestra dos valores de 2 dígitos separados por dos puntos: ideal para relojes.\n\n### Temperatura con `temperature()` y `temperature_f()`\n\nMuestran el valor con el símbolo `°C` o `°F` automáticamente. Si el valor está fuera de rango (-9 a 99), muestra `lo` o `hi`.\n\n### Scroll con `scroll()`\n\n```python\ndisplay.scroll('Texto largo', delay=500)\n```\n\nDeja correr cualquier texto de derecha a izquierda. El segundo parámetro es el delay entre frames en milisegundos.\n\n## Proyecto: pronosticador de temperatura\n\nCombinando lo anterior con una llamada HTTP a una API meteorológica (como WeatherAPI o OpenWeatherMap), puedes mostrar la temperatura actual de tu ciudad alternando entre °C y °F. La librería `urequests` de MicroPython te permite hacer la petición HTTP directamente desde la placa.\n\n## Solución de problemas\n\n- **Display no enciende:** verifica VCC y GND. El módulo requiere 5V para el brillo máximo, aunque la lógica funciona a 3.3V.\n- **Caracteres corridos o erráticos:** revisa que los pines CLK y DIO no estén invertidos.\n- **Brillo bajo:** sube el valor en `display.brightness()` (máx 7).\n- **\"ImportError: tm1637\":** confirma que el archivo se guardó como `tm1637.py` en el sistema de archivos del MicroPython device.\n\n## Cierre\n\nEl TM1637 es uno de los displays más versátiles y baratos que existen para proyectos de microcontroladores. Con MicroPython, el código queda mucho más legible que en C++ y permite prototipar rápido relojes, termómetros, contadores o cualquier interfaz numérica simple. ¡Felices proyectos!",
-      "materials_list": [
-        {"name": "Placa ESP32 DevKit con WiFi", "qty": 1, "role": "core (opción 1)"},
-        {"name": "NodeMCU ESP8266 con WiFi", "qty": 1, "role": "core (opción 2, alternativa)"},
-        {"name": "Módulo display TM1637 4 dígitos 7 segmentos", "qty": 1, "role": "visualización"},
-        {"name": "Cables tipo dupont macho-hembra", "qty": 4, "role": "conexiones"},
-        {"name": "Cable USB para alimentación y carga de código", "qty": 1, "role": "alimentación"}
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Flashear MicroPython en la placa",
-          "text": "Instala el firmware MicroPython en tu ESP32 o ESP8266 usando esptool.py o desde Thonny IDE. Si recién partes, sigue la guía de Random Nerd Tutorials de instalación de MicroPython."
-        },
-        {
-          "position": 2,
-          "name": "Cablear el TM1637",
-          "text": "Conecta CLK y DIO del display a los GPIOs según la placa: GPIO 19/18 en ESP32, o GPIO 14/12 (D5/D6) en ESP8266. VCC va a 5V (VIN) y GND a GND."
-        },
-        {
-          "position": 3,
-          "name": "Subir la librería tm1637.py",
-          "text": "Descarga el archivo tm1637.py de Random Nerd Tutorials. Ábrelo en Thonny IDE y guárdalo como 'MicroPython Device' con el nombre exacto tm1637.py, sin modificar."
-        },
-        {
-          "position": 4,
-          "name": "Ejecutar el script de prueba",
-          "text": "Crea un script main.py con el código de ejemplo que muestra todas las funciones (números, texto, temperatura, scroll). Asegúrate de ajustar los pines según tu placa antes de subirlo."
-        },
-        {
-          "position": 5,
-          "name": "Experimentar y extender",
-          "text": "Una vez que el ciclo demo funcione, modifica el código para tu caso: reloj con módulo RTC, termómetro con DHT22, contador de visitas, o cualquier interfaz numérica. La librería expone todo lo necesario."
+          "name": "Adaptar a tu proyecto",
+          "text": "Modifica los pines o las funciones según necesites: reloj, contador, termómetro o cualquier indicador numérico que muestre datos en tiempo real.",
+          "image_url": null
         }
       ],
       "code_blocks": [
         {
           "lang": "python",
-          "caption": "Ejemplo completo: todas las funciones del TM1637 en MicroPython",
-          "code": "import tm1637\nfrom machine import Pin\nfrom time import sleep\n\n# ESP32: GPIO 19 (CLK) y GPIO 18 (DIO)\ndisplay = tm1637.TM1637(clk=Pin(19), dio=Pin(18))\n# ESP8266 (descomentar si corresponde):\n# display = tm1637.TM1637(clk=Pin(14), dio=Pin(12))\n\ndisplay.brightness(7)\n\nwhile True:\n    display.write([127, 255, 127, 127])  # 88:88\n    sleep(1)\n\n    display.write([0, 0, 0, 0])  # apagado total\n    sleep(1)\n\n    display.write([63, 6, 91, 79])  # 0123\n    sleep(1)\n\n    display.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])  # COOL\n    sleep(1)\n\n    display.show('help')\n    sleep(1)\n\n    display.hex(0xdead)\n    sleep(1)\n    display.hex(0xbeef)\n    sleep(1)\n\n    display.numbers(12, 59)  # 12:59\n    sleep(1)\n\n    display.number(-123)\n    sleep(1)\n\n    display.temperature(24)\n    sleep(1)\n    display.temperature_f(75)\n    sleep(1)\n\n    display.scroll('MechatronicStore', delay=500)\n    sleep(1)"
+          "caption": "Librería tm1637.py — guardar en la Raspberry Pi Pico",
+          "code": "\"\"\"\nMicroPython TM1637 quad 7-segment LED display driver\nhttps://github.com/mcauser/micropython-tm1637\n\nMIT License\nCopyright (c) 2016-2023 Mike Causer\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\"\"\"\n\n__version__ = '1.3.0'\n\nfrom micropython import const\nfrom machine import Pin\nfrom time import sleep_us, sleep_ms\n\nTM1637_CMD1 = const(64)  # 0x40 data command\nTM1637_CMD2 = const(192) # 0xC0 address command\nTM1637_CMD3 = const(128) # 0x80 display control command\nTM1637_DSP_ON = const(8) # 0x08 display on\nTM1637_DELAY = const(10) # 10us delay between clk/dio pulses\nTM1637_MSB = const(128)  # msb is the decimal point or the colon depending on your display\n\n# 0-9, a-z, blank, dash, star\n_SEGMENTS = bytearray(b'\\x3F\\x06\\x5B\\x4F\\x66\\x6D\\x7D\\x07\\x7F\\x6F\\x77\\x7C\\x39\\x5E\\x79\\x71\\x3D\\x76\\x06\\x1E\\x76\\x38\\x55\\x54\\x3F\\x73\\x67\\x50\\x6D\\x78\\x3E\\x1C\\x2A\\x76\\x6E\\x5B\\x00\\x40\\x63')\n\nclass TM1637(object):\n    \"\"\"Library for quad 7-segment LED modules based on the TM1637 LED driver.\"\"\"\n    def __init__(self, clk, dio, brightness=7):\n        self.clk = clk\n        self.dio = dio\n\n        if not 0 > i) & 1)\n            sleep_us(TM1637_DELAY)\n            self.clk(1)\n            sleep_us(TM1637_DELAY)\n            self.clk(0)\n            sleep_us(TM1637_DELAY)\n        self.clk(0)\n        sleep_us(TM1637_DELAY)\n        self.clk(1)\n        sleep_us(TM1637_DELAY)\n        self.clk(0)\n        sleep_us(TM1637_DELAY)\n\n    def brightness(self, val=None):\n        \"\"\"Set the display brightness 0-7.\"\"\"\n        # brightness 0 = 1/16th pulse width\n        # brightness 7 = 14/16th pulse width\n        if val is None:\n            return self._brightness\n        if not 0 = 65 and o = 97 and o = 48 and o 4d}'.format(num)\n        self.write(self.encode_string(string))\n\n    def numbers(self, num1, num2, colon=True):\n        \"\"\"Display two numeric values -9 through 99, with leading zeros\n        and separated by a colon.\"\"\"\n        num1 = max(-9, min(num1, 99))\n        num2 = max(-9, min(num2, 99))\n        segments = self.encode_string('{0:0>2d}{1:0>2d}'.format(num1, num2))\n        if colon:\n            segments[1] |= 0x80 # colon on\n        self.write(segments)\n\n    def temperature(self, num):\n        if num  99:\n            self.show('hi') # high\n        else:\n            string = '{0: >2d}'.format(num)\n            self.write(self.encode_string(string))\n        self.write([_SEGMENTS[38], _SEGMENTS[12]], 2) # degrees C\n        \n    def temperature_f(self, num):\n        if num  99:\n            self.show('hi') # high\n        else:\n            string = '{0: >2d}'.format(num)\n            self.write(self.encode_string(string))\n        self.write([_SEGMENTS[38], _SEGMENTS[15]], 2) # degrees F\n\n    def show(self, string, colon=False):\n        segments = self.encode_string(string)\n        if len(segments) > 1 and colon:\n            segments[1] |= 128\n        self.write(segments[:4])\n\n    def scroll(self, string, delay=250):\n        segments = string if isinstance(string, list) else self.encode_string(string)\n        data = [0] * 8\n        data[4:0] = list(segments)\n        for i in range(len(segments) + 5):\n            self.write(data[0+i:4+i])\n            sleep_ms(delay)\n\n\nclass TM1637Decimal(TM1637):\n    \"\"\"Library for quad 7-segment LED modules based on the TM1637 LED driver.\n\n    This class is meant to be used with decimal display modules (modules\n    that have a decimal point after each 7-segment LED).\n    \"\"\"\n\n    def encode_string(self, string):\n        \"\"\"Convert a string to LED segments.\n\n        Convert an up to 4 character length string containing 0-9, a-z,\n        space, dash, star and '.' to an array of segments, matching the length of\n        the source string.\"\"\"\n        segments = bytearray(len(string.replace('.','')))\n        j = 0\n        for i in range(len(string)):\n            if string[i] == '.' and j > 0:\n                segments[j-1] |= TM1637_MSB\n                continue\n            segments[j] = self.encode_char(string[i])\n            j += 1\n        return segments"
+        },
+        {
+          "lang": "python",
+          "caption": "Demo: funciones básicas del display TM1637",
+          "code": "# Rui Santos & Sara Santos - Random Nerd Tutorials\n# Complete project details at https://RandomNerdTutorials.com/raspberry-pi-pico-tm1637-micropython/\n\nimport tm1637\nfrom machine import Pin\nfrom time import sleep\n\n# Initialize display (adjust pins if needed)\ndisplay = tm1637.TM1637(clk=Pin(21), dio=Pin(20))\n\n# Set display brightness\ndisplay.brightness(7)\n\nwhile True:\n    # all LEDS on \"88:88\"\n    display.write([127, 255, 127, 127])\n    sleep(1)\n\n    # all LEDS off\n    display.write([0, 0, 0, 0])\n    sleep(1)\n\n    # show \"0123\"\n    display.write([63, 6, 91, 79])\n    sleep(1)\n\n    # show \"COOL\"\n    display.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])\n    sleep(1)\n\n    # show \"HELP\"\n    display.show('help')\n    sleep(1)\n\n    # display \"dEAd\", \"bEEF\"\n    display.hex(0xdead)\n    sleep(1)\n    display.hex(0xbeef)\n    sleep(1)\n\n    # show \"12:59\"\n    display.numbers(12, 59)\n    sleep(1)\n\n    # show \"-123\"\n    display.number(-123)\n    sleep(1)\n\n    # show temperature '24*C'\n    display.temperature(24)\n    sleep(1)\n    \n    # show temperature '75*F'\n    display.temperature_f(75)\n    sleep(1)\n\n    # display scrolling text\n    display.scroll('Random Nerd Tutorials', delay=500)\n    sleep(1)"
         }
       ],
       "linked_products": [
         {
-          "name_original": "Placa ESP32 DevKit con WiFi",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=X2-10V2",
+          "name_original": "Raspberry Pi Pico (any model)",
+          "product_id": "N-207",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-tm1637-display-7-segmentos-micropython&utm_content=N-207&attribute_entrada-usb=Micro+USB",
           "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "NodeMCU ESP8266 con WiFi",
-          "product_id": "X3-9",
-          "product_url": "https://www.mechatronicstore.cl/nodemcu-basada-en-wifi-esp8266/?utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=X3-9",
-          "price_clp": 5990,
-          "stock_available": true,
-          "match_score": 0.93
-        },
-        {
-          "name_original": "Módulo display TM1637 4 dígitos 7 segmentos",
-          "product_id": "D-204",
-          "product_url": "https://www.mechatronicstore.cl/modulo-display-7-segmentos-4-digitos-0-36-tipo-reloj-4-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=D-204",
-          "price_clp": 2900,
           "stock_available": true,
           "match_score": 0.95
         },
         {
-          "name_original": "Cables tipo dupont macho-hembra",
-          "product_id": "C-415",
-          "product_url": "https://www.mechatronicstore.cl/cable-macho-hembra-40-piezas-10-cm/?utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=C-415",
-          "price_clp": 1990,
+          "name_original": "TM1637 4-Digit 7-Segment Display",
+          "product_id": "D-204",
+          "product_url": "https://www.mechatronicstore.cl/modulo-display-7-segmentos-4-digitos-0-36-tipo-reloj-4-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-tm1637-display-7-segmentos-micropython&utm_content=D-204",
+          "price_clp": 2900,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "Jumper wires (macho-macho)",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-tm1637-display-7-segmentos-micropython&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Micro USB cable",
+          "product_id": "B-103",
+          "product_url": "https://www.mechatronicstore.cl/cable-micro-usb-de-datos/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-tm1637-display-7-segmentos-micropython&utm_content=B-103",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.9
+        }
+      ],
+      "github_url": "https://github.com/mcauser/micropython-tm1637",
+      "download_urls": [
+        {
+          "label": "Librería tm1637.py",
+          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/Raspberry-Pi-Pico/MicroPython/tm1637/tm1637.py",
+          "kind": "py"
+        },
+        {
+          "label": "Ejemplo funciones básicas (tm1637_basic_functions.py)",
+          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/Raspberry-Pi-Pico/MicroPython/tm1637/tm1637_basic_functions.py",
+          "kind": "py"
+        }
+      ],
+      "category": "rpi",
+      "difficulty": "beginner",
+      "estimated_time_minutes": 45,
+      "estimated_cost_clp": 16070,
+      "tags": [
+        "raspberry-pi-pico",
+        "tm1637",
+        "micropython",
+        "7-segmentos",
+        "display",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "7aa0c097827a",
+      "slug": "esp32-web-server-temporizador-led-arduino-ide",
+      "title_es": "ESP32: servidor web con temporizador programable para LED (Arduino IDE)",
+      "subtitle_es": "Construye un servidor web con ESP32 que enciende o apaga un LED con un temporizador programable desde el navegador, usando Arduino IDE.",
+      "hero_image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/04/ESP32-Web-Server-Set-Timer-Schedule-Arduino-IDE-Core.jpg",
+      "body_es": "## Introducción\n\nEn este proyecto vas a construir un servidor web con el ESP32 que te permite controlar un LED programando un temporizador con acciones de encendido (ON) o apagado (OFF) por un período en segundos, minutos u horas. La página web también tiene dos botones para encender o apagar el LED de inmediato. Programaremos el ESP32 usando el Arduino IDE.\n\n> Si recién estás partiendo con servidores web en ESP32, revisa nuestra guía completa para principiantes con Arduino IDE.\n\n## Resumen del proyecto\n\nLa siguiente imagen muestra la página web que construirás en este proyecto:\n\n![Vista general del proyecto — temporizador LED ESP32](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/04/ESP32-Web-Server-Set-Timer-Schedule-Arduino-IDE-Core-Project-Overview.png)\n\nFuncionalidades principales del servidor web:\n\n- **Estado actual del LED**: etiqueta de texto \"GPIO is ON\" / \"GPIO is OFF\"\n- **Control instantáneo del LED**: botones TURN ON / TURN OFF\n- **Formulario HTML para el temporizador**: define la acción (ENCENDER/APAGAR), la unidad de tiempo y la duración\n- **Estado del temporizador** y tiempo restante para la próxima acción\n- **Botón para cancelar el temporizador**\n\nPara simplificar, vamos a guardar el HTML y el CSS dentro de una variable en el sketch de Arduino, pero también puedes servir los archivos desde el sistema LittleFS si prefieres.\n\n## Requisitos previos\n\nAntes de seguir esta guía, necesitas tener instalado el ESP32 Core en tu Arduino IDE. Si todavía no lo haces, revisa la guía de instalación.\n\nTambién necesitas una placa ESP32 (cualquier modelo de tu preferencia).\n\n### Materiales\n\n- **Placa ESP32** (modelo de tu preferencia — ESP32-WROOM, ESP32 DevKit V1, etc.)\n- **LED de 5 mm**\n- **Resistencia de 220 Ω o 330 Ω** (opcional pero recomendada)\n- **Protoboard** y **cables jumper**\n- **Cable USB** para programar la placa\n\nLas conexiones son simples: el ánodo del LED va al GPIO 5 a través de la resistencia, y el cátodo a GND. Puedes cambiar el pin editando la línea `const int ledPin = 5;` en el código.\n\n## Instalar las librerías necesarias en Arduino IDE\n\nVamos a usar las siguientes librerías para construir el servidor web:\n\n- **ESPAsyncWebServer** by ESP32Async\n- **AsyncTCP** by ESP32Async\n\nPuedes instalarlas desde el Library Manager del Arduino IDE. Abre el Library Manager haciendo clic en el ícono de librería en la barra lateral izquierda.\n\nBusca **ESPAsyncWebServer** e instala la versión de ESP32Async:\n\n![Instalar ESPAsyncWebServer en Arduino IDE 2](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2024/06/Install-ESPAsyncWebServer-Library-ArduinoIDE-2-f.png)\n\nLuego instala la librería **AsyncTCP**. Busca AsyncTCP e instala la versión de ESP32Async:\n\n![Instalar AsyncTCP en Arduino IDE](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2024/06/Install-AsyncTCP-Library-ArduinoIDE.png)\n\n## Sketch de Arduino: servidor web con temporizador\n\nEl siguiente código crea un servidor web que sirve una página HTML para programar el encendido o apagado de un LED por un tiempo determinado.\n\n> **Importante:** antes de subir el código, reemplaza `REPLACE_WITH_YOUR_SSID` y `REPLACE_WITH_YOUR_PASSWORD` con las credenciales de tu red Wi-Fi.\n\n```cpp\n/*********\n  Rui Santos & Sara Santos - Random Nerd Tutorials\n  Complete project details at https://RandomNerdTutorials.com/esp32-web-server-timer-schedule-arduino/\n  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.\n  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n*********/\n#include \n#include \n#include \n#include \n#include \n\n// REPLACE WITH YOUR NETWORK CREDENTIALS\nconst char* ssid = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\n\n// LED connected to GPIO 5\nconst int ledPin = 5;\n\n// Global variables\nAsyncWebServer server(80);\n\nTimerHandle_t gpioTimer = NULL;\n// Timer action: 1 = ON, 0 = OFF\nint targetAction = -1;\n\nTickType_t timerStartTick = 0;\nuint64_t totalDurationTicks = 0;\n\n// HTML Web Page\nconst char index_html[] PROGMEM = R\"rawliteral(\n\n\n\n  ESP32 Web Server - Timer Schedule\n  \n  \n    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; background: #f4f4f4; }\n    h1 { color: #333; }\n    .card { max-width: 440px; margin: 20px auto; padding: 25px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }\n    button { width: 100%; padding: 14px; margin: 8px 0; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }\n    .onButton { background: #28a745; color: white; }\n    .offButton { background: #999999; color: white; }\n    button:hover { opacity: 0.95; }\n    .state { font-size: 22px; font-weight: bold; margin: 15px 0; }\n    .ledOn { color: #28a745; }\n    .ledOff { color: #999999; }\n    label { display: block; margin: 12px 0 6px; font-weight: bold; text-align: left; }\n    select, input[type=\"number\"] { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;}\n    .startButton { background:#1a73e8; color:white; }\n    #cancelButton { display:none; background:#dc3545; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; margin-top:10px; }\n  \n\n\n  ESP32 - Timer Schedule\n  \n    GPIO is Loading...\n    TURN ON\n    TURN OFF\n  \n  \n    Set Timer\n    \n      Action\n      \n        --- Select Action ---\n        TURN ON (HIGH)\n        TURN OFF(LOW)\n      \n      Time Unit\n      \n        Seconds\n        Minutes\n        Hours\n      \n      Duration\n      \n      START TIMER\n    \n    \n      Timer Status: No active timers\n      \n      \n        CANCEL TIMER\n      \n    \n  \n\n  \n    // Update LED State\n    function updateLEDState() {\n      fetch('/led-state')\n        .then(r => r.json())\n        .then(data => {\n          const stateEl = document.getElementById('ledState');\n          if (data.state === 1) {\n            stateEl.innerHTML = 'ON';\n          } else {\n            stateEl.innerHTML = 'OFF';\n          }\n        })\n        .catch(() => {\n          document.getElementById('ledState').innerHTML = 'Error';\n        });\n    }\n    // Control LED\n    function controlLED(state) {\n      fetch('/control?state=' + state)\n        .then(() => updateLEDState());\n    }\n\n    // Timer functions\n    let countdownInterval = null;\n    let remainingSeconds = 0;\n    // Format time to hours, minutes and seconds    \n    function formatTime(seconds) {\n      if (seconds  0) return h + \"h \" + m + \"m \" + s + \"s\";\n      if (m > 0) return m + \"m \" + s + \"s\";\n      return s + \"s\";\n    }\n    // Check the remaining time for the timer to end\n    function updateTimerStatus() {\n      fetch('/timer-status')\n        .then(r => r.json())\n        .then(data => {\n          document.getElementById('status').innerText = data.status;\n\n          const cancelButton = document.getElementById('cancelButton');\n          const remainingEl = document.getElementById('remaining');\n\n          if (data.active) {\n            remainingSeconds = data.remaining_seconds;\n            cancelButton.style.display = 'inline-block';\n\n            if (!countdownInterval) {\n              countdownInterval = setInterval(() => {\n                if (remainingSeconds > 0) {\n                  remainingSeconds--;\n                  remainingEl.innerText = \"Remaining: \" + formatTime(remainingSeconds);\n                } else {\n                  clearInterval(countdownInterval);\n                  countdownInterval = null;\n                }\n              }, 1000);\n            }\n            remainingEl.innerText = \"Remaining: \" + formatTime(remainingSeconds);\n          } else {\n            cancelButton.style.display = 'none';\n            remainingEl.innerText = \"\";\n            if (countdownInterval) {\n              clearInterval(countdownInterval);\n              countdownInterval = null;\n            }\n          }\n        });\n    }\n    // Cancel timer button\n    function cancelTimer() {\n      if (confirm(\"Cancel the current timer?\")) {\n        fetch('/cancel-timer', { method: 'POST' })\n          .then(() => updateTimerStatus());\n      }\n    }\n\n    // Update every 10 seconds\n    setInterval(() => {\n      updateLEDState();\n      updateTimerStatus();\n    }, 10000);\n    window.onload = () => {\n      updateLEDState();\n      updateTimerStatus();\n    };\n  \n\n\n)rawliteral\";\n\n// Timer Callback - Turns the LED on or off depending on the action selected\nvoid IRAM_ATTR timerCallback(TimerHandle_t xTimer) {\n  if (targetAction != -1) {\n    digitalWrite(ledPin, targetAction ? HIGH : LOW);\n    Serial.printf(\"Timer finished: GPIO %d set to %s\\n\", ledPin, targetAction ? \"HIGH (ON)\" : \"LOW (OFF)\");\n  }\n  targetAction = -1;\n  timerStartTick = 0;\n  totalDurationTicks = 0;\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n\n  // Define ledPin as an OUTPUT and initialize it off (LOW)\n  pinMode(ledPin, OUTPUT);\n  digitalWrite(ledPin, LOW);\n\n  // Create a timer and assign the timerCallback function\n  gpioTimer = xTimerCreate(\"GPIO_Timer\", pdMS_TO_TICKS(1000), pdFALSE, 0, timerCallback);\n\n  // Start the Wi-Fi connection\n  WiFi.begin(ssid, password);\n  Serial.print(\"Connecting to Wi-Fi\");\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(500);\n    Serial.print(\".\");\n  }\n  Serial.println(\"\\nWi-Fi Connected!\");\n  // Print the ESP32 IP Address\n  Serial.print(\"Access ESP32 IP Address: http://\");\n  Serial.println(WiFi.localIP());\n\n  // Root URL handler\n  server.on(\"/\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    request->send_P(200, \"text/html\", index_html);\n  });\n\n  // Instant LED control\n  server.on(\"/control\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    if (request->hasParam(\"state\")) {\n      int state = request->getParam(\"state\")->value().toInt();\n      digitalWrite(ledPin, state ? HIGH : LOW);\n      Serial.printf(\"LED set to %s\\n\", state ? \"ON\" : \"OFF\");\n    }\n    request->send(200, \"text/plain\", \"OK\");\n  });\n\n  // Get current LED state\n  server.on(\"/led-state\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    int state = digitalRead(ledPin);\n    request->send(200, \"application/json\", \"{\\\"state\\\":\" + String(state) + \"}\");\n  });\n\n  // Set the timer duration to perform the action selected\n  server.on(\"/set-timer\", HTTP_POST, [](AsyncWebServerRequest *request) {\n    if (request->hasParam(\"action\", true) && request->hasParam(\"duration\", true) && request->hasParam(\"unit\", true)) {\n\n      targetAction = request->getParam(\"action\", true)->value().toInt();\n      int dur = request->getParam(\"duration\", true)->value().toInt();\n      String unit = request->getParam(\"unit\", true)->value();\n\n      uint64_t durationSeconds = 0;\n      if (unit == \"s\")      durationSeconds = (uint64_t)dur;\n      else if (unit == \"m\") durationSeconds = (uint64_t)dur * 60ULL;\n      else if (unit == \"h\") durationSeconds = (uint64_t)dur * 3600ULL;\n\n      if (durationSeconds > 0) {\n        if (xTimerIsTimerActive(gpioTimer)) xTimerStop(gpioTimer, 0);\n\n        uint64_t tempTicks = durationSeconds * (uint64_t)configTICK_RATE_HZ;\n        TickType_t timerTicks = (tempTicks > 0xFFFFFFFFULL) ? 0xFFFFFFFFULL : (TickType_t)tempTicks;\n\n        timerStartTick = xTaskGetTickCount();\n        totalDurationTicks = tempTicks;\n\n        xTimerChangePeriod(gpioTimer, timerTicks, 0);\n        xTimerStart(gpioTimer, 0);\n\n        Serial.printf(\"Timer scheduled: GPIO %d will be set to %s in %llu seconds\\n\", ledPin,\n                      targetAction ? \"ON\" : \"OFF\", durationSeconds);\n      }\n    }\n    request->redirect(\"/\");\n  });\n\n  // Cancel Timer\n  server.on(\"/cancel-timer\", HTTP_POST, [](AsyncWebServerRequest *request) {\n    // Stop the active timer\n    if (xTimerIsTimerActive(gpioTimer)) {\n      xTimerStop(gpioTimer, 0);\n      Serial.println(\"Timer cancelled\");\n    }\n    targetAction = -1;\n    timerStartTick = 0; \n    totalDurationTicks = 0;\n    request->send(200, \"text/plain\", \"OK\");\n  });\n\n  // Timer Status - Returns the remaining time in seconds\n  server.on(\"/timer-status\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    if (targetAction != -1 && xTimerIsTimerActive(gpioTimer) && totalDurationTicks > 0) {\n      // Calculate how many seconds are left for the timer to end\n      TickType_t now = xTaskGetTickCount();\n      uint64_t elapsedTicks = 0;\n\n      if (now >= timerStartTick) {\n        elapsedTicks = now - timerStartTick;\n      } else {\n        elapsedTicks = (0xFFFFFFFFULL - timerStartTick) + now + 1;\n      }\n\n      uint64_t remainingTicks = (totalDurationTicks > elapsedTicks) ? totalDurationTicks - elapsedTicks : 0;\n      uint64_t remainingSeconds = remainingTicks / (uint64_t)configTICK_RATE_HZ;\n\n      // Return the amount of seconds left and action that will execute when the timer ends\n      String json = \"{\\\"status\\\":\\\"Setting GPIO \"+ String(ledPin) +\" to \" + \n                    String(targetAction ? \"ON\" : \"OFF\") + \"\\\",\";\n      json += \"\\\"active\\\":true,\";\n      json += \"\\\"remaining_seconds\\\":\" + String((unsigned long)remainingSeconds) + \"}\";\n      request->send(200, \"application/json\", json);\n    } else {\n      request->send(200, \"application/json\", \"{\\\"status\\\":\\\"No active timers\\\",\\\"active\\\":false,\\\"remaining_seconds\\\":0}\");\n    }\n  });\n\n  server.begin();\n  Serial.println(\"ESP32 Web Server Timer Schedule is Ready!\");\n}\n\nvoid loop() {\n  vTaskDelay(pdMS_TO_TICKS(100));\n}\n```\n\n## Cómo funciona el código\n\nA grandes rasgos, el sketch hace lo siguiente:\n\n1. **Conecta el ESP32 a tu red Wi-Fi** usando las credenciales que pongas en `ssid` y `password`.\n2. **Levanta un servidor web asincrónico** en el puerto 80 con la librería ESPAsyncWebServer.\n3. **Define las rutas HTTP** del servidor:\n   - `/` → devuelve la página HTML con el formulario y los botones.\n   - `/control?state=1` / `/control?state=0` → enciende o apaga el LED de inmediato.\n   - `/led-state` → devuelve el estado actual del LED en JSON.\n   - `/set-timer` → recibe el formulario y crea un temporizador FreeRTOS con la duración seleccionada.\n   - `/timer-status` → devuelve el estado del temporizador (activo, segundos restantes).\n   - `/cancel-timer` → cancela el temporizador en curso.\n4. **Usa timers de FreeRTOS** (`xTimerCreate`, `xTimerStart`, `xTimerStop`) para programar la acción sin bloquear el loop principal.\n5. **La página web** consulta el estado cada 10 segundos con `fetch()` y actualiza la cuenta regresiva en tiempo real con `setInterval()`.\n\n## Subir y probar\n\n1. **Conecta** tu ESP32 al PC con el cable USB.\n2. **Configura** el board y el puerto en el Arduino IDE (Tools > Board > ESP32 Dev Module, y selecciona el puerto correcto).\n3. **Sube el código** con el botón Upload.\n4. **Abre el Serial Monitor** a 115200 baudios para ver la dirección IP que el ESP32 obtuvo del router.\n5. **Escribe esa IP** en tu navegador (PC o teléfono en la misma red Wi-Fi) y deberías ver la página de control.\n\nPrueba a definir un temporizador de 30 segundos para ENCENDER el LED. El estado y el tiempo restante deberían actualizarse automáticamente.\n\n## Conclusión\n\nCon menos de 300 líneas de código tienes un sistema completo de control remoto con temporizador para cualquier carga conectada al ESP32 (no solo un LED — puedes adaptar el código para controlar un relé, una bomba, una luz, etc.). El uso de `ESPAsyncWebServer` + timers de FreeRTOS hace que la solución sea robusta y no bloqueante, ideal para proyectos IoT que necesitan ejecutar acciones programadas sin depender de un servidor externo.",
+      "materials_list": [
+        {
+          "name": "Placa ESP32 (DevKit, WROOM o similar)",
+          "qty": 1,
+          "role": "microcontrolador"
+        },
+        {
+          "name": "LED 5 mm",
+          "qty": 1,
+          "role": "actuador"
+        },
+        {
+          "name": "Resistencia 220 Ω",
+          "qty": 1,
+          "role": "limitador de corriente"
+        },
+        {
+          "name": "Protoboard 830 puntos",
+          "qty": 1,
+          "role": "prototipado"
+        },
+        {
+          "name": "Cables jumper macho-macho",
+          "qty": 4,
+          "role": "cableado"
+        },
+        {
+          "name": "Cable USB (micro USB o tipo C según placa)",
+          "qty": 1,
+          "role": "alimentación y programación"
+        }
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Preparar Arduino IDE para ESP32",
+          "text": "Instala el ESP32 Core en Arduino IDE desde Boards Manager. Asegúrate de poder compilar un sketch básico para tu placa antes de continuar.",
+          "image_url": null
+        },
+        {
+          "position": 2,
+          "name": "Instalar las librerías ESPAsyncWebServer y AsyncTCP",
+          "text": "Abre el Library Manager y busca 'ESPAsyncWebServer by ESP32Async' y 'AsyncTCP by ESP32Async'. Instala ambas — son la base del servidor asincrónico.",
+          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2024/06/Install-ESPAsyncWebServer-Library-ArduinoIDE-2-f.png"
+        },
+        {
+          "position": 3,
+          "name": "Cablear el LED al ESP32",
+          "text": "Conecta el ánodo del LED al GPIO 5 a través de una resistencia de 220 Ω y el cátodo a GND. Si quieres usar otro pin, edita la línea const int ledPin = 5; en el código.",
+          "image_url": null
+        },
+        {
+          "position": 4,
+          "name": "Configurar Wi-Fi y subir el sketch",
+          "text": "Pega el código en Arduino IDE, reemplaza las constantes ssid y password con tu red, selecciona la placa correcta y sube el sketch.",
+          "image_url": null
+        },
+        {
+          "position": 5,
+          "name": "Probar el servidor desde el navegador",
+          "text": "Abre el Serial Monitor a 115200 baudios, copia la IP que muestra el ESP32 y ábrela en tu navegador. Prueba los botones TURN ON / TURN OFF y arma un temporizador de 30 segundos para verificar la cuenta regresiva.",
+          "image_url": null
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "cpp",
+          "caption": "Sketch completo del servidor web con temporizador FreeRTOS",
+          "code": "/*********\n  Rui Santos & Sara Santos - Random Nerd Tutorials\n  Complete project details at https://RandomNerdTutorials.com/esp32-web-server-timer-schedule-arduino/\n  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.\n  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n*********/\n#include \n#include \n#include \n#include \n#include \n\n// REPLACE WITH YOUR NETWORK CREDENTIALS\nconst char* ssid = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\n\n// LED connected to GPIO 5\nconst int ledPin = 5;\n\n// Global variables\nAsyncWebServer server(80);\n\nTimerHandle_t gpioTimer = NULL;\n// Timer action: 1 = ON, 0 = OFF\nint targetAction = -1;\n\nTickType_t timerStartTick = 0;\nuint64_t totalDurationTicks = 0;\n\n// HTML Web Page\nconst char index_html[] PROGMEM = R\"rawliteral(\n\n\n\n  ESP32 Web Server - Timer Schedule\n  \n  \n    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; background: #f4f4f4; }\n    h1 { color: #333; }\n    .card { max-width: 440px; margin: 20px auto; padding: 25px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }\n    button { width: 100%; padding: 14px; margin: 8px 0; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }\n    .onButton { background: #28a745; color: white; }\n    .offButton { background: #999999; color: white; }\n    button:hover { opacity: 0.95; }\n    .state { font-size: 22px; font-weight: bold; margin: 15px 0; }\n    .ledOn { color: #28a745; }\n    .ledOff { color: #999999; }\n    label { display: block; margin: 12px 0 6px; font-weight: bold; text-align: left; }\n    select, input[type=\"number\"] { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;}\n    .startButton { background:#1a73e8; color:white; }\n    #cancelButton { display:none; background:#dc3545; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; margin-top:10px; }\n  \n\n\n  ESP32 - Timer Schedule\n  \n    GPIO is Loading...\n    TURN ON\n    TURN OFF\n  \n  \n    Set Timer\n    \n      Action\n      \n        --- Select Action ---\n        TURN ON (HIGH)\n        TURN OFF(LOW)\n      \n      Time Unit\n      \n        Seconds\n        Minutes\n        Hours\n      \n      Duration\n      \n      START TIMER\n    \n    \n      Timer Status: No active timers\n      \n      \n        CANCEL TIMER\n      \n    \n  \n\n  \n    // Update LED State\n    function updateLEDState() {\n      fetch('/led-state')\n        .then(r => r.json())\n        .then(data => {\n          const stateEl = document.getElementById('ledState');\n          if (data.state === 1) {\n            stateEl.innerHTML = 'ON';\n          } else {\n            stateEl.innerHTML = 'OFF';\n          }\n        })\n        .catch(() => {\n          document.getElementById('ledState').innerHTML = 'Error';\n        });\n    }\n    // Control LED\n    function controlLED(state) {\n      fetch('/control?state=' + state)\n        .then(() => updateLEDState());\n    }\n\n    // Timer functions\n    let countdownInterval = null;\n    let remainingSeconds = 0;\n    // Format time to hours, minutes and seconds    \n    function formatTime(seconds) {\n      if (seconds  0) return h + \"h \" + m + \"m \" + s + \"s\";\n      if (m > 0) return m + \"m \" + s + \"s\";\n      return s + \"s\";\n    }\n    // Check the remaining time for the timer to end\n    function updateTimerStatus() {\n      fetch('/timer-status')\n        .then(r => r.json())\n        .then(data => {\n          document.getElementById('status').innerText = data.status;\n\n          const cancelButton = document.getElementById('cancelButton');\n          const remainingEl = document.getElementById('remaining');\n\n          if (data.active) {\n            remainingSeconds = data.remaining_seconds;\n            cancelButton.style.display = 'inline-block';\n\n            if (!countdownInterval) {\n              countdownInterval = setInterval(() => {\n                if (remainingSeconds > 0) {\n                  remainingSeconds--;\n                  remainingEl.innerText = \"Remaining: \" + formatTime(remainingSeconds);\n                } else {\n                  clearInterval(countdownInterval);\n                  countdownInterval = null;\n                }\n              }, 1000);\n            }\n            remainingEl.innerText = \"Remaining: \" + formatTime(remainingSeconds);\n          } else {\n            cancelButton.style.display = 'none';\n            remainingEl.innerText = \"\";\n            if (countdownInterval) {\n              clearInterval(countdownInterval);\n              countdownInterval = null;\n            }\n          }\n        });\n    }\n    // Cancel timer button\n    function cancelTimer() {\n      if (confirm(\"Cancel the current timer?\")) {\n        fetch('/cancel-timer', { method: 'POST' })\n          .then(() => updateTimerStatus());\n      }\n    }\n\n    // Update every 10 seconds\n    setInterval(() => {\n      updateLEDState();\n      updateTimerStatus();\n    }, 10000);\n    window.onload = () => {\n      updateLEDState();\n      updateTimerStatus();\n    };\n  \n\n\n)rawliteral\";\n\n// Timer Callback - Turns the LED on or off depending on the action selected\nvoid IRAM_ATTR timerCallback(TimerHandle_t xTimer) {\n  if (targetAction != -1) {\n    digitalWrite(ledPin, targetAction ? HIGH : LOW);\n    Serial.printf(\"Timer finished: GPIO %d set to %s\\n\", ledPin, targetAction ? \"HIGH (ON)\" : \"LOW (OFF)\");\n  }\n  targetAction = -1;\n  timerStartTick = 0;\n  totalDurationTicks = 0;\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n\n  // Define ledPin as an OUTPUT and initialize it off (LOW)\n  pinMode(ledPin, OUTPUT);\n  digitalWrite(ledPin, LOW);\n\n  // Create a timer and assign the timerCallback function\n  gpioTimer = xTimerCreate(\"GPIO_Timer\", pdMS_TO_TICKS(1000), pdFALSE, 0, timerCallback);\n\n  // Start the Wi-Fi connection\n  WiFi.begin(ssid, password);\n  Serial.print(\"Connecting to Wi-Fi\");\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(500);\n    Serial.print(\".\");\n  }\n  Serial.println(\"\\nWi-Fi Connected!\");\n  // Print the ESP32 IP Address\n  Serial.print(\"Access ESP32 IP Address: http://\");\n  Serial.println(WiFi.localIP());\n\n  // Root URL handler\n  server.on(\"/\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    request->send_P(200, \"text/html\", index_html);\n  });\n\n  // Instant LED control\n  server.on(\"/control\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    if (request->hasParam(\"state\")) {\n      int state = request->getParam(\"state\")->value().toInt();\n      digitalWrite(ledPin, state ? HIGH : LOW);\n      Serial.printf(\"LED set to %s\\n\", state ? \"ON\" : \"OFF\");\n    }\n    request->send(200, \"text/plain\", \"OK\");\n  });\n\n  // Get current LED state\n  server.on(\"/led-state\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    int state = digitalRead(ledPin);\n    request->send(200, \"application/json\", \"{\\\"state\\\":\" + String(state) + \"}\");\n  });\n\n  // Set the timer duration to perform the action selected\n  server.on(\"/set-timer\", HTTP_POST, [](AsyncWebServerRequest *request) {\n    if (request->hasParam(\"action\", true) && request->hasParam(\"duration\", true) && request->hasParam(\"unit\", true)) {\n\n      targetAction = request->getParam(\"action\", true)->value().toInt();\n      int dur = request->getParam(\"duration\", true)->value().toInt();\n      String unit = request->getParam(\"unit\", true)->value();\n\n      uint64_t durationSeconds = 0;\n      if (unit == \"s\")      durationSeconds = (uint64_t)dur;\n      else if (unit == \"m\") durationSeconds = (uint64_t)dur * 60ULL;\n      else if (unit == \"h\") durationSeconds = (uint64_t)dur * 3600ULL;\n\n      if (durationSeconds > 0) {\n        if (xTimerIsTimerActive(gpioTimer)) xTimerStop(gpioTimer, 0);\n\n        uint64_t tempTicks = durationSeconds * (uint64_t)configTICK_RATE_HZ;\n        TickType_t timerTicks = (tempTicks > 0xFFFFFFFFULL) ? 0xFFFFFFFFULL : (TickType_t)tempTicks;\n\n        timerStartTick = xTaskGetTickCount();\n        totalDurationTicks = tempTicks;\n\n        xTimerChangePeriod(gpioTimer, timerTicks, 0);\n        xTimerStart(gpioTimer, 0);\n\n        Serial.printf(\"Timer scheduled: GPIO %d will be set to %s in %llu seconds\\n\", ledPin,\n                      targetAction ? \"ON\" : \"OFF\", durationSeconds);\n      }\n    }\n    request->redirect(\"/\");\n  });\n\n  // Cancel Timer\n  server.on(\"/cancel-timer\", HTTP_POST, [](AsyncWebServerRequest *request) {\n    // Stop the active timer\n    if (xTimerIsTimerActive(gpioTimer)) {\n      xTimerStop(gpioTimer, 0);\n      Serial.println(\"Timer cancelled\");\n    }\n    targetAction = -1;\n    timerStartTick = 0; \n    totalDurationTicks = 0;\n    request->send(200, \"text/plain\", \"OK\");\n  });\n\n  // Timer Status - Returns the remaining time in seconds\n  server.on(\"/timer-status\", HTTP_GET, [](AsyncWebServerRequest *request) {\n    if (targetAction != -1 && xTimerIsTimerActive(gpioTimer) && totalDurationTicks > 0) {\n      // Calculate how many seconds are left for the timer to end\n      TickType_t now = xTaskGetTickCount();\n      uint64_t elapsedTicks = 0;\n\n      if (now >= timerStartTick) {\n        elapsedTicks = now - timerStartTick;\n      } else {\n        elapsedTicks = (0xFFFFFFFFULL - timerStartTick) + now + 1;\n      }\n\n      uint64_t remainingTicks = (totalDurationTicks > elapsedTicks) ? totalDurationTicks - elapsedTicks : 0;\n      uint64_t remainingSeconds = remainingTicks / (uint64_t)configTICK_RATE_HZ;\n\n      // Return the amount of seconds left and action that will execute when the timer ends\n      String json = \"{\\\"status\\\":\\\"Setting GPIO \"+ String(ledPin) +\" to \" + \n                    String(targetAction ? \"ON\" : \"OFF\") + \"\\\",\";\n      json += \"\\\"active\\\":true,\";\n      json += \"\\\"remaining_seconds\\\":\" + String((unsigned long)remainingSeconds) + \"}\";\n      request->send(200, \"application/json\", json);\n    } else {\n      request->send(200, \"application/json\", \"{\\\"status\\\":\\\"No active timers\\\",\\\"active\\\":false,\\\"remaining_seconds\\\":0}\");\n    }\n  });\n\n  server.begin();\n  Serial.println(\"ESP32 Web Server Timer Schedule is Ready!\");\n}\n\nvoid loop() {\n  vTaskDelay(pdMS_TO_TICKS(100));\n}"
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "ESP32 development board",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-web-server-temporizador-led-arduino-ide&utm_content=X2-10V2&attribute_entrada=Tipo+C",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Breadboard / Protoboard 830 puntos",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-web-server-temporizador-led-arduino-ide&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Jumper wires (macho-macho 30cm)",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-web-server-temporizador-led-arduino-ide&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.85
+        },
+        {
+          "name_original": "Cable USB Tipo C",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-web-server-temporizador-led-arduino-ide&utm_content=B-101",
+          "price_clp": 2190,
           "stock_available": true,
           "match_score": 0.82
         }
       ],
-      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/tree/master/Projects/ESP-MicroPython/tm1637",
+      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials",
       "download_urls": [
         {
-          "label": "Librería tm1637.py (descargar a la placa)",
-          "url": "https://raw.githubusercontent.com/RuiSantosdotme/Random-Nerd-Tutorials/refs/heads/master/Projects/ESP-MicroPython/tm1637/tm1637.py",
-          "kind": "py"
-        },
-        {
-          "label": "Script de funciones básicas (.py)",
-          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP-MicroPython/tm1637/tm1637_basic_functions.py",
-          "kind": "py"
+          "label": "Sketch completo (ESP32_Timer_Web_Server.ino)",
+          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP32/ESP32_Timer_Web_Server.ino",
+          "kind": "ino"
         }
       ],
       "category": "esp32",
       "difficulty": "intermediate",
-      "estimated_time_minutes": 40,
-      "estimated_cost_clp": 13880,
-      "tags": ["micropython", "esp32", "esp8266", "tm1637", "display", "thonny", "tutorial"]
+      "estimated_time_minutes": 75,
+      "estimated_cost_clp": 17460,
+      "tags": [
+        "esp32",
+        "arduino",
+        "web-server",
+        "temporizador",
+        "iot",
+        "freertos",
+        "led"
+      ]
+    },
+    {
+      "id": "7cb2921fe490",
+      "slug": "esp32-esp-idf-servidor-web-simple-html-vscode",
+      "title_es": "ESP32 + ESP-IDF: servidor web simple que sirve una página HTML",
+      "subtitle_es": "Aprende a programar el ESP32 con ESP-IDF en VS Code para crear un servidor web local que sirve una página HTML personalizada.",
+      "hero_image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Simple-Web-Server-Serve-HTML-Page.jpg",
+      "body_es": "## Introducción\n\nEsta guía te muestra cómo armar un servidor web local simple con el ESP32 programado con **ESP-IDF**, que sirve una página HTML accesible desde cualquier navegador conectado a la misma red Wi-Fi. Es una base perfecta para luego agregar botones o campos de texto que controlen y monitoreen los GPIO del ESP32.\n\n> ¿Prefieres usar Arduino IDE? Sigue nuestro tutorial: *Servidor web con ESP32 — guía completa para principiantes (Arduino IDE)*.\n\n## Requisitos previos\n\nAntes de seguir esta guía, necesitas tener instalada la extensión **ESP-IDF** en VS Code (Microsoft Visual Studio Code). Si todavía no la tienes, revisa la guía oficial de instalación: *Programando el ESP32 con ESP-IDF usando VS Code*.\n\nTambién necesitas una placa ESP32 (cualquier modelo de tu preferencia) y un cable USB para conectarla al PC.\n\n## ¿Qué es un servidor web?\n\nEn términos simples, un servidor web es un \"computador\" que entrega páginas web. Guarda los archivos del sitio —documentos HTML, imágenes, hojas de estilo CSS, fuentes y otros recursos— y los envía al navegador del usuario cuando este los solicita.\n\nCuando accedes a una página en tu navegador, en realidad estás enviando una petición a un servidor usando el protocolo **HTTP**. Este protocolo define cómo se solicita y entrega la información en internet. El servidor responde enviando la página que pediste, también a través de HTTP.\n\n### Cliente-Servidor: ESP32 como servidor\n\n![Comunicación cliente-servidor en ESP32](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/04/esp32-client-server-communication-f.png)\n\nCuando escribes una URL en tu navegador, tu dispositivo (el **cliente**) envía una petición HTTP a un servidor. El servidor recibe la petición y responde con la página solicitada.\n\nEn este tutorial, el ESP32 va a actuar como **servidor**, y tú, desde tu navegador, vas a ser el **cliente**.\n\n## Servidor web con ESP-IDF\n\nVeamos un ejemplo práctico: el ESP32 funciona como un servidor web local dentro de tu red Wi-Fi.\n\n![ESP32 actuando como servidor web](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/04/ESP32-Web-Server-Wi-Fi-Client-Connected-1.png)\n\nTípicamente, el ESP32 corriendo como servidor se conecta vía Wi-Fi a tu router. Tu PC, teléfono o tablet también están conectados al mismo router (por Wi-Fi o Ethernet), por lo tanto el ESP32 y el navegador están en la misma red.\n\n![ESP32 web server — request y response entre cliente y servidor](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/04/ESP32-Web-Server-Wi-Fi-Clients-Request-Response.png)\n\nCuando escribes la dirección IP del ESP32 en tu navegador, le envías una petición HTTP. El ESP32 responde con datos: un valor, una lectura de sensor, una página HTML o cualquier otra cosa.\n\nEn este tutorial, cuando escribas la IP del ESP32, este responderá con HTML para mostrar una página simple como la siguiente:\n\n![Demostración del servidor web ESP-IDF — página HTML servida](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Simple-Web-Server-Serve-HTML-Web-Page-Demonstration.png)\n\nPor simplicidad, esta página es bien básica. En tutoriales futuros la vamos a expandir con botones y campos para controlar los GPIO.\n\n### Materiales\n\n- **Placa ESP32** (cualquier modelo: DevKit V1, ESP32-WROOM, ESP32-S3, etc.)\n- **Cable USB** (micro USB o tipo C según tu placa) para programar la placa desde VS Code\n\n## Crear un proyecto plantilla ESP-IDF para el ESP32\n\nLa extensión ESP-IDF te facilita crear un proyecto desde cero con todos los archivos y configuraciones necesarias generados automáticamente.\n\nPara crear un nuevo proyecto ESP-IDF en VS Code, sigue estos pasos:\n\n1. Abre la extensión **ESP-IDF Espressif**\n2. Expande el menú **\"Advanced\"**\n3. Haz clic en la opción **\"New Project Wizard\"**\n4. Elige **\"Use ESP-IDF v5.4.1\"** para seleccionar la versión del framework\n\n![Asistente para crear/abrir proyecto ESP-IDF en VS Code](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Create-Open-New-Project-Wizard-Menu.png)\n\nSe abre una nueva ventana. Completa los siguientes campos:\n\n- **Project Name**: nombre del proyecto\n- **Enter Project Directory**: elige la carpeta donde se guardará todo\n- **Choose ESP-IDF Board**: selecciona tu modelo de ESP32\n- **Choose Serial Port**: el puerto serial al que está conectada la placa\n\n![Asistente — seleccionar directorio, placa y plantilla](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Create-Open-New-Project-Wizard-Menu-Select-Directory-Board-Template.png)\n\nA continuación, elige la plantilla **\"sample_project\"** desde **ESP-IDF: Template**:\n\n![Crear nuevo proyecto sample usando plantilla IDF](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/ESP-IDF-ESP32-Create-New-Sample-Project-using-IDF-Template.png)\n\nCuando termines, se creará el proyecto y se abrirá una nueva ventana de VS Code:\n\n![Proyecto sample abierto en VS Code](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/ESP-IDF-ESP32-Open-New-Project-Sample.png)\n\n## Abrir el proyecto ESP-IDF en VS Code\n\nSi el proyecto no se abre automáticamente, anda a **File > Open Folder** y selecciona la carpeta del proyecto recién creado:\n\n![Abrir carpeta del proyecto en VS Code](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Open-Project-Folder-VS-Code-File-Menu.png)\n\n![Seleccionar carpeta del proyecto ESP-IDF](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Open-Project-VS-Code-Select-Folder.png)\n\nUna vez abierto, navega a la carpeta `main` y abre el archivo principal `main.c` (o el nombre que le hayas dado al proyecto):\n\n![Navegar a main.c en VS Code](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Open-Project-in-a-VS-Code-Browse-to-Main-C-File.png)\n\n## Crear el archivo de configuración Wi-Fi (Kconfig.projbuild)\n\nPara no tener que hardcodear el SSID y password en el código, vamos a usar el sistema **menuconfig** de ESP-IDF. Creamos un archivo llamado `Kconfig.projbuild` dentro de la carpeta `main`:\n\n![Crear archivo Kconfig.projbuild en la carpeta main](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/Create-new-file-main-folder-Kconfig-projbuild.png)\n\nPega el siguiente contenido en `Kconfig.projbuild`:\n\n```kconfig\nmenu \"Wi-Fi Configuration\"\n    config ESP_WIFI_SSID\n        string \"WiFi SSID\"\n        help\n            SSID (network name) you want to connect to.\n\n    config ESP_WIFI_PASSWORD\n        string \"WiFi Password\"\n        help\n            Password of the Wi-Fi network you want to connect to.\nendmenu\n```\n\n![Kconfig.projbuild con la configuración Wi-Fi](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/Kconfig-projbuild-Wi-Fi-Configuration-File.png)\n\nAhora abre el **SDK Configuration Editor (menuconfig)** desde la barra inferior de VS Code:\n\n![Abrir el SDK Configuration Editor (menuconfig)](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/Open-SDK-Configuration-Editor-Menuconfig-Wi-Fi-Configuration.png)\n\nBusca **\"Wi-Fi Configuration\"** y completa el **WiFi SSID** y el **WiFi Password** con las credenciales de tu red:\n\n![menuconfig — completar SSID y password de Wi-Fi](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/SDK-Configuration-Editor-Menuconfig-Kconfig-projbuild-Wi-Fi-Configuration-SSID-Password.png)\n\nGuarda los cambios. Esto generará las macros `CONFIG_ESP_WIFI_SSID` y `CONFIG_ESP_WIFI_PASSWORD` que vamos a usar desde el código C.\n\n## Código: servidor web simple en ESP-IDF\n\nReemplaza el contenido de `main.c` con el siguiente código:\n\n```c\nNone\n```\n\n> El código completo y los ESP-IDF components están en el repositorio oficial de Random Nerd Tutorials.\n\n## Compilar, flashear y probar\n\n1. **Build** del proyecto desde la barra inferior de VS Code (ícono de cilindro/martillo).\n2. **Flash** a la placa (ícono de rayo).\n3. **Monitor** para abrir el monitor serial (ícono de enchufe).\n\nEn el monitor serial deberías ver el ESP32 conectándose al Wi-Fi y, una vez conectado, su dirección IP. Copia esa IP y pégala en el navegador de tu PC o teléfono (que tienen que estar en la misma red).\n\nLa página HTML que sirve el ESP32 debería aparecer.\n\n## Conclusión\n\nTienes un servidor web minimalista corriendo en el ESP32 con ESP-IDF. Esta es la base para proyectos más ambiciosos: control de relés, lectura de sensores en tiempo real, dashboards IoT o automatización del hogar. ESP-IDF da más control y mejor rendimiento que Arduino IDE, a cambio de una curva de aprendizaje más empinada — pero el esfuerzo vale la pena cuando necesitas exprimir al máximo las capacidades del chip.",
+      "materials_list": [
+        {
+          "name": "Placa ESP32 (DevKit, WROOM, S3 u otro modelo)",
+          "qty": 1,
+          "role": "microcontrolador"
+        },
+        {
+          "name": "Cable USB (micro USB o tipo C según placa)",
+          "qty": 1,
+          "role": "alimentación y programación"
+        }
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Instalar la extensión ESP-IDF en VS Code",
+          "text": "Instala VS Code y la extensión oficial ESP-IDF Espressif. Configura la versión 5.4.1 del framework siguiendo el wizard. Asegúrate de poder compilar el sample_project antes de continuar.",
+          "image_url": null
+        },
+        {
+          "position": 2,
+          "name": "Crear un nuevo proyecto con el New Project Wizard",
+          "text": "Desde la extensión ESP-IDF, abre Advanced > New Project Wizard. Define nombre, directorio, modelo de placa y puerto serial. Selecciona la plantilla sample_project.",
+          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/ESP-IDF-ESP32-Create-New-Sample-Project-using-IDF-Template.png"
+        },
+        {
+          "position": 3,
+          "name": "Configurar el Wi-Fi con Kconfig.projbuild",
+          "text": "Crea el archivo Kconfig.projbuild en la carpeta main con el menú Wi-Fi Configuration. Abre el SDK Configuration Editor y completa SSID y password de tu red.",
+          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/Kconfig-projbuild-Wi-Fi-Configuration-File.png"
+        },
+        {
+          "position": 4,
+          "name": "Escribir el código del servidor web",
+          "text": "Reemplaza el contenido de main.c con el código del servidor web usando esp_http_server. El handler responde con un string HTML cuando un cliente accede a la raíz.",
+          "image_url": null
+        },
+        {
+          "position": 5,
+          "name": "Build, flash y prueba",
+          "text": "Compila con Build, flashea con Flash y abre el Monitor serial. Copia la IP que muestra el ESP32 al conectarse al Wi-Fi y ábrela en el navegador para ver la página HTML servida.",
+          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Simple-Web-Server-Serve-HTML-Web-Page-Demonstration.png"
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "kconfig",
+          "caption": "Kconfig.projbuild — menú de configuración de Wi-Fi",
+          "code": "menu \"Wi-Fi Configuration\"\n    config ESP_WIFI_SSID\n        string \"WiFi SSID\"\n        help\n            SSID (network name) you want to connect to.\n\n    config ESP_WIFI_PASSWORD\n        string \"WiFi Password\"\n        help\n            Password of the Wi-Fi network you want to connect to.\nendmenu"
+        },
+        {
+          "lang": "c",
+          "caption": "main.c — servidor web simple con esp_http_server",
+          "code": null
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "ESP32 development board",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-esp-idf-servidor-web-simple-html-vscode&utm_content=X2-10V2&attribute_entrada=Tipo+C",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Cable USB Tipo C",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-esp-idf-servidor-web-simple-html-vscode&utm_content=B-101",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.82
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "esp32",
+      "difficulty": "advanced",
+      "estimated_time_minutes": 90,
+      "estimated_cost_clp": 10180,
+      "tags": [
+        "esp32",
+        "esp-idf",
+        "web-server",
+        "html",
+        "vscode",
+        "wifi"
+      ]
     }
   ]
 }
