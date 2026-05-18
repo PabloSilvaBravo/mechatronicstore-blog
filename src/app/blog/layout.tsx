@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BlogHeader from "./components/BlogHeader";
 import BackToTop from "./components/BackToTop";
+import UtilityBar from "./components/UtilityBar";
 import Logo from "../components/Logo";
 
 export default function BlogLayout({
@@ -10,6 +11,7 @@ export default function BlogLayout({
 }) {
   return (
     <>
+      <UtilityBar />
       <BlogHeader />
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">

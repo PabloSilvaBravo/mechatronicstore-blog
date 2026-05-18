@@ -100,6 +100,64 @@ export async function getPublishedTutorials(
 }
 
 /**
+ * Búsqueda full-text simple en title_es + subtitle_es + body_es.
+ *
+ * Pablo 18-may-2026: SearchBar del header dispara `/blog/tutoriales?q=...`
+ * y esta función filtra. SQLite no tiene FTS configurado en esta DB
+ * por ahora; usamos LIKE case-insensitive sobre los 3 campos clave.
+ * Cuando crezca el corpus, migrar a FTS5 virtual table.
+ *
+ * Para queries multi-palabra: split por espacio y exigir TODOS los
+ * tokens en al menos uno de los campos (relevancia básica). Para
+ * relevancia avanzada, FTS5 con bm25.
+ */
+export async function searchPublishedTutorials(
+  q: string,
+  limit = 50,
+): Promise<TutorialPublished[]> {
+  const trimmed = q.trim();
+  if (trimmed.length === 0) return getPublishedTutorials(limit);
+
+  const client = getClient();
+  // Split en tokens y armar AND de LIKE para cada uno
+  const tokens = trimmed
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2)
+    .slice(0, 6); // cap a 6 tokens para evitar queries patológicas
+
+  if (tokens.length === 0) return getPublishedTutorials(limit);
+
+  const conditions = tokens
+    .map(
+      () =>
+        `(lower(title_es) LIKE ? OR lower(subtitle_es) LIKE ? OR lower(body_es) LIKE ?)`,
+    )
+    .join(" AND ");
+
+  const args: string[] = [];
+  for (const t of tokens) {
+    const like = `%${t}%`;
+    args.push(like, like, like);
+  }
+
+  const result = await client.execute({
+    sql: `
+      SELECT *
+      FROM tutorials
+      WHERE status = 'published' AND ${conditions}
+      ORDER BY published_at DESC
+      LIMIT ?
+    `,
+    args: [...args, limit],
+  });
+
+  return result.rows.map((r) =>
+    rowToTutorial(r as unknown as typeof tutorials.$inferSelect),
+  );
+}
+
+/**
  * Tutoriales publicados que tienen un tag específico en su tags_json.
  * Usa SQLite json_each para iterar el array sin parsear JSON en TS.
  *

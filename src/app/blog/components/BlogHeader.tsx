@@ -1,9 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
 import Logo from "../../components/Logo";
+import SearchBar from "./SearchBar";
+import HeaderActions from "./HeaderActions";
+
+/**
+ * Placeholder visual de SearchBar mientras Suspense resuelve. Mismo
+ * tamaño que el campo real para evitar layout shift.
+ */
+function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
+  if (variant === "icon") {
+    return (
+      <div
+        className="w-10 h-10 rounded-lg"
+        style={{ background: "var(--bg-hover)" }}
+        aria-hidden
+      />
+    );
+  }
+  return (
+    <div
+      className="h-10 rounded-lg"
+      style={{ background: "var(--brand-purple)", opacity: 0.85 }}
+      aria-hidden
+    />
+  );
+}
 
 const CATEGORIES = [
   { slug: "arduino", label: "Arduino", icon: "🔌" },
@@ -16,18 +41,25 @@ const CATEGORIES = [
 ];
 
 /**
- * Header sticky con branding, nav categorías (click-to-open dropdown),
- * theme toggle y mobile hamburger.
+ * BlogHeader v3 — harmonizado con mechatronicstore.cl (Pablo 18-may-2026).
  *
- * Pablo 18-may-2026 audit visual: el dropdown hover-only era inutilizable
- * en mobile + se cerraba antes de poder hacer click en desktop. Ahora es
- * click-controlled con click-outside listener para cerrar.
+ * Reestructurado a 3 filas EXACTAS como el store, para que el usuario
+ * sienta que blog y tienda son un solo sitio:
+ *
+ *   Row 1: UtilityBar (montado afuera en layout, sticky top)
+ *   Row 2: Main bar — Logo · SearchBar · HeaderActions · Theme · Burger
+ *   Row 3: Nav menu — Inicio · Tutoriales · Categorías ▼ · Mecha Noticias ↗ · Tienda ↗
+ *
+ * Mobile: search collapsa a icono, nav se vuelve hamburger.
+ *
+ * El UtilityBar (envío gratis) está montado en layout.tsx fuera del
+ * BlogHeader para que se mantenga arriba aunque el header sticky
+ * cambie de comportamiento.
  */
 export default function BlogHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [catsOpen, setCatsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLLIElement>(null);
 
   // Click-outside para cerrar dropdown
   useEffect(() => {
@@ -51,7 +83,7 @@ export default function BlogHeader() {
     };
   }, [catsOpen]);
 
-  // Cerrar mobile menu al cambiar de ruta (best effort via popstate)
+  // Cerrar mobile menu al cambiar de ruta
   useEffect(() => {
     const close = () => setMobileOpen(false);
     window.addEventListener("popstate", close);
@@ -60,131 +92,55 @@ export default function BlogHeader() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b"
+      className="sticky top-0 z-40"
       style={{
-        borderColor: "var(--border-subtle)",
         backgroundColor: "var(--bg-overlay)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex items-center justify-between gap-4 py-3 sm:py-4">
-          {/* Logo SVG mechatronic + BLOG */}
+      {/* ─── Row 2: Main bar ──────────────────────────────────────
+          Layout horizontal: [Logo] [SearchBar grows] [Actions]
+          Replica el main bar del store. */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex items-center gap-3 sm:gap-5 py-3">
+          {/* Logo */}
           <Link
             href="/blog"
-            className="flex items-center hover:opacity-80 transition-opacity"
+            className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0"
             aria-label="Blog MechatronicStore"
           >
             <Logo size="md" />
           </Link>
 
-          {/* Desktop nav
-              Pablo 18-may-2026: orden "Tienda primero" — el blog existe
-              para llevar tráfico a la tienda, así que el CTA principal
-              tiene que ser visible siempre. Sin icono external (se veía
-              feo). Sin underlink en Tienda — está estilizado como pill
-              destacado para diferenciarse del resto de la nav. */}
-          <nav className="hidden md:flex items-center gap-4 text-sm">
-            <a
-              href="https://www.mechatronicstore.cl"
-              className="px-3.5 py-1.5 rounded-md text-xs font-bold uppercase tracking-[0.08em] transition-all"
-              style={{
-                background: "var(--brand-yellow)",
-                color: "var(--text-on-yellow)",
-              }}
-            >
-              Tienda
-            </a>
+          {/* Search bar — grande, ocupa espacio disponible.
+              Desktop: variant full (campo expandido).
+              Mobile: variant icon (botón lupa que abre modal).
+              Suspense porque SearchBar usa useSearchParams (client-only)
+              y Next.js 16 exige boundary explícito en static prerender. */}
+          <div className="hidden md:block flex-1 max-w-2xl">
+            <Suspense fallback={<SearchBarFallback variant="full" />}>
+              <SearchBar variant="full" />
+            </Suspense>
+          </div>
+          <div className="md:hidden flex-1" />
 
-            <Link
-              href="/blog"
-              className="underlink px-1 py-2"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Inicio
-            </Link>
-
-            {/* Categorías dropdown — click-controlled */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setCatsOpen((v) => !v)}
-                className="px-3 py-2 rounded-md transition-colors hover:bg-[color:var(--bg-hover)] inline-flex items-center gap-1.5"
-                style={{
-                  color: catsOpen ? "var(--text)" : "var(--text-muted)",
-                  backgroundColor: catsOpen ? "var(--bg-hover)" : "transparent",
-                }}
-                aria-expanded={catsOpen}
-                aria-haspopup="menu"
-              >
-                Categorías
-                <svg
-                  className={`h-3.5 w-3.5 transition-transform ${catsOpen ? "rotate-180" : ""}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  aria-hidden
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                  />
-                </svg>
-              </button>
-              {catsOpen && (
-                <div
-                  role="menu"
-                  className="absolute top-full right-0 mt-1.5 w-64 rounded-xl border shadow-2xl py-2 z-50"
-                  style={{
-                    borderColor: "var(--border)",
-                    backgroundColor: "var(--bg-elevated)",
-                    boxShadow: "0 12px 40px var(--shadow-color)",
-                  }}
-                >
-                  <div
-                    className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] border-b mb-1"
-                    style={{
-                      color: "var(--text-dim)",
-                      borderColor: "var(--border-subtle)",
-                    }}
-                  >
-                    Por temática
-                  </div>
-                  {/* Pablo 18-may-2026: emojis fuera. luisllamas usa
-                      texto puro en su dropdown — se siente más adulto /
-                      técnico. El emoji solo se queda en mobile menu donde
-                      ayuda a tap target. */}
-                  {CATEGORIES.map((c) => (
-                    <Link
-                      key={c.slug}
-                      href={`/blog/categoria/${c.slug}`}
-                      role="menuitem"
-                      className="accent-bar block px-3 py-2 mx-1 rounded-md text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
-                      style={{ color: "var(--text)" }}
-                      onClick={() => setCatsOpen(false)}
-                    >
-                      <span className="font-medium">{c.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
+          {/* Right cluster: search icon en mobile + actions + theme + burger */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div className="md:hidden">
+              <Suspense fallback={<SearchBarFallback variant="icon" />}>
+                <SearchBar variant="icon" />
+              </Suspense>
             </div>
-
-          </nav>
-
-          {/* Right cluster */}
-          <div className="flex items-center gap-2">
+            <HeaderActions />
             <ThemeToggle />
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg border transition-colors"
+              className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
               style={{
-                borderColor: "var(--border)",
-                backgroundColor: mobileOpen ? "var(--bg-hover)" : "var(--bg-elevated)",
+                backgroundColor: mobileOpen ? "var(--bg-hover)" : "transparent",
                 color: "var(--text)",
               }}
               aria-label="Menú"
@@ -216,21 +172,161 @@ export default function BlogHeader() {
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile menu */}
-        {mobileOpen && (
-          <div
-            ref={mobileMenuRef}
-            className="md:hidden border-t pb-4 pt-3 fade-in-up"
-            style={{ borderColor: "var(--border-subtle)" }}
-          >
+      {/* ─── Row 3: Nav menu ─────────────────────────────────────
+          Desktop only. Replica el nav menu del store: items
+          horizontales con dropdowns. */}
+      <div
+        className="hidden md:block border-t"
+        style={{ borderColor: "var(--border-subtle)" }}
+      >
+        <nav className="mx-auto max-w-7xl px-4 sm:px-6">
+          <ul className="flex items-center gap-6 text-xs font-bold uppercase tracking-[0.08em] py-2.5">
+            <li>
+              <Link
+                href="/blog"
+                className="underlink py-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Inicio
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/tutoriales"
+                className="underlink py-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Tutoriales
+              </Link>
+            </li>
+            <li className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setCatsOpen((v) => !v)}
+                className="inline-flex items-center gap-1 underlink py-1"
+                style={{
+                  color: catsOpen ? "var(--text)" : "var(--text-muted)",
+                }}
+                aria-expanded={catsOpen}
+                aria-haspopup="menu"
+              >
+                Categorías
+                <svg
+                  className={`h-3 w-3 transition-transform ${catsOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                  />
+                </svg>
+              </button>
+              {catsOpen && (
+                <div
+                  role="menu"
+                  className="absolute top-full left-0 mt-2 w-64 rounded-xl border shadow-2xl py-2 z-50"
+                  style={{
+                    borderColor: "var(--border)",
+                    backgroundColor: "var(--bg-elevated)",
+                    boxShadow: "0 12px 40px var(--shadow-color)",
+                  }}
+                >
+                  <div
+                    className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] border-b mb-1"
+                    style={{
+                      color: "var(--text-dim)",
+                      borderColor: "var(--border-subtle)",
+                    }}
+                  >
+                    Por temática
+                  </div>
+                  {CATEGORIES.map((c) => (
+                    <Link
+                      key={c.slug}
+                      href={`/blog/categoria/${c.slug}`}
+                      role="menuitem"
+                      className="accent-bar block px-3 py-2 mx-1 rounded-md text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
+                      style={{ color: "var(--text)" }}
+                      onClick={() => setCatsOpen(false)}
+                    >
+                      <span className="font-medium normal-case tracking-normal">
+                        {c.label}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </li>
+            {/* External links — Mecha Noticias + Tienda con flecha ↗ */}
+            <li className="ml-auto flex items-center gap-6">
+              <a
+                href="https://noticias.mechatronicstore.cl/?utm_source=blog&utm_medium=header_nav"
+                className="inline-flex items-center gap-1 underlink py-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Mecha Noticias
+                <svg
+                  className="w-2.5 h-2.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" />
+                </svg>
+              </a>
+              <a
+                href="https://www.mechatronicstore.cl/?utm_source=blog&utm_medium=header_nav"
+                className="inline-flex items-center gap-1 underlink py-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Tienda
+                <svg
+                  className="w-2.5 h-2.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" />
+                </svg>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* ─── Mobile menu (drawer) ─────────────────────────────── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden border-t pb-4 pt-3 fade-in-up"
+          style={{ borderColor: "var(--border-subtle)" }}
+        >
+          <div className="mx-auto max-w-7xl px-4">
             <Link
               href="/blog"
               className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-[color:var(--bg-hover)]"
               style={{ color: "var(--text)" }}
               onClick={() => setMobileOpen(false)}
             >
-              📰 Inicio
+              Inicio
+            </Link>
+            <Link
+              href="/blog/tutoriales"
+              className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-[color:var(--bg-hover)]"
+              style={{ color: "var(--text)" }}
+              onClick={() => setMobileOpen(false)}
+            >
+              Todos los tutoriales
             </Link>
             <div
               className="mt-3 px-3 text-[10px] font-bold uppercase tracking-[0.12em]"
@@ -252,9 +348,25 @@ export default function BlogHeader() {
                 </Link>
               ))}
             </div>
+            <div
+              className="mt-3 px-3 text-[10px] font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--text-dim)" }}
+            >
+              Ecosistema
+            </div>
             <a
-              href="https://www.mechatronicstore.cl"
-              className="mt-3 flex items-center justify-center gap-2 mx-3 py-3 text-sm font-bold rounded-lg"
+              href="https://noticias.mechatronicstore.cl/?utm_source=blog&utm_medium=mobile_nav"
+              className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <span className="font-medium">Mecha Noticias</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" />
+              </svg>
+            </a>
+            <a
+              href="https://www.mechatronicstore.cl/?utm_source=blog&utm_medium=mobile_nav"
+              className="mt-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-lg"
               style={{
                 background:
                   "linear-gradient(135deg, var(--brand-purple), var(--brand-purple-light))",
@@ -264,8 +376,8 @@ export default function BlogHeader() {
               Visitar la tienda →
             </a>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
 }
