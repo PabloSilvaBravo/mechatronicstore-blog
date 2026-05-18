@@ -72,10 +72,27 @@ const GENERIC_COMPONENTS = new Set([
 const VALUE_RE = /^\d+(?:[a-zA-Z]+|[.,]\d+)?$/;
 
 function tokenize(s: string): string[] {
-  return s
+  const raw = s
     .toLowerCase()
     .split(/[^a-záéíóúñ0-9]+/i)
     .filter((t) => t.length > 0);
+
+  // Pablo 18-may-2026: bug "LED 5 mm" no matcheaba con "LED 5mm rojo"
+  // porque "5 mm" tokeniza como ["5", "mm"] vs "5mm" como ["5mm"]. Acá
+  // sintetizamos también la concatenación `\d+` + adyacente alfa → "5mm",
+  // así ambos lados comparten el mismo token-valor.
+  const synthesized: string[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    synthesized.push(raw[i]);
+    if (
+      /^\d+$/.test(raw[i]) &&
+      i + 1 < raw.length &&
+      /^[a-záéíóúñ]+$/i.test(raw[i + 1])
+    ) {
+      synthesized.push(raw[i] + raw[i + 1]);
+    }
+  }
+  return synthesized;
 }
 
 /**
