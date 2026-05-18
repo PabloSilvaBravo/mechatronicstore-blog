@@ -153,16 +153,19 @@ export default function BlogHeader() {
                   >
                     Por temática
                   </div>
+                  {/* Pablo 18-may-2026: emojis fuera. luisllamas usa
+                      texto puro en su dropdown — se siente más adulto /
+                      técnico. El emoji solo se queda en mobile menu donde
+                      ayuda a tap target. */}
                   {CATEGORIES.map((c) => (
                     <Link
                       key={c.slug}
                       href={`/blog/categoria/${c.slug}`}
                       role="menuitem"
-                      className="flex items-center gap-3 px-3 py-2.5 mx-1 rounded-md text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
+                      className="accent-bar block px-3 py-2 mx-1 rounded-md text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
                       style={{ color: "var(--text)" }}
                       onClick={() => setCatsOpen(false)}
                     >
-                      <span className="text-base" aria-hidden>{c.icon}</span>
                       <span className="font-medium">{c.label}</span>
                     </Link>
                   ))}

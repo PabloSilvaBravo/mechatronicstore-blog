@@ -91,33 +91,34 @@ export default async function CategoryPage({ params }: Props) {
         <span style={{ color: "var(--text-muted)" }}>{meta.label}</span>
       </nav>
 
-      {/* Hero header con decoración */}
-      <header className="relative mb-10 -mx-4 px-4 py-8 sm:-mx-6 sm:px-6 sm:py-12">
+      {/* Hero header con decoración + H1 en gradient block (Pack C-lite)
+          Pablo 18-may-2026: replicando luisllamas — H1 wrapped en
+          container con bg gradient brand. Subtitle en monospace
+          con caret blink. */}
+      <header className="relative mb-10 -mx-4 px-4 py-10 sm:-mx-6 sm:px-6 sm:py-14">
         <HeroDecor />
         <div className="relative">
           <div
-            className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
+            className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
             style={{ color: "var(--brand-yellow)" }}
           >
-            <span aria-hidden className="text-base">
-              {meta.icon}
-            </span>
-            <span>Categoría</span>
+            Sección · {meta.label}
           </div>
           <h1
-            className="font-headline mb-3 tracking-tight"
+            className="font-headline mb-4 tracking-tight"
             style={{
               fontSize: "clamp(2rem, 1.5rem + 3vw, 3.5rem)",
               lineHeight: 1.05,
-              color: "var(--text)",
               letterSpacing: "-0.02em",
             }}
           >
-            Tutoriales de {meta.label}
+            <span className="h1-gradient-block">
+              Tutoriales de {meta.label}
+            </span>
           </h1>
           <p
-            className="text-lg sm:text-xl"
-            style={{ color: "var(--text-muted)", maxWidth: "60ch" }}
+            className="subtitle-mono with-caret mt-4"
+            style={{ maxWidth: "60ch" }}
           >
             {meta.description}.
           </p>

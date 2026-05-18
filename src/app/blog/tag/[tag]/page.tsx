@@ -128,7 +128,7 @@ export default async function TagPage({ params }: PageProps) {
         <span style={{ color: "var(--text-muted)" }}>#{decoded}</span>
       </nav>
 
-      <header className="relative mb-10 -mx-4 px-4 py-8 sm:-mx-6 sm:px-6 sm:py-10">
+      <header className="relative mb-10 -mx-4 px-4 py-10 sm:-mx-6 sm:px-6 sm:py-12">
         <HeroDecor />
         <div className="relative">
           <div
@@ -138,19 +138,17 @@ export default async function TagPage({ params }: PageProps) {
             Etiqueta
           </div>
           <h1
-            className="font-headline mb-2 tracking-tight"
+            className="font-headline mb-4 tracking-tight"
             style={{
               fontSize: "clamp(2rem, 1.5rem + 3vw, 3.25rem)",
-              color: "var(--text)",
               letterSpacing: "-0.02em",
               lineHeight: 1.05,
             }}
           >
-            #{decoded}
+            <span className="h1-gradient-block">#{decoded}</span>
           </h1>
           <p
-            className="text-sm uppercase tracking-wider"
-            style={{ color: "var(--text-dim)" }}
+            className="subtitle-mono with-caret mt-4"
           >
             {totalCount} {totalCount === 1 ? "tutorial publicado" : "tutoriales publicados"}
           </p>

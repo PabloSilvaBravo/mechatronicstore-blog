@@ -269,10 +269,10 @@ export default async function TutorialPage({ params }: Props) {
           {tutorial.title_es}
         </h1>
 
-        {/* Subtitle */}
+        {/* Subtitle en monospace estilo "engineering log" */}
         <p
-          className="text-lg sm:text-xl mb-6 leading-relaxed"
-          style={{ color: "var(--text-muted)", maxWidth: "60ch" }}
+          className="subtitle-mono mb-6"
+          style={{ maxWidth: "60ch", fontSize: "clamp(1rem, 0.92rem + 0.35vw, 1.125rem)" }}
         >
           {tutorial.subtitle_es}
         </p>

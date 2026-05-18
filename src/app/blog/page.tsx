@@ -70,11 +70,11 @@ export default async function BlogHomePage() {
             Construye electrónica sin esperar a que lleguen las piezas.
           </h1>
           <p
-            className="text-lg sm:text-xl"
-            style={{ color: "var(--text-muted)", maxWidth: "62ch" }}
+            className="subtitle-mono mt-2"
+            style={{ maxWidth: "62ch", fontSize: "clamp(1rem, 0.9rem + 0.4vw, 1.1rem)" }}
           >
-            Cada tutorial usa componentes que ya están en stock en MechatronicStore.
-            Despacho a todo Chile en 24-48 horas, precios en CLP.
+            Componentes en stock en MechatronicStore. Despacho a Chile en 24-48 h.
+            <span className="typewriter-caret" aria-hidden />
           </p>
         </header>
         <div
@@ -129,10 +129,10 @@ export default async function BlogHomePage() {
             <span className="wave" aria-hidden>👋</span>
           </h1>
           <p
-            className="text-lg sm:text-xl leading-relaxed"
-            style={{ color: "var(--text-muted)", maxWidth: "62ch" }}
+            className="subtitle-mono mt-2 leading-relaxed"
+            style={{ maxWidth: "62ch", fontSize: "clamp(1rem, 0.9rem + 0.4vw, 1.1rem)" }}
           >
-            Cada tutorial usa componentes que ya están en stock en{" "}
+            Componentes en stock en{" "}
             <a
               href="https://www.mechatronicstore.cl"
               className="underlink font-semibold"
@@ -140,8 +140,8 @@ export default async function BlogHomePage() {
             >
               MechatronicStore
             </a>
-            . Despacho a todo Chile en 24-48 horas, precios en CLP, sin
-            importaciones ni reemplazos.
+            . Despacho a Chile en 24-48 h, precios en CLP, sin importaciones.
+            <span className="typewriter-caret" aria-hidden />
           </p>
         </div>
       </header>

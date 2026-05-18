@@ -629,6 +629,63 @@ input, textarea, select {
   animation: blink-caret 1.1s step-end infinite;
 }
 
+/* ── #6b. Subtitle monospace estilo "terminal engineering" ────────
+ *
+ * Pablo 18-may-2026 v3 (Pack B audit luisllamas): los subtítulos del
+ * sitio de Luis están en font-mono con caret blinking al final.
+ * Eso da el vibe "terminal / hacker" que define el sitio. Replicamos
+ * con .subtitle-mono que aplica:
+ *   - font-mono (mismo --font-mono de los code blocks)
+ *   - tracking ligero
+ *   - color text-muted (no full bright)
+ *   - opcional caret ::after blink si se agrega .with-caret
+ * ─────────────────────────────────────────────────────────────── */
+.subtitle-mono {
+  font-family: var(--font-mono);
+  font-size: clamp(0.95rem, 0.8rem + 0.4vw, 1.05rem);
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.subtitle-mono.with-caret::after {
+  content: "|";
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--brand-yellow);
+  font-weight: 600;
+  animation: blink-caret 1.1s step-end infinite;
+}
+
+/* ── #11. Gradient bg block para H1 destacado (Pack C-lite) ───────
+ *
+ * Luisllamas tiene su H1 de categoría en un BLOQUE con gradient bg
+ * blue→purple (no es text gradient, es un container). Da muchísimo
+ * peso visual. Replicamos con .h1-gradient-block — wrappea el H1 en
+ * un span/div con padding generoso, border-radius medio, y bg gradient
+ * brand purple→yellow. Optional shadow para que "flote".
+ * ─────────────────────────────────────────────────────────────── */
+.h1-gradient-block {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  background: var(--gradient-brand);
+  color: var(--text-on-purple);
+  box-shadow: 0 8px 32px -8px color-mix(in srgb, var(--brand-purple) 40%, transparent);
+  /* Levísimo border-top más claro para sensación 3D, igual que Luis */
+  position: relative;
+}
+
+.h1-gradient-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
 /* ── #7. Button shimmer/glow en hover (.btn-luis) ─────────────────
  * Para CTAs primarios — el botón hace un sweep de luz al hover.
  * No es para todos los botones, solo opt-in via .btn-luis.
