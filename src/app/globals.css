@@ -427,9 +427,19 @@ input, textarea, select {
 }
 
 /* ── #2. Card "luisllamas style" — gradient border en hover ───────
- * El truco: padding-box + border-box dual background, así el border
- * de 1px se vuelve gradient mientras el interior queda sólido.
- * `transition: .4s ease all` para que el cambio se sienta orgánico.
+ *
+ * Pablo 18-may-2026 v2: inspeccioné el sitio de Luis con Playwright
+ * + getComputedStyle. Su receta REAL es más sutil que lo que tenía:
+ *   - card NO se eleva (sin translateY)
+ *   - imagen NO se escala (sin scale/translateY)
+ *   - SOLO cambia: border (transparent → gradient), box-shadow
+ *     (single layer 0 15px 40px 5px), e img filter (brightness +
+ *     contrast). La quietud es lo que hace que se vea "profesional",
+ *     no el movimiento. Movimiento sutil ≠ movimiento ausente.
+ *
+ * El truco padding-box + border-box dual background hace que el
+ * border de 1px se vuelva gradient mientras el interior queda
+ * sólido. `transition: .4s ease all` para que el cambio sea orgánico.
  * ─────────────────────────────────────────────────────────────── */
 .card-luis {
   position: relative;
@@ -438,30 +448,32 @@ input, textarea, select {
   border-radius: 12px;
   overflow: hidden;
   transition: 0.4s ease all;
-  will-change: transform, box-shadow;
+  will-change: border, box-shadow;
 }
 
 .card-luis:hover {
   border: 1px solid transparent;
-  box-shadow: var(--shadow-lifted);
+  /* Single-layer shadow grande y muy blureada — receta exacta de
+     luisllamas. Más sutil que multi-layer. */
+  box-shadow: 0 15px 40px 5px color-mix(in srgb, var(--brand-purple) 18%, transparent);
   /* Padding-box = interior sólido. Border-box = gradient brand. */
   background:
     linear-gradient(var(--bg-elevated), var(--bg-elevated)) padding-box,
     var(--gradient-brand) border-box;
-  transform: translateY(-2px);
+  /* Sin transform — la card queda quieta. */
 }
 
-/* La imagen dentro del card hace lift + scale leve — sutil pero
-   se nota mucho cuando lo combinás con el gradient border. */
+/* La imagen dentro del card SOLO cambia su filter — sin transform.
+   Brightness 0.92 + contrast 1.15 da el efecto "más nítida" sin
+   mover nada. Receta luisllamas literal. */
 .card-luis img:first-of-type,
 .card-luis .card-img {
-  transition: transform 0.5s ease, filter 0.4s ease;
+  transition: filter 0.4s ease;
 }
 
 .card-luis:hover img:first-of-type,
 .card-luis:hover .card-img {
-  transform: scale(1.05) translateY(-4px);
-  filter: brightness(1.05);
+  filter: brightness(0.92) contrast(1.15);
 }
 
 /* ── #3. Animated underline (.underlink) ──────────────────────────
