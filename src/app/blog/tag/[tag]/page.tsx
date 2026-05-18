@@ -7,6 +7,8 @@ import {
   countTutorialsByTag,
   relatedTags,
 } from "@/lib/db/queries";
+import HeroDecor from "../../components/HeroDecor";
+import RevealOnScroll from "../../components/RevealOnScroll";
 
 const BASE_URL = "https://www.mechatronicstore.cl";
 const MIN_TUTORIALS_FOR_INDEX = 3;
@@ -118,66 +120,74 @@ export default async function TagPage({ params }: PageProps) {
       />
 
       <nav
-        className="text-sm mb-6"
-        style={{ color: "var(--text-muted)" }}
+        className="text-xs uppercase tracking-[0.12em] mb-6"
+        style={{ color: "var(--text-dim)" }}
       >
-        <Link href="/blog" className="hover:underline">← Blog</Link>
+        <Link href="/blog" className="underlink">Blog</Link>
+        <span className="mx-2" aria-hidden>›</span>
+        <span style={{ color: "var(--text-muted)" }}>#{decoded}</span>
       </nav>
 
-      <header className="mb-8">
-        <div
-          className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
-          style={{ color: "var(--brand-yellow)" }}
-        >
-          Etiqueta
+      <header className="relative mb-10 -mx-4 px-4 py-8 sm:-mx-6 sm:px-6 sm:py-10">
+        <HeroDecor />
+        <div className="relative">
+          <div
+            className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
+            style={{ color: "var(--brand-yellow)" }}
+          >
+            Etiqueta
+          </div>
+          <h1
+            className="font-headline mb-2 tracking-tight"
+            style={{
+              fontSize: "clamp(2rem, 1.5rem + 3vw, 3.25rem)",
+              color: "var(--text)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.05,
+            }}
+          >
+            #{decoded}
+          </h1>
+          <p
+            className="text-sm uppercase tracking-wider"
+            style={{ color: "var(--text-dim)" }}
+          >
+            {totalCount} {totalCount === 1 ? "tutorial publicado" : "tutoriales publicados"}
+          </p>
         </div>
-        <h1
-          className="text-3xl sm:text-4xl font-bold mb-2"
-          style={{ color: "var(--text)" }}
-        >
-          #{decoded}
-        </h1>
-        <p
-          className="text-sm uppercase tracking-wider"
-          style={{ color: "var(--text-dim)" }}
-        >
-          {totalCount} {totalCount === 1 ? "tutorial publicado" : "tutoriales publicados"}
-        </p>
       </header>
 
-      <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        {items.map((t) => (
-          <li
-            key={t.slug}
-            className="border rounded-lg overflow-hidden transition-colors hover:border-[color:var(--brand-yellow)]"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <Link href={`/blog/${t.slug}`} className="block">
-              {t.hero_image_url && (
-                <img
-                  src={t.hero_image_url}
-                  alt={t.title_es}
-                  className="w-full h-40 object-cover"
-                />
-              )}
-              <div className="p-4">
-                <h2
-                  className="font-bold mb-1 line-clamp-2"
-                  style={{ color: "var(--text)" }}
-                >
-                  {t.title_es}
-                </h2>
-                <p
-                  className="text-sm line-clamp-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {t.subtitle_es}
-                </p>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <RevealOnScroll>
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {items.map((t) => (
+            <li key={t.slug}>
+              <Link href={`/blog/${t.slug}`} className="card-luis group block">
+                {t.hero_image_url && (
+                  <img
+                    src={t.hero_image_url}
+                    alt={t.title_es}
+                    className="card-img w-full h-44 object-cover"
+                  />
+                )}
+                <div className="p-4">
+                  <h2
+                    className="font-headline font-bold leading-tight mb-1 line-clamp-2 group-hover:text-[color:var(--text-accent)] transition-colors"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {t.title_es}
+                  </h2>
+                  <p
+                    className="text-sm line-clamp-2"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {t.subtitle_es}
+                  </p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </RevealOnScroll>
 
       {related.length >= 3 && (
         <section
@@ -201,10 +211,10 @@ export default async function TagPage({ params }: PageProps) {
               <Link
                 key={r.tag}
                 href={`/blog/tag/${encodeURIComponent(r.tag)}`}
-                className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors hover:bg-[color:var(--bg-hover)]"
+                className="pill inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm"
                 style={{
-                  borderColor: "var(--border)",
                   color: "var(--text-muted)",
+                  backgroundColor: "var(--bg-elevated)",
                 }}
               >
                 <span style={{ color: "var(--text-dim)" }}>#</span>

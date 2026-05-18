@@ -59,7 +59,7 @@ export default async function RelatedTutorials({
         </div>
         <Link
           href={`/blog/categoria/${category}`}
-          className="text-sm whitespace-nowrap hover:underline"
+          className="underlink text-sm whitespace-nowrap"
           style={{ color: "var(--text-accent)" }}
         >
           Ver todos →
@@ -70,13 +70,13 @@ export default async function RelatedTutorials({
           <li key={t.slug}>
             <Link
               href={`/blog/${t.slug}`}
-              className="group flex gap-4 p-3 rounded-lg transition-colors hover:bg-[color:var(--bg-elevated)]"
+              className="card-luis group flex gap-4 p-3"
             >
               {t.hero_image_url && (
                 <img
                   src={t.hero_image_url}
                   alt={t.title_es}
-                  className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-md flex-shrink-0 border"
+                  className="card-img w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-md flex-shrink-0 border"
                   style={{ borderColor: "var(--border-subtle)" }}
                 />
               )}

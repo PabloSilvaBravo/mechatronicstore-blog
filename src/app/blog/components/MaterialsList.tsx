@@ -277,18 +277,15 @@ export default function MaterialsList({
                     source="material_list"
                     productId={String(product.product_id)}
                     productName={product.name_original}
-                    className="pill inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-md whitespace-nowrap"
+                    className="btn-luis inline-flex items-center gap-1 text-xs font-bold rounded-md whitespace-nowrap"
+                    style={{
+                      backgroundColor: "var(--brand-yellow)",
+                      color: "var(--text-on-yellow)",
+                      padding: "0.4rem 0.75rem",
+                      borderRadius: "0.375rem",
+                    }}
                   >
-                    <span
-                      style={{
-                        backgroundColor: "var(--brand-yellow)",
-                        color: "var(--text-on-yellow)",
-                        padding: "0.4rem 0.75rem",
-                        borderRadius: "0.375rem",
-                      }}
-                    >
-                      Agregar →
-                    </span>
+                    Agregar →
                   </TrackableLink>
                 </>
               ) : (
