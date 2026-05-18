@@ -1,92 +1,192 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-17T15:05:00+00:00",
+  "translated_at": "2026-05-18T12:05:00+00:00",
   "translations": [
     {
-      "id": "e28a037dfbd9",
-      "slug": "esp32-cyd-pantalla-touchscreen-microsd-simultaneo",
-      "title_es": "ESP32 CYD: pantalla, touchscreen y microSD funcionando juntos sin conflictos",
-      "subtitle_es": "Aprende a usar pantalla, touchscreen y tarjeta microSD al mismo tiempo en la placa ESP32 CYD evitando los conflictos del bus SPI.",
-      "body_es": "## Introducción\n\nLa placa **ESP32 CYD (Cheap Yellow Display)** —también conocida como ESP32-2432S028R— integra en un solo módulo un ESP32 WROOM, una pantalla TFT de 2.8\" con resolución 240x320 y touchscreen resistivo, además de una ranura para tarjeta microSD. El detalle: usar las tres funciones a la vez no es tan directo como parece, porque todas comparten el protocolo SPI y se pelean por los mismos pines.\n\nEn esta guía vamos a armar un ejemplo simple que muestra en pantalla las coordenadas del punto que tocas y, al mismo tiempo, las guarda en un archivo dentro de la microSD. Una base sólida para que después puedas construir loggers de datos, interfaces con guardado de configuración o cualquier proyecto que requiera las tres funciones operando en paralelo.\n\n> **Probado en:** ESP32-2432S028R 2.8\" 240x320 con touchscreen resistivo. Si recién partes con esta placa, te conviene revisar primero un tutorial introductorio del CYD antes de seguir.\n\n## Por qué se produce el conflicto SPI\n\nEl ESP32 cuenta con dos buses SPI por hardware: **VSPI** y **HSPI**. Los pines por defecto son:\n\n| SPI  | MOSI    | MISO    | SCLK    | CS     |\n|------|---------|---------|---------|--------|\n| VSPI | GPIO 23 | GPIO 19 | GPIO 18 | GPIO 5 |\n| HSPI | GPIO 13 | GPIO 12 | GPIO 14 | GPIO 15 |\n\nEn el CYD la microSD usa los pines por defecto de VSPI (MOSI 23 / MISO 19 / SCLK 18 / CS 5). En nuestros ejemplos, la pantalla se configura en HSPI y el touchscreen también queda en VSPI. Acá está el problema: el touchscreen escucha eventos de toque de manera continua, así que no es buena idea desactivarlo cada vez que escribimos en la microSD. Y aunque en teoría varios dispositivos pueden compartir un bus SPI usando distintos CS, en la práctica este enfoque falla con frecuencia.\n\n## La solución: Software SPI para el touchscreen\n\nEl truco es **separar al touchscreen del bus VSPI por hardware** y hacer que se comunique vía Software SPI (SoftSPI) en pines libres. Para eso usamos una versión modificada de la librería `XPT2046_Touchscreen` que llamaremos `XPT2046_TouchscreenSOFTSPI`, junto con una librería auxiliar `SoftSPI`.\n\nDe esa forma:\n- La **pantalla** sigue en HSPI.\n- La **microSD** se queda con los pines hardware de VSPI.\n- El **touchscreen** corre por software, sin tocar ningún bus hardware.\n\n## Prerrequisitos\n\nAntes de avanzar, deja todo listo:\n\n1. **Arduino IDE 2.x** instalado.\n2. **Placas ESP32** agregadas al Arduino IDE (vía Board Manager).\n3. **Librería TFT_eSPI** instalada y configurada con el `User_Setup.h` correcto para CYD (no uses los User_Setup que circulan por internet: usa el de la guía oficial de Random Nerd Tutorials).\n4. **Librería LVGL 9.x** de kisvegabor instalada, con su `lv_conf.h` adaptado.\n5. **Librerías XPT2046_TouchscreenSOFTSPI y SoftSPI**: descarga el .zip con los 4 archivos (.cpp y .h de ambas librerías) desde el enlace del tutorial original.\n\n## Paso 1 — Preparar la carpeta del sketch\n\nLas librerías SoftSPI y la versión modificada del touchscreen las vamos a instalar **localmente en la carpeta del sketch**, no globalmente.\n\n1. Abre Arduino IDE y guarda un sketch nuevo (`Archivo > Guardar como…`) en la ubicación que prefieras.\n2. Ve a `Programa > Mostrar carpeta del programa` para abrirla en el explorador.\n3. Copia ahí los 4 archivos:\n   - `XPT2046_TouchscreenSOFTSPI.cpp`\n   - `XPT2046_TouchscreenSOFTSPI.h`\n   - `SoftSPI.cpp`\n   - `SoftSPI.h`\n4. Reinicia Arduino IDE. Los archivos deberían aparecer como pestañas adicionales del proyecto.\n\n## Paso 2 — Conexiones físicas\n\nEn la placa CYD no necesitas cablear nada externo: pantalla, touchscreen y lector microSD ya están integrados en el PCB. Solo necesitas:\n\n- **CYD conectada al PC** con un cable USB (micro USB o tipo C según versión).\n- **Tarjeta microSD** formateada en FAT32 insertada en la ranura trasera de la placa.\n\nLos pines internos quedan así:\n\n| Función     | Pin GPIO     | Notas              |\n|-------------|--------------|--------------------|\n| MicroSD MOSI| 23           | VSPI hardware      |\n| MicroSD MISO| 19           | VSPI hardware      |\n| MicroSD SCLK| 18           | VSPI hardware      |\n| MicroSD CS  | 5            | VSPI hardware      |\n| Touch T_DIN | 32           | SoftSPI MOSI       |\n| Touch T_OUT | 39           | SoftSPI MISO       |\n| Touch T_CLK | 25           | SoftSPI CLK        |\n| Touch T_CS  | 33           | Chip Select        |\n| Touch T_IRQ | 36           | Interrupción touch |\n\n## Paso 3 — Subir el sketch\n\nCon todo en su lugar, sube el código a la placa CYD. El sketch hace tres cosas:\n\n1. **Inicializa la microSD** en VSPI y crea un archivo `/touch_points.txt` con encabezado `x,y,z` si no existe.\n2. **Inicializa el touchscreen** con SoftSPI usando los pines T_DIN/T_OUT/T_CLK.\n3. **Inicializa la pantalla TFT** vía TFT_eSPI + LVGL para mostrar un label con la posición tocada.\n\nCada vez que tocas el touchscreen, el callback `touchscreen_read()` lee las coordenadas calibradas, las muestra en pantalla y las añade como una nueva línea al archivo de la microSD.\n\n## Paso 4 — Probar\n\nDespués de subir el código:\n\n1. Abre el Monitor Serial a 115200 baudios para ver el log de inicialización (tipo de tarjeta, capacidad, archivos existentes).\n2. Toca varios puntos en la pantalla. Verás las coordenadas X, Y y la presión Z actualizándose en vivo.\n3. Apaga la placa, extrae la microSD e insértala en tu PC.\n4. Abre `touch_points.txt`: deberías ver todas las coordenadas guardadas en formato CSV.\n\n## ¿Cuándo NO necesitas la librería modificada?\n\nSolo necesitas usar `XPT2046_TouchscreenSOFTSPI` cuando vas a usar **las tres funciones a la vez** (pantalla + touch + microSD). Si tu proyecto solo combina pantalla y touchscreen, o pantalla y microSD, puedes seguir con la librería estándar `XPT2046_Touchscreen`.\n\n## Cierre\n\nCon este truco de mover el touchscreen a Software SPI, el CYD se vuelve realmente útil para proyectos que requieren guardar datos en local: loggers de sensores con UI, interfaces con guardado de configuración, juegos con high scores persistentes o lo que se te ocurra.\n\nSi estás recién entrando al mundo del CYD y LVGL, esta es una de las habilidades clave que vale la pena dominar. Felices proyectos.",
+      "id": "9d2b09690521",
+      "slug": "esp32-tm1637-temperatura-weatherapi-display-7-segmentos",
+      "title_es": "ESP32 + TM1637: muestra la temperatura de tu ciudad sin sensor",
+      "subtitle_es": "Arma un termómetro WiFi con ESP32 y display TM1637 que consulta la WeatherAPI cada hora y alterna entre °C y °F.",
+      "body_es": "## Introducción\n\nEn este proyecto vamos a armar un mini termómetro WiFi que muestra la temperatura actual de tu ciudad en un display **TM1637 de 4 dígitos y 7 segmentos**, sin necesidad de ningún sensor físico. La gracia es que la temperatura la pedimos vía HTTP a la **WeatherAPI**, así que la placa ESP32 solo necesita estar conectada a tu red WiFi.\n\nEl display alterna automáticamente entre la lectura en grados Celsius y en Fahrenheit cada 5 segundos, y la consulta a la API se refresca cada 1 hora para no quemar el cuota gratuita.\n\n> **Probado en:** ESP32 DevKit (cualquier modelo con WiFi sirve) + módulo TM1637 4 dígitos tipo reloj.\n\n## Lo que vas a aprender\n\n- Configurar el módulo TM1637 con el ESP32 usando solo 2 pines digitales.\n- Hacer peticiones HTTP GET desde el ESP32 a una API externa.\n- Parsear JSON con ArduinoJson para extraer campos puntuales.\n- Crear símbolos personalizados (°C, °F) en un display de 7 segmentos.\n\n## Prerrequisitos\n\nAntes de partir, asegúrate de tener:\n\n1. **Arduino IDE** instalado con el soporte para placas ESP32 agregado (vía Board Manager).\n2. Una **cuenta gratuita en WeatherAPI** (weatherapi.com) para obtener tu API key. El plan free es más que suficiente.\n3. Tu **SSID y contraseña WiFi** a mano.\n\n## Materiales\n\n- ESP32 DevKit (cualquier variante con WiFi).\n- Módulo display TM1637 de 4 dígitos y 7 segmentos.\n- Cables tipo dupont macho-macho para las conexiones.\n- Cable USB para alimentar y programar el ESP32.\n\n**Costo aproximado:** ~CLP $13.880 (aproximado, según componentes que tengas disponibles).\n\n## Conociendo el TM1637\n\nEl TM1637 es un módulo que combina **4 dígitos de 7 segmentos** en una sola placa, controlados por el chip driver TM1637. Los 4 dígitos están separados por dos puntos (`:`) entre el segundo y el tercero, lo que lo hace ideal para relojes y, en nuestro caso, para mostrar valores numéricos con símbolos.\n\nUna gran ventaja: el módulo se controla con apenas **2 pines digitales** (CLK y DIO) más alimentación, así que no acapara los GPIOs del ESP32.\n\n## Obtener tu API Key de WeatherAPI\n\n1. Entra a [weatherapi.com](https://www.weatherapi.com/) y crea una cuenta gratis.\n2. Verifica tu email e inicia sesión.\n3. En tu dashboard (weatherapi.com/my/) vas a encontrar tu API key. Aunque diga que el trial expira, la key sigue funcionando libremente en el tier free.\n4. Cópiala a un lugar seguro: la vas a necesitar dentro del código.\n\nPara probarla rápido, abre esta URL en tu navegador reemplazando los valores entre llaves:\n\n```\nhttps://api.weatherapi.com/v1/current.json?q={TU_CIUDAD}&key={TU_API_KEY}\n```\n\nLa API te devuelve un JSON con un montón de datos. Para este proyecto nos interesan dos campos: `current.temp_c` y `current.temp_f`.\n\n## Conexiones físicas\n\nCablear el TM1637 al ESP32 es directo. Solo 4 cables:\n\n| TM1637 | ESP32          |\n|--------|----------------|\n| CLK    | GPIO 19        |\n| DIO    | GPIO 18        |\n| VCC    | VIN (5V) o 3V3 |\n| GND    | GND            |\n\nPuedes usar otros GPIOs si los 18 y 19 ya los tienes ocupados; basta con cambiar los `#define` en el código.\n\n## Instalación de librerías\n\nDesde el **Library Manager** de Arduino IDE, instala:\n\n1. **TM1637** (de avishorp): para controlar el display. Es vieja pero anda perfecto.\n2. **ArduinoJson** (de bblanchon): para parsear el JSON que devuelve la WeatherAPI.\n\nLos headers nativos `WiFi.h` y `HTTPClient.h` ya vienen incluidos con el core de ESP32.\n\n## El código\n\nAntes de subir, reemplaza tres cosas en el código:\n\n- `REPLACE_WITH_YOUR_SSID` → nombre de tu red WiFi.\n- `REPLACE_WITH_YOUR_PASSWORD` → contraseña de la red.\n- `REPLACE_WITH_YOUR_WeatherAPI_API_Key` → tu API key.\n- `Oporto` → cambia por tu ciudad (Santiago, Valparaíso, Concepción, etc.).\n\n```cpp\n#include <WiFi.h>\n#include <HTTPClient.h>\n#include <ArduinoJson.h>\n#include <TM1637Display.h>\n\n// Credenciales WiFi\nconst char* ssid = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\n\nconst char* api_key = \"REPLACE_WITH_YOUR_WeatherAPI_API_Key\";\nconst char* location = \"Santiago\";\n\nString url = \"https://api.weatherapi.com/v1/current.json?q=\" + String(location) + \"&key=\" + String(api_key);\n\n// Pines del TM1637\n#define CLK 19\n#define DIO 18\n\nTM1637Display display(CLK, DIO);\n\n// Símbolo °C\nconst uint8_t Celsius[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,  // Círculo (grado)\n  SEG_A | SEG_D | SEG_E | SEG_F   // C\n};\n\n// Símbolo °F\nconst uint8_t Fahrenheit[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,  // Círculo (grado)\n  SEG_F | SEG_E | SEG_A | SEG_G   // F\n};\n\nfloat currentTempC = 9999;\nfloat currentTempF = 9999;\nunsigned long lastFetchTime = 0;\nconst unsigned long fetchInterval = 3600000UL;  // 1 hora\n\nvoid initWiFi() {\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(1000);\n    Serial.println(\"Conectando a WiFi..\");\n  }\n  Serial.println(\"Conexión exitosa\");\n  Serial.print(\"IP: \");\n  Serial.println(WiFi.localIP());\n}\n\nbool updateTemperatures() {\n  HTTPClient http;\n  http.begin(url);\n  int httpCode = http.GET();\n\n  if (httpCode == HTTP_CODE_OK) {\n    String payload = http.getString();\n    Serial.print(payload);\n\n    StaticJsonDocument<1024> doc;\n    DeserializationError error = deserializeJson(doc, payload);\n    if (error) {\n      Serial.print(\"Falló parseo JSON: \");\n      Serial.println(error.c_str());\n      http.end();\n      return false;\n    }\n\n    currentTempC = doc[\"current\"][\"temp_c\"];\n    currentTempF = doc[\"current\"][\"temp_f\"];\n    http.end();\n    return true;\n  } else {\n    Serial.print(\"Error en la petición: \");\n    Serial.println(httpCode);\n    http.end();\n    return false;\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n  initWiFi();\n  display.setBrightness(7);\n\n  if (updateTemperatures()) {\n    lastFetchTime = millis();\n  }\n}\n\nvoid loop() {\n  if (millis() - lastFetchTime >= fetchInterval) {\n    if (updateTemperatures()) {\n      lastFetchTime = millis();\n    } else {\n      Serial.println(\"Falló el refresco, mantengo valores anteriores.\");\n    }\n  }\n\n  // Mostrar Celsius\n  int roundedTempC = round(currentTempC);\n  display.showNumberDec(roundedTempC, false, 2, 0);\n  display.setSegments(Celsius, 2, 2);\n  delay(5000);\n\n  // Mostrar Fahrenheit\n  int roundedTempF = round(currentTempF);\n  display.showNumberDec(roundedTempF, false, 2, 0);\n  display.setSegments(Fahrenheit, 2, 2);\n  delay(5000);\n}\n```\n\n## Cómo funciona el código\n\n### Conexión WiFi\nLa función `initWiFi()` deja al ESP32 conectado a tu red WiFi. Si no logra conectarse, queda imprimiendo el aviso hasta que enganche.\n\n### Petición a WeatherAPI\n`updateTemperatures()` arma la URL, hace el GET, valida que el código de respuesta sea 200 y parsea el JSON con ArduinoJson. Si todo va bien, guarda `temp_c` y `temp_f` en variables globales.\n\n### Refresco cada hora\nUsamos `millis()` con un intervalo de 3.600.000 ms (1 hora). Sin esto, la WeatherAPI nos cortaría el servicio rápido en su plan free por demasiadas requests.\n\n### Símbolos °C y °F\nLos arrays `Celsius` y `Fahrenheit` definen, segmento por segmento, los caracteres especiales. El círculo del grado se forma encendiendo los segmentos A, B, F, G del primer dígito.\n\n### Loop alternado\nCada 5 segundos cambiamos entre los dos modos: primero muestra `roundedTempC + °C`, luego `roundedTempF + °F`, y vuelve a empezar.\n\n## Probando el proyecto\n\nUna vez subido el código, abre el **Monitor Serial a 115200 baudios**. Deberías ver:\n\n1. La conexión al WiFi y la IP asignada al ESP32.\n2. El payload completo del JSON que devuelve WeatherAPI.\n3. La temperatura actual de tu ciudad alternándose en el display TM1637.\n\nSi el display muestra `9999`, significa que la primera petición a la API falló — revisa la API key, el nombre de la ciudad y que tengas señal WiFi estable.\n\n## Ideas para extender\n\n- Agregar un sensor DHT22 local y comparar la temperatura medida vs la pronosticada.\n- Mostrar humedad o velocidad del viento alternando con la temperatura.\n- Encender un LED RGB según el rango de temperatura (azul si <10°C, verde 10-25°C, rojo >25°C).\n- Subir el dato a un dashboard con MQTT o Home Assistant.\n\n## Cierre\n\nCon menos de CLP $14.000 en componentes y unas pocas líneas de código, tienes un termómetro WiFi para tu escritorio. Es un proyecto ideal para entender cómo el ESP32 puede consumir APIs externas y desplegar datos en hardware de bajo costo. ¡Felices proyectos!",
       "materials_list": [
-        {"name": "ESP32-2432S028R (CYD - Cheap Yellow Display 2.8\")", "qty": 1, "role": "core"},
-        {"name": "Tarjeta microSD 8GB o más (formato FAT32)", "qty": 1, "role": "almacenamiento"},
-        {"name": "Cable USB (Tipo C o micro USB según versión de la placa)", "qty": 1, "role": "alimentación y programación"},
-        {"name": "PC con Arduino IDE 2.x instalado", "qty": 1, "role": "entorno de desarrollo"}
+        {"name": "Placa ESP32 DevKit (cualquier variante con WiFi)", "qty": 1, "role": "core"},
+        {"name": "Módulo display TM1637 4 dígitos 7 segmentos", "qty": 1, "role": "visualización"},
+        {"name": "Cables tipo dupont macho-macho", "qty": 4, "role": "conexiones"},
+        {"name": "Cable USB para alimentación y programación", "qty": 1, "role": "alimentación"}
       ],
       "steps": [
         {
           "position": 1,
-          "name": "Preparar entorno y librerías",
-          "text": "Instala las placas ESP32 en Arduino IDE, la librería TFT_eSPI de Bodmer con el User_Setup.h específico para CYD, y la librería LVGL 9.x. Descarga el .zip con los archivos de XPT2046_TouchscreenSOFTSPI y SoftSPI."
+          "name": "Obtener API key de WeatherAPI",
+          "text": "Crea una cuenta gratuita en weatherapi.com, verifica tu email y copia tu API key del dashboard. El plan free es suficiente para este proyecto."
         },
         {
           "position": 2,
-          "name": "Copiar librerías a la carpeta del sketch",
-          "text": "Guarda un sketch nuevo, abre su carpeta vía Programa > Mostrar carpeta del programa, y copia ahí los 4 archivos: XPT2046_TouchscreenSOFTSPI.cpp/.h y SoftSPI.cpp/.h. Reinicia Arduino IDE."
+          "name": "Preparar Arduino IDE",
+          "text": "Instala Arduino IDE, agrega el soporte para placas ESP32 vía Board Manager, e instala las librerías TM1637 (de avishorp) y ArduinoJson (de bblanchon) desde el Library Manager."
         },
         {
           "position": 3,
-          "name": "Insertar microSD y conectar la CYD",
-          "text": "Formatea una tarjeta microSD en FAT32, insértala en la ranura trasera de la CYD y conecta la placa al PC mediante el cable USB correspondiente."
+          "name": "Cablear el TM1637 al ESP32",
+          "text": "Conecta CLK del display al GPIO 19, DIO al GPIO 18, VCC a VIN (5V) y GND a GND. Solo 4 cables tipo dupont son suficientes."
         },
         {
           "position": 4,
-          "name": "Cargar el sketch principal",
-          "text": "Pega el código del ejemplo, selecciona la placa ESP32 Dev Module en Arduino IDE y sube el sketch. El código inicializa microSD, touchscreen vía SoftSPI y pantalla TFT con LVGL."
+          "name": "Personalizar el sketch",
+          "text": "Reemplaza el SSID, contraseña WiFi, API key y ciudad en las constantes del código. Sube el sketch a la placa ESP32 desde Arduino IDE."
         },
         {
           "position": 5,
-          "name": "Probar y verificar guardado",
-          "text": "Abre el Monitor Serial a 115200 baudios y toca puntos en la pantalla. Las coordenadas X, Y, Z se mostrarán en pantalla y se guardarán en /touch_points.txt. Extrae la microSD y abre el archivo en tu PC para confirmar."
+          "name": "Verificar funcionamiento",
+          "text": "Abre el Monitor Serial a 115200 baudios para ver la conexión WiFi y la respuesta JSON. El display TM1637 mostrará la temperatura alternando entre °C y °F cada 5 segundos, refrescándose desde la WeatherAPI cada hora."
         }
       ],
       "code_blocks": [
         {
           "lang": "cpp",
-          "caption": "Sketch completo: pantalla + touchscreen (SoftSPI) + microSD en CYD",
-          "code": "#include <SPI.h>\n#include <TFT_eSPI.h>\n#include <XPT2046_TouchscreenSOFTSPI.h>\n\n// Pines del touchscreen (SoftSPI)\n#define XPT2046_IRQ 36   // T_IRQ\n#define XPT2046_MOSI 32  // T_DIN\n#define XPT2046_MISO 39  // T_OUT\n#define XPT2046_CLK 25   // T_CLK\n#define XPT2046_CS 33    // T_CS\n\nSoftSPI *tsSoftSpi;\nXPT2046_TouchscreenSOFTSPI touchscreen(XPT2046_CS, XPT2046_IRQ);\n\n#include <lvgl.h>\n#include \"FS.h\"\n#include \"SD.h\"\n\n// Pines de la microSD (VSPI hardware)\n#define SD_MISO  19\n#define SD_MOSI  23\n#define SD_SCK   18\n#define SD_CS    5\nSPIClass Sd_spi = SPIClass(VSPI);\n\n#define SCREEN_WIDTH 240\n#define SCREEN_HEIGHT 320\n\nint x, y, z;\n\n#define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))\nuint32_t draw_buf[DRAW_BUF_SIZE / 4];\n\nstatic lv_obj_t * text_label_touch;\n\nvoid appendFile(fs::FS &fs, const char * path, const char * message){\n  File file = fs.open(path, FILE_APPEND);\n  if(!file){ Serial.println(\"Failed to open file for appending\"); return; }\n  file.print(message);\n  file.close();\n}\n\nvoid writeFile(fs::FS &fs, const char * path, const char * message){\n  File file = fs.open(path, FILE_WRITE);\n  if(!file){ Serial.println(\"Failed to open file for writing\"); return; }\n  file.print(message);\n  file.close();\n}\n\nvoid touchscreen_read(lv_indev_t * indev, lv_indev_data_t * data) {\n  if(touchscreen.tirqTouched() && touchscreen.touched(tsSoftSpi)) {\n    TS_Point p = touchscreen.getPoint(tsSoftSpi);\n    x = map(p.x, 200, 3700, 1, SCREEN_WIDTH);\n    y = map(p.y, 240, 3800, 1, SCREEN_HEIGHT);\n    z = p.z;\n    data->state = LV_INDEV_STATE_PRESSED;\n    data->point.x = x;\n    data->point.y = y;\n\n    String touch_data = \"X = \" + String(x) + \"\\nY = \" + String(y) + \"\\nZ = \" + String(z);\n    lv_label_set_text(text_label_touch, touch_data.c_str());\n\n    String sdMessage = String(x) + \",\" + String(y) + \",\" + String(z) + \"\\n\";\n    appendFile(SD, \"/touch_points.txt\", sdMessage.c_str());\n  } else {\n    data->state = LV_INDEV_STATE_RELEASED;\n  }\n}\n\nvoid lv_create_main_gui(void) {\n  text_label_touch = lv_label_create(lv_screen_active());\n  lv_label_set_text(text_label_touch, \"Toca la pantalla para probar\");\n  lv_obj_align(text_label_touch, LV_ALIGN_CENTER, 0, 0);\n\n  static lv_style_t style_text_label;\n  lv_style_init(&style_text_label);\n  lv_style_set_text_font(&style_text_label, &lv_font_montserrat_18);\n  lv_obj_add_style(text_label_touch, &style_text_label, 0);\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n\n  // Inicializa microSD en VSPI hardware\n  Sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);\n  if (!SD.begin(SD_CS, Sd_spi, 55000000)) {\n    Serial.println(\"Card Mount Failed\");\n  }\n\n  uint8_t cardType = SD.cardType();\n  if(cardType == CARD_NONE){ Serial.println(\"No SD card attached\"); return; }\n\n  // Crea archivo si no existe\n  File file = SD.open(\"/touch_points.txt\");\n  if(!file) {\n    writeFile(SD, \"/touch_points.txt\", \"x,y,z\\r\\n\");\n  }\n  file.close();\n\n  // Inicializa LVGL\n  lv_init();\n\n  // Touchscreen vía SoftSPI (la clave para evitar el conflicto con microSD)\n  tsSoftSpi = new SoftSPI(XPT2046_MOSI, XPT2046_MISO, XPT2046_CLK);\n  touchscreen.begin(tsSoftSpi);\n  touchscreen.setRotation(2);\n\n  // Pantalla TFT vía LVGL\n  lv_display_t * disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));\n  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);\n\n  lv_indev_t * indev = lv_indev_create();\n  lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);\n  lv_indev_set_read_cb(indev, touchscreen_read);\n\n  lv_create_main_gui();\n}\n\nvoid loop() {\n  lv_task_handler();\n  lv_tick_inc(5);\n  delay(5);\n}"
+          "caption": "Sketch principal: ESP32 + TM1637 + WeatherAPI",
+          "code": "#include <WiFi.h>\n#include <HTTPClient.h>\n#include <ArduinoJson.h>\n#include <TM1637Display.h>\n\nconst char* ssid = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\nconst char* api_key = \"REPLACE_WITH_YOUR_WeatherAPI_API_Key\";\nconst char* location = \"Santiago\";\n\nString url = \"https://api.weatherapi.com/v1/current.json?q=\" + String(location) + \"&key=\" + String(api_key);\n\n#define CLK 19\n#define DIO 18\nTM1637Display display(CLK, DIO);\n\nconst uint8_t Celsius[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,\n  SEG_A | SEG_D | SEG_E | SEG_F\n};\nconst uint8_t Fahrenheit[] = {\n  SEG_A | SEG_B | SEG_F | SEG_G,\n  SEG_F | SEG_E | SEG_A | SEG_G\n};\n\nfloat currentTempC = 9999;\nfloat currentTempF = 9999;\nunsigned long lastFetchTime = 0;\nconst unsigned long fetchInterval = 3600000UL;\n\nvoid initWiFi() {\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(1000);\n    Serial.println(\"Conectando a WiFi..\");\n  }\n  Serial.print(\"IP: \");\n  Serial.println(WiFi.localIP());\n}\n\nbool updateTemperatures() {\n  HTTPClient http;\n  http.begin(url);\n  int httpCode = http.GET();\n  if (httpCode == HTTP_CODE_OK) {\n    String payload = http.getString();\n    StaticJsonDocument<1024> doc;\n    if (deserializeJson(doc, payload)) { http.end(); return false; }\n    currentTempC = doc[\"current\"][\"temp_c\"];\n    currentTempF = doc[\"current\"][\"temp_f\"];\n    http.end();\n    return true;\n  }\n  http.end();\n  return false;\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  delay(1000);\n  initWiFi();\n  display.setBrightness(7);\n  if (updateTemperatures()) lastFetchTime = millis();\n}\n\nvoid loop() {\n  if (millis() - lastFetchTime >= fetchInterval) {\n    if (updateTemperatures()) lastFetchTime = millis();\n  }\n  int roundedTempC = round(currentTempC);\n  display.showNumberDec(roundedTempC, false, 2, 0);\n  display.setSegments(Celsius, 2, 2);\n  delay(5000);\n  int roundedTempF = round(currentTempF);\n  display.showNumberDec(roundedTempF, false, 2, 0);\n  display.setSegments(Fahrenheit, 2, 2);\n  delay(5000);\n}"
         }
       ],
       "linked_products": [
         {
-          "name_original": "ESP32-2432S028R (CYD - Cheap Yellow Display 2.8\")",
-          "product_id": "D-517",
-          "product_url": "https://www.mechatronicstore.cl/esp32-wroom-con-pantalla-lcd-tactil-2-8-lvgl/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd-simultaneo&utm_content=D-517",
-          "price_clp": 24990,
+          "name_original": "Placa ESP32 DevKit (cualquier variante con WiFi)",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-tm1637-temperatura-weatherapi-display-7-segmentos&utm_content=X2-10V2",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "Módulo display TM1637 4 dígitos 7 segmentos",
+          "product_id": "D-204",
+          "product_url": "https://www.mechatronicstore.cl/modulo-display-7-segmentos-4-digitos-0-36-tipo-reloj-4-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-tm1637-temperatura-weatherapi-display-7-segmentos&utm_content=D-204",
+          "price_clp": 2900,
           "stock_available": true,
           "match_score": 0.95
         },
         {
-          "name_original": "Tarjeta microSD 8GB o más (formato FAT32)",
-          "product_id": "B-450V1",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=8gb&utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd-simultaneo&utm_content=B-450V1",
-          "price_clp": 7990,
+          "name_original": "Cables tipo dupont macho-macho",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-tm1637-temperatura-weatherapi-display-7-segmentos&utm_content=C-417",
+          "price_clp": 2990,
           "stock_available": true,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Cable USB Tipo C 1m",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd-simultaneo&utm_content=B-101",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.78
+          "match_score": 0.85
         }
       ],
-      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials",
+      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP32/ESP32_TM1637_Temperature_Display.ino",
       "download_urls": [
         {
-          "label": "Librerías XPT2046_TouchscreenSOFTSPI + SoftSPI + sketch principal (.zip)",
-          "url": "https://randomnerdtutorials.com/esp32-cyd-display-touchscreen-microsd-card/",
-          "kind": "external"
+          "label": "Código fuente .ino (GitHub)",
+          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP32/ESP32_TM1637_Temperature_Display.ino",
+          "kind": "ino"
         }
       ],
       "category": "esp32",
       "difficulty": "intermediate",
-      "estimated_time_minutes": 60,
-      "estimated_cost_clp": 35170,
-      "tags": ["esp32", "cyd", "touchscreen", "microsd", "lvgl", "tft", "softspi"]
+      "estimated_time_minutes": 45,
+      "estimated_cost_clp": 13880,
+      "tags": ["esp32", "tm1637", "display", "weatherapi", "http", "arduino-ide", "tutorial"]
+    },
+    {
+      "id": "0abbbb441679",
+      "slug": "micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos",
+      "title_es": "MicroPython: TM1637 4 dígitos con ESP32 o ESP8266 paso a paso",
+      "subtitle_es": "Aprende a controlar el display TM1637 de 4 dígitos con ESP32 o ESP8266 en MicroPython: texto, números, temperatura y scroll.",
+      "body_es": "## Introducción\n\nEn este tutorial vamos a aprender a interfacear el módulo **TM1637 de 4 dígitos y 7 segmentos** con las placas **ESP32 y ESP8266 programadas en MicroPython**. Vamos a ver cómo cablearlo, instalar la librería y programar el display para mostrar texto, números, símbolos personalizados y hasta texto en scroll.\n\nComo proyecto final, vamos a construir un pronosticador de clima básico que muestra la temperatura en el display.\n\n> **Probado en:** ESP32 DevKit y NodeMCU ESP8266 con firmware MicroPython actualizado.\n\n## Lo que vas a aprender\n\n- Cablear el TM1637 a ESP32 y ESP8266 usando solo 2 pines digitales.\n- Instalar una librería MicroPython externa via Thonny IDE.\n- Mostrar números, hexadecimales, texto y temperatura en el display.\n- Hacer scroll horizontal de texto largo.\n- Crear caracteres personalizados con control byte a byte de los segmentos.\n\n## Prerrequisitos\n\nPara seguir este tutorial necesitas:\n\n1. **MicroPython** flasheado en tu ESP32 o ESP8266.\n2. Un IDE para escribir y subir código: **Thonny IDE** es la opción más simple. uPyCraft IDE también funciona bien.\n3. Conocimientos básicos de Python.\n\n## Materiales\n\n- ESP32 DevKit **o** NodeMCU ESP8266 (cualquiera de los dos).\n- Módulo display TM1637 de 4 dígitos y 7 segmentos.\n- Cables dupont macho-hembra (para conectar la placa al módulo).\n- Cable USB para alimentación y carga del código.\n\n**Costo aproximado:** ~CLP $13.880 con ESP32 o ~CLP $11.880 con ESP8266 (aproximado).\n\n## Conociendo el TM1637\n\nEl **TM1637** combina 4 dígitos de 7 segmentos en una sola placa, controlados por el chip driver del mismo nombre. El módulo más común trae los 4 dígitos separados por dos puntos (`:`) entre el segundo y el tercero, perfecto para relojes digitales o termómetros.\n\nExisten versiones con 6 dígitos pero requieren otra librería y muchas vienen con defectos de fábrica, así que en esta guía usamos la versión de 4 dígitos con dos puntos.\n\n## Conexiones físicas\n\nEl display requiere solo **2 pines digitales** (CLK y DIO) más alimentación. Eso lo hace ideal para combinar con otros sensores sin agotar los GPIOs.\n\n### Cableado en ESP32\n\n| TM1637 | ESP32          |\n|--------|----------------|\n| CLK    | GPIO 19        |\n| DIO    | GPIO 18        |\n| VCC    | VIN (5V)       |\n| GND    | GND            |\n\n### Cableado en ESP8266 (NodeMCU)\n\n| TM1637 | ESP8266            |\n|--------|--------------------|\n| CLK    | GPIO 14 (D5)       |\n| DIO    | GPIO 12 (D6)       |\n| VCC    | VIN (5V)           |\n| GND    | GND                |\n\nPuedes usar otros GPIOs si lo necesitas, basta con cambiar los pines al instanciar el objeto `TM1637`.\n\n## Instalar la librería TM1637 en MicroPython\n\nVamos a usar una versión derivada del driver `micropython-tm1637` de mcauser, ajustada para nuestro caso.\n\n1. Descarga el archivo `tm1637.py` desde el repositorio de Random Nerd Tutorials (link en la sección de descargas).\n2. Abre Thonny IDE conectado a tu placa.\n3. Pega el contenido en un archivo nuevo.\n4. Ve a **Archivo > Guardar como…** y selecciona **MicroPython Device**.\n5. Guarda el archivo con el nombre exacto **`tm1637.py`** (no cambies el nombre).\n\nCon la librería cargada en la placa, ya puedes importarla desde tu `main.py` o cualquier otro script.\n\n## Ejemplo básico: probar todas las funciones\n\nEste script muestra la mayoría de las funciones de la librería: mostrar segmentos individuales, números, hexadecimales, texto, temperatura y texto en scroll.\n\n```python\nimport tm1637\nfrom machine import Pin\nfrom time import sleep\n\n# Inicializa el display (ajusta los pines si es necesario)\ndisplay = tm1637.TM1637(clk=Pin(19), dio=Pin(18))\n# Para ESP8266:\n# display = tm1637.TM1637(clk=Pin(14), dio=Pin(12))\n\ndisplay.brightness(7)  # 0 (mínimo) a 7 (máximo)\n\nwhile True:\n    # Todos los segmentos ON: \"88:88\"\n    display.write([127, 255, 127, 127])\n    sleep(1)\n\n    # Todos los segmentos OFF\n    display.write([0, 0, 0, 0])\n    sleep(1)\n\n    # Mostrar \"0123\"\n    display.write([63, 6, 91, 79])\n    sleep(1)\n\n    # Mostrar \"COOL\"\n    display.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])\n    sleep(1)\n\n    # Mostrar texto \"HELP\"\n    display.show('help')\n    sleep(1)\n\n    # Mostrar hexadecimal: \"dEAd\", \"bEEF\"\n    display.hex(0xdead)\n    sleep(1)\n    display.hex(0xbeef)\n    sleep(1)\n\n    # Mostrar \"12:59\" (estilo reloj)\n    display.numbers(12, 59)\n    sleep(1)\n\n    # Mostrar número negativo: \"-123\"\n    display.number(-123)\n    sleep(1)\n\n    # Mostrar temperatura: '24*C'\n    display.temperature(24)\n    sleep(1)\n\n    # Mostrar temperatura: '75*F'\n    display.temperature_f(75)\n    sleep(1)\n\n    # Texto en scroll horizontal\n    display.scroll('MechatronicStore', delay=500)\n    sleep(1)\n```\n\n## Cómo funciona el código\n\n### Inicialización\n\n```python\ndisplay = tm1637.TM1637(clk=Pin(19), dio=Pin(18))\n```\n\nInstancia el objeto display indicando los pines CLK y DIO. Si usas ESP8266 cambia a `Pin(14)` y `Pin(12)`.\n\n### Brillo\n\n```python\ndisplay.brightness(7)\n```\n\nAcepta valores de 0 (mínimo) a 7 (máximo). En interiores con luz baja, 3 o 4 suele ser más cómodo a la vista.\n\n### Control byte a byte con `write()`\n\nCada dígito del display se controla con un byte. Los **7 bits bajos** controlan cada segmento (A=bit 0, B=bit 1, ..., G=bit 6), y el bit MSB del segundo dígito controla los dos puntos del medio.\n\n| Segmento | Bit |\n|----------|-----|\n| A        | 0   |\n| B        | 1   |\n| C        | 2   |\n| D        | 3   |\n| E        | 4   |\n| F        | 5   |\n| G        | 6   |\n\nUn `1` enciende el segmento, `0` lo apaga. Ejemplo: `0b0000110` enciende los segmentos C y B (dibuja un \"1\" reducido).\n\n### Strings cortos con `show()`\n\n```python\ndisplay.show('help')\n```\n\nMuestra hasta 4 caracteres directamente. Soporta `0-9`, `a-z`, espacio, guión y asterisco.\n\n### Números con `number()` y `numbers()`\n\n- `display.number(-123)` muestra un único valor entero entre -999 y 9999, alineado a la derecha.\n- `display.numbers(12, 59)` muestra dos valores de 2 dígitos separados por dos puntos: ideal para relojes.\n\n### Temperatura con `temperature()` y `temperature_f()`\n\nMuestran el valor con el símbolo `°C` o `°F` automáticamente. Si el valor está fuera de rango (-9 a 99), muestra `lo` o `hi`.\n\n### Scroll con `scroll()`\n\n```python\ndisplay.scroll('Texto largo', delay=500)\n```\n\nDeja correr cualquier texto de derecha a izquierda. El segundo parámetro es el delay entre frames en milisegundos.\n\n## Proyecto: pronosticador de temperatura\n\nCombinando lo anterior con una llamada HTTP a una API meteorológica (como WeatherAPI o OpenWeatherMap), puedes mostrar la temperatura actual de tu ciudad alternando entre °C y °F. La librería `urequests` de MicroPython te permite hacer la petición HTTP directamente desde la placa.\n\n## Solución de problemas\n\n- **Display no enciende:** verifica VCC y GND. El módulo requiere 5V para el brillo máximo, aunque la lógica funciona a 3.3V.\n- **Caracteres corridos o erráticos:** revisa que los pines CLK y DIO no estén invertidos.\n- **Brillo bajo:** sube el valor en `display.brightness()` (máx 7).\n- **\"ImportError: tm1637\":** confirma que el archivo se guardó como `tm1637.py` en el sistema de archivos del MicroPython device.\n\n## Cierre\n\nEl TM1637 es uno de los displays más versátiles y baratos que existen para proyectos de microcontroladores. Con MicroPython, el código queda mucho más legible que en C++ y permite prototipar rápido relojes, termómetros, contadores o cualquier interfaz numérica simple. ¡Felices proyectos!",
+      "materials_list": [
+        {"name": "Placa ESP32 DevKit con WiFi", "qty": 1, "role": "core (opción 1)"},
+        {"name": "NodeMCU ESP8266 con WiFi", "qty": 1, "role": "core (opción 2, alternativa)"},
+        {"name": "Módulo display TM1637 4 dígitos 7 segmentos", "qty": 1, "role": "visualización"},
+        {"name": "Cables tipo dupont macho-hembra", "qty": 4, "role": "conexiones"},
+        {"name": "Cable USB para alimentación y carga de código", "qty": 1, "role": "alimentación"}
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Flashear MicroPython en la placa",
+          "text": "Instala el firmware MicroPython en tu ESP32 o ESP8266 usando esptool.py o desde Thonny IDE. Si recién partes, sigue la guía de Random Nerd Tutorials de instalación de MicroPython."
+        },
+        {
+          "position": 2,
+          "name": "Cablear el TM1637",
+          "text": "Conecta CLK y DIO del display a los GPIOs según la placa: GPIO 19/18 en ESP32, o GPIO 14/12 (D5/D6) en ESP8266. VCC va a 5V (VIN) y GND a GND."
+        },
+        {
+          "position": 3,
+          "name": "Subir la librería tm1637.py",
+          "text": "Descarga el archivo tm1637.py de Random Nerd Tutorials. Ábrelo en Thonny IDE y guárdalo como 'MicroPython Device' con el nombre exacto tm1637.py, sin modificar."
+        },
+        {
+          "position": 4,
+          "name": "Ejecutar el script de prueba",
+          "text": "Crea un script main.py con el código de ejemplo que muestra todas las funciones (números, texto, temperatura, scroll). Asegúrate de ajustar los pines según tu placa antes de subirlo."
+        },
+        {
+          "position": 5,
+          "name": "Experimentar y extender",
+          "text": "Una vez que el ciclo demo funcione, modifica el código para tu caso: reloj con módulo RTC, termómetro con DHT22, contador de visitas, o cualquier interfaz numérica. La librería expone todo lo necesario."
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "python",
+          "caption": "Ejemplo completo: todas las funciones del TM1637 en MicroPython",
+          "code": "import tm1637\nfrom machine import Pin\nfrom time import sleep\n\n# ESP32: GPIO 19 (CLK) y GPIO 18 (DIO)\ndisplay = tm1637.TM1637(clk=Pin(19), dio=Pin(18))\n# ESP8266 (descomentar si corresponde):\n# display = tm1637.TM1637(clk=Pin(14), dio=Pin(12))\n\ndisplay.brightness(7)\n\nwhile True:\n    display.write([127, 255, 127, 127])  # 88:88\n    sleep(1)\n\n    display.write([0, 0, 0, 0])  # apagado total\n    sleep(1)\n\n    display.write([63, 6, 91, 79])  # 0123\n    sleep(1)\n\n    display.write([0b00111001, 0b00111111, 0b00111111, 0b00111000])  # COOL\n    sleep(1)\n\n    display.show('help')\n    sleep(1)\n\n    display.hex(0xdead)\n    sleep(1)\n    display.hex(0xbeef)\n    sleep(1)\n\n    display.numbers(12, 59)  # 12:59\n    sleep(1)\n\n    display.number(-123)\n    sleep(1)\n\n    display.temperature(24)\n    sleep(1)\n    display.temperature_f(75)\n    sleep(1)\n\n    display.scroll('MechatronicStore', delay=500)\n    sleep(1)"
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "Placa ESP32 DevKit con WiFi",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=X2-10V2",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "NodeMCU ESP8266 con WiFi",
+          "product_id": "X3-9",
+          "product_url": "https://www.mechatronicstore.cl/nodemcu-basada-en-wifi-esp8266/?utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=X3-9",
+          "price_clp": 5990,
+          "stock_available": true,
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Módulo display TM1637 4 dígitos 7 segmentos",
+          "product_id": "D-204",
+          "product_url": "https://www.mechatronicstore.cl/modulo-display-7-segmentos-4-digitos-0-36-tipo-reloj-4-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=D-204",
+          "price_clp": 2900,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Cables tipo dupont macho-hembra",
+          "product_id": "C-415",
+          "product_url": "https://www.mechatronicstore.cl/cable-macho-hembra-40-piezas-10-cm/?utm_source=blog&utm_medium=tutorial&utm_campaign=micropython-esp32-esp8266-tm1637-display-4-digitos-7-segmentos&utm_content=C-415",
+          "price_clp": 1990,
+          "stock_available": true,
+          "match_score": 0.82
+        }
+      ],
+      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/tree/master/Projects/ESP-MicroPython/tm1637",
+      "download_urls": [
+        {
+          "label": "Librería tm1637.py (descargar a la placa)",
+          "url": "https://raw.githubusercontent.com/RuiSantosdotme/Random-Nerd-Tutorials/refs/heads/master/Projects/ESP-MicroPython/tm1637/tm1637.py",
+          "kind": "py"
+        },
+        {
+          "label": "Script de funciones básicas (.py)",
+          "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/ESP-MicroPython/tm1637/tm1637_basic_functions.py",
+          "kind": "py"
+        }
+      ],
+      "category": "esp32",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 40,
+      "estimated_cost_clp": 13880,
+      "tags": ["micropython", "esp32", "esp8266", "tm1637", "display", "thonny", "tutorial"]
     }
   ]
 }
