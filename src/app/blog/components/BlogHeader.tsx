@@ -80,10 +80,10 @@ export default function BlogHeader() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 text-sm">
+          <nav className="hidden md:flex items-center gap-4 text-sm">
             <Link
               href="/blog"
-              className="px-3 py-2 rounded-md transition-colors hover:bg-[color:var(--bg-hover)]"
+              className="underlink px-1 py-2"
               style={{ color: "var(--text-muted)" }}
             >
               Inicio
@@ -156,7 +156,7 @@ export default function BlogHeader() {
 
             <a
               href="https://www.mechatronicstore.cl"
-              className="px-3 py-2 rounded-md transition-colors hover:bg-[color:var(--bg-hover)] inline-flex items-center gap-1.5"
+              className="underlink inline-flex items-center gap-1.5 px-1 py-2"
               style={{ color: "var(--text-muted)" }}
             >
               Tienda

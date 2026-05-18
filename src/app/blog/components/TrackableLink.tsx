@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, CSSProperties } from "react";
 
 interface Props {
   href: string;
@@ -9,6 +9,7 @@ interface Props {
   productId?: string | null;
   productName?: string | null;
   className?: string;
+  style?: CSSProperties;
   children: ReactNode;
 }
 
@@ -31,6 +32,7 @@ export default function TrackableLink({
   productId,
   productName,
   className,
+  style,
   children,
 }: Props) {
   const handleClick = () => {
@@ -56,6 +58,7 @@ export default function TrackableLink({
       target="_blank"
       rel="noopener"
       className={className}
+      style={style}
       onClick={handleClick}
     >
       {children}

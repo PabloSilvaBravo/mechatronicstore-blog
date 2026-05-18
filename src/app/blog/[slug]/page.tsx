@@ -14,6 +14,8 @@ import MarkdownEnhancer from "../components/MarkdownEnhancer";
 import ReadingProgress from "../components/ReadingProgress";
 import ShareButtons from "../components/ShareButtons";
 import RelatedTutorials from "../components/RelatedTutorials";
+import HeroDecor from "../components/HeroDecor";
+import RevealOnScroll from "../components/RevealOnScroll";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -206,11 +208,11 @@ export default async function TutorialPage({ params }: Props) {
         className="mb-6 text-xs uppercase tracking-[0.12em]"
         style={{ color: "var(--text-dim)" }}
       >
-        <Link href="/" className="hover:text-[color:var(--text-muted)]">
+        <Link href="/" className="underlink hover:text-[color:var(--text-muted)]">
           Inicio
         </Link>
         <span className="mx-2" aria-hidden>›</span>
-        <Link href="/blog" className="hover:text-[color:var(--text-muted)]">
+        <Link href="/blog" className="underlink hover:text-[color:var(--text-muted)]">
           Blog
         </Link>
         {tutorial.category && (
@@ -218,7 +220,7 @@ export default async function TutorialPage({ params }: Props) {
             <span className="mx-2" aria-hidden>›</span>
             <Link
               href={`/blog/categoria/${tutorial.category}`}
-              className="hover:text-[color:var(--text-muted)]"
+              className="underlink hover:text-[color:var(--text-muted)]"
             >
               {categoryLabel(tutorial.category)}
             </Link>
@@ -226,10 +228,11 @@ export default async function TutorialPage({ params }: Props) {
         )}
       </nav>
 
-      {/* Hero header — estilo editorial */}
-      <header className="mb-10">
+      {/* Hero header — estilo editorial con decoración SVG */}
+      <header className="relative mb-10 -mx-4 px-4 py-6 sm:-mx-6 sm:px-6 sm:py-8">
+        <HeroDecor />
         {/* Category badge + difficulty tag */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative flex flex-wrap items-center gap-3 mb-6">
           {tutorial.category && (
             <Link
               href={`/blog/categoria/${tutorial.category}`}
@@ -373,7 +376,7 @@ export default async function TutorialPage({ params }: Props) {
 
       {/* Steps con cards numerados */}
       {tutorial.steps.length > 0 && (
-        <section className="my-12">
+        <RevealOnScroll as="section" className="my-12">
           <div className="mb-6">
             <div
               className="text-[11px] font-bold uppercase tracking-[0.15em] mb-2"
@@ -403,12 +406,12 @@ export default async function TutorialPage({ params }: Props) {
               />
             ))}
           </ol>
-        </section>
+        </RevealOnScroll>
       )}
 
       {/* Code blocks extraídos por LLM */}
       {tutorial.code_blocks.length > 0 && (
-        <section className="my-12">
+        <RevealOnScroll as="section" className="my-12">
           <div className="mb-6">
             <div
               className="text-[11px] font-bold uppercase tracking-[0.15em] mb-2"
@@ -430,7 +433,7 @@ export default async function TutorialPage({ params }: Props) {
           {tutorial.code_blocks.map((cb, i) => (
             <CodeBlock key={i} lang={cb.lang} caption={cb.caption} code={cb.code} />
           ))}
-        </section>
+        </RevealOnScroll>
       )}
 
       <DownloadLinks
@@ -452,9 +455,8 @@ export default async function TutorialPage({ params }: Props) {
               <Link
                 key={t}
                 href={`/blog/tag/${encodeURIComponent(t)}`}
-                className="pill inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border"
+                className="pill inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full"
                 style={{
-                  borderColor: "var(--border)",
                   color: "var(--text-muted)",
                   backgroundColor: "var(--bg-elevated)",
                 }}

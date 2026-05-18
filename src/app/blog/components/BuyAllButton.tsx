@@ -27,7 +27,7 @@ export default function BuyAllButton({ linkedProducts, slug }: Props) {
         slug={slug}
         source="buy_all"
         productName={`Comprar todo (${linkedProducts.length} productos)`}
-        className="group relative block overflow-hidden rounded-xl transition-all hover:scale-[1.01]"
+        className="btn-luis group relative block overflow-hidden rounded-xl"
       >
         <div
           className="relative flex items-center justify-between gap-4 p-5"
