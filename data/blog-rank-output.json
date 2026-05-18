@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-18T06:30:00Z",
+  "ranked_at": "2026-05-18T00:36:37.497Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,50 +25,133 @@
   },
   "rankings": [
     {
-      "id": "4fbf4752fcf4",
+      "id": "584e9ad93cd6",
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
+        "pedagogy": 8,
+        "code_quality": 8,
         "materials_clarity": 7,
-        "step_completeness": 7,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 6,
-        "novelty": 8
+        "step_completeness": 8,
+        "image_quality": 7,
+        "relevance_to_store_catalog": 9,
+        "novelty": 6
       },
-      "combined_score": 0.685,
-      "verdict": "Proyecto novedoso de Tetris en grilla NeoPixel con RP2040 PropMaker, pero el excerpt solo muestra overview sin codigo ni pasos detallados. Hardware Adafruit niche, baja relevancia de catalogo.",
+      "combined_score": 0.77,
+      "verdict": "Tutorial sólido de Pico con TM1637 en MicroPython; cableado, librería e ejemplos completos, pero novedad baja por solaparse con la variante ESP32/ESP8266.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "NeoPixel LED strip",
-        "Bateria Lipo 3.7V 1200mAh",
-        "Switch SPDT slide",
-        "Cable STEMMA QT JST SH 4-pin",
-        "Acrilico difusor LED negro"
+        "Raspberry Pi Pico",
+        "Display TM1637 4 dígitos",
+        "Jumper Dupont",
+        "Protoboard"
       ]
     },
     {
-      "id": "4e1610cba496",
+      "id": "0abbbb441679",
       "scores": {
         "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 8,
-        "step_completeness": 7,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 7,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "image_quality": 7,
+        "relevance_to_store_catalog": 10,
+        "novelty": 6
+      },
+      "combined_score": 0.785,
+      "verdict": "Excelente match de catálogo: ESP32+ESP8266+TM1637, doble cableado y ejemplos. Novedad media por ser variante MicroPython del mismo display.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "ESP8266 NodeMCU",
+        "Display TM1637 4 dígitos",
+        "Jumper Dupont",
+        "Protoboard"
+      ]
+    },
+    {
+      "id": "9d2b09690521",
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "image_quality": 8,
+        "relevance_to_store_catalog": 9,
         "novelty": 7
       },
-      "combined_score": 0.725,
-      "verdict": "Scoreboard FIFA con Matrix Portal S3 y cuatro matrices RGB 64x32. Buena justificacion de requisitos de hardware y potencia, pero excerpt sin codigo ni fotos de armado paso a paso.",
+      "combined_score": 0.79,
+      "verdict": "Proyecto integrador atractivo: HTTP+JSON+display, parts list explícita con foto y código Arduino completo y comentado.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "Display TM1637 4 dígitos",
+        "Jumper Dupont"
+      ]
+    },
+    {
+      "id": "7cb2921fe490",
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 6,
+        "step_completeness": 8,
+        "image_quality": 8,
+        "relevance_to_store_catalog": 8,
+        "novelty": 7
+      },
+      "combined_score": 0.76,
+      "verdict": "Buen tutorial ESP-IDF con menuconfig y Kconfig bien explicados; baja en materiales por usar solo ESP32 y audiencia más nicho.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "ESP32-S3",
-        "Matriz RGB LED 64x32 4mm pitch",
-        "Fuente 5V 4A",
-        "Cable USB-A a USB-C",
-        "Tornillos y standoffs M3",
-        "Adaptador DC hembra 2.1mm"
+        "ESP32 DevKit",
+        "Cable USB-C"
+      ]
+    },
+    {
+      "id": "7aa0c097827a",
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 6,
+        "step_completeness": 8,
+        "image_quality": 7,
+        "relevance_to_store_catalog": 9,
+        "novelty": 8
+      },
+      "combined_score": 0.775,
+      "verdict": "Idea original con scheduler FreeRTOS y UI web cuidada; materiales mínimos (ESP32+LED) y novedad alta, pero combined queda al filo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "LED 5mm",
+        "Resistencia 220 ohm",
+        "Protoboard",
+        "Jumper Dupont"
+      ]
+    },
+    {
+      "id": "8a884b6de94d",
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 8,
+        "materials_clarity": 6,
+        "step_completeness": 8,
+        "image_quality": 7,
+        "relevance_to_store_catalog": 7,
+        "novelty": 7
+      },
+      "combined_score": 0.715,
+      "verdict": "Tutorial ESP-IDF avanzado con auth básica; sólido técnicamente pero audiencia muy nicho y bajo aporte de materiales para el catálogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32 DevKit",
+        "Cable USB-C"
       ]
     }
   ]
