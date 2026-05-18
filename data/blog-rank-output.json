@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-18T00:36:37.497Z",
+  "ranked_at": "2026-05-18T06:35:58.702+00:00",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -27,132 +27,127 @@
     {
       "id": "584e9ad93cd6",
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "image_quality": 7,
+        "pedagogy": 9,
+        "code_quality": 9,
+        "materials_clarity": 8,
+        "step_completeness": 9,
+        "image_quality": 8,
         "relevance_to_store_catalog": 9,
         "novelty": 6
       },
-      "combined_score": 0.77,
-      "verdict": "Tutorial sólido de Pico con TM1637 en MicroPython; cableado, librería e ejemplos completos, pero novedad baja por solaparse con la variante ESP32/ESP8266.",
+      "verdict": "Tutorial muy completo del TM1637 con RPi Pico en MicroPython: ToC clara, librería incluida, ejemplos de funciones y proyecto con sensor interno. Componentes 100% vendibles.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "Raspberry Pi Pico",
-        "Display TM1637 4 dígitos",
-        "Jumper Dupont",
-        "Protoboard"
-      ]
+        "TM1637 4-Digit 7-Segment Display",
+        "Jumper wires"
+      ],
+      "combined_score": 0.845
     },
     {
       "id": "0abbbb441679",
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 10,
-        "novelty": 6
+        "pedagogy": 9,
+        "code_quality": 9,
+        "materials_clarity": 8,
+        "step_completeness": 9,
+        "image_quality": 8,
+        "relevance_to_store_catalog": 9,
+        "novelty": 5
       },
-      "combined_score": 0.785,
-      "verdict": "Excelente match de catálogo: ESP32+ESP8266+TM1637, doble cableado y ejemplos. Novedad media por ser variante MicroPython del mismo display.",
+      "verdict": "TM1637 con ESP32/ESP8266 en MicroPython, paralelo al de Pico. Buena calidad pero solapa contenido del candidato Pico TM1637 con misma librería y ejemplos.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "ESP32",
-        "ESP8266 NodeMCU",
-        "Display TM1637 4 dígitos",
-        "Jumper Dupont",
-        "Protoboard"
-      ]
+        "ESP8266",
+        "TM1637 4-Digit 7-Segment Display",
+        "Jumper wires"
+      ],
+      "combined_score": 0.835
     },
     {
       "id": "9d2b09690521",
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "image_quality": 8,
+        "pedagogy": 9,
+        "code_quality": 9,
+        "materials_clarity": 8,
+        "step_completeness": 9,
+        "image_quality": 9,
         "relevance_to_store_catalog": 9,
         "novelty": 7
       },
-      "combined_score": 0.79,
-      "verdict": "Proyecto integrador atractivo: HTTP+JSON+display, parts list explícita con foto y código Arduino completo y comentado.",
+      "verdict": "Proyecto integrador ESP32 + TM1637 + WeatherAPI: combina display, HTTP requests y formato custom de símbolos °C/°F. Aplicación práctica con buen impacto comercial.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "ESP32",
-        "Display TM1637 4 dígitos",
-        "Jumper Dupont"
-      ]
+        "TM1637 4-Digit 7-Segment Display",
+        "Jumper wires"
+      ],
+      "combined_score": 0.865
     },
     {
       "id": "7cb2921fe490",
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
+        "pedagogy": 9,
+        "code_quality": 9,
         "materials_clarity": 6,
         "step_completeness": 8,
         "image_quality": 8,
-        "relevance_to_store_catalog": 8,
-        "novelty": 7
+        "relevance_to_store_catalog": 7,
+        "novelty": 8
       },
-      "combined_score": 0.76,
-      "verdict": "Buen tutorial ESP-IDF con menuconfig y Kconfig bien explicados; baja en materiales por usar solo ESP32 y audiencia más nicho.",
+      "verdict": "Web server ESP32 con ESP-IDF: framework menos cubierto que Arduino IDE, código C completo y screenshots de configuración. Pocos componentes físicos asociados.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "ESP32-S3",
-        "ESP32 DevKit",
-        "Cable USB-C"
-      ]
+        "ESP32"
+      ],
+      "combined_score": 0.79
     },
     {
       "id": "7aa0c097827a",
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 6,
+        "pedagogy": 9,
+        "code_quality": 9,
+        "materials_clarity": 7,
         "step_completeness": 8,
         "image_quality": 7,
-        "relevance_to_store_catalog": 9,
-        "novelty": 8
+        "relevance_to_store_catalog": 8,
+        "novelty": 7
       },
-      "combined_score": 0.775,
-      "verdict": "Idea original con scheduler FreeRTOS y UI web cuidada; materiales mínimos (ESP32+LED) y novedad alta, pero combined queda al filo.",
+      "verdict": "ESP32 web server con timer schedule para LED: incluye HTML, CSS, JS y código Arduino. Proyecto reproducible con LED y resistor estándar.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "ESP32",
         "LED 5mm",
-        "Resistencia 220 ohm",
-        "Protoboard",
-        "Jumper Dupont"
-      ]
+        "Resistor 220 ohm",
+        "Jumper wires",
+        "Protoboard"
+      ],
+      "combined_score": 0.8
     },
     {
       "id": "8a884b6de94d",
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 8,
-        "materials_clarity": 6,
+        "pedagogy": 8,
+        "code_quality": 9,
+        "materials_clarity": 5,
         "step_completeness": 8,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 7,
-        "novelty": 7
+        "image_quality": 8,
+        "relevance_to_store_catalog": 6,
+        "novelty": 8
       },
-      "combined_score": 0.715,
-      "verdict": "Tutorial ESP-IDF avanzado con auth básica; sólido técnicamente pero audiencia muy nicho y bajo aporte de materiales para el catálogo.",
+      "verdict": "ESP-IDF con HTTP basic auth: tema avanzado y poco cubierto, pero sin componentes físicos relevantes para venta. Más software que hardware.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "ESP32 DevKit",
-        "Cable USB-C"
-      ]
+        "ESP32"
+      ],
+      "combined_score": 0.74
     }
   ]
 }
