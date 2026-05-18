@@ -39,11 +39,65 @@ NO publicás directamente al portal — el watcher persiste a DB con status='pub
 
 ## Reescritura editorial (NO traducción literal)
 
-- Tono: español Chile maker-friendly. Usar **tú** (no vos) — público objetivo amplio.
-- Adaptar:
-  - "$10" → "~CLP $9.500" (conversión aproximada al CLP, mencionar "aproximado")
-  - "Walmart" → mencionar tienda local cuando aplique
-  - Modismos: "guys" → "amigos", "build" → "armar/construir/montar"
+### Tono — español Chile con TUTEO (regla crítica)
+
+Pablo 18-may-2026: incidente "Aprendé, construí, comprá" en la home del
+blog → eso es voseo rioplatense (Argentina/Uruguay). **El público de
+MechatronicStore es chileno**, usa **tuteo** (tú + verbos sin acento en
+la última sílaba).
+
+**FORMA CORRECTA (Chile):**
+- "**Aprende**, **construye**, **compra**" ← imperativo chileno
+- "**Conecta** el cable a GND" / "**Carga** el código al ESP32"
+- "Antes de empezar, **asegúrate** de tener el módulo"
+- "Si **quieres** cambiar el pin, edita la línea 12"
+- "**Tienes** que instalar la librería primero"
+- "**Puedes** ver el resultado en el monitor serial"
+
+**FORMA INCORRECTA (rioplatense — NUNCA usar):**
+- ❌ "Aprendé, construí, comprá"
+- ❌ "Conectá el cable" / "Cargá el código"
+- ❌ "asegurate de tener" (sin tilde + sin reflexivo correcto)
+- ❌ "Si querés cambiar"
+- ❌ "Tenés que instalar"
+- ❌ "Podés ver el resultado"
+- ❌ "vos" en cualquier contexto
+
+### Glosario rápido voseo → tuteo
+
+| ❌ Voseo (no usar) | ✅ Tuteo Chile |
+|---|---|
+| Aprendé | Aprende |
+| Construí | Construye |
+| Comprá | Compra |
+| Conectá | Conecta |
+| Cargá | Carga |
+| Instalá | Instala |
+| Configurá | Configura |
+| Verificá | Verifica |
+| Asegurate | Asegúrate |
+| Elegí | Elige |
+| Andá | Ve |
+| Buscá | Busca |
+| Tomá | Toma |
+| Mirá | Mira |
+| Querés | Quieres |
+| Podés | Puedes |
+| Tenés | Tienes |
+| Sabés | Sabes |
+| Hacés | Haces |
+| Ponés | Pones |
+| Sos | Eres |
+| Estás | Estás (igual) |
+| Vos | Tú |
+
+### Otras adaptaciones Chile
+
+- "$10" → "~CLP $9.500" (conversión aproximada, mencionar "aproximado")
+- "Walmart" / "Best Buy" → "tienda local" o no mencionar
+- Modismos: "guys" → "todos" o "makers" (NO "amigos" — sentido genérico)
+- "build" → "armar" / "montar" / "construir"
+- "wire it up" → "conectar" / "cablear"
 - Mantener: nombres técnicos (ESP32, DHT22, GPIO, etc.), código sin tocar
 - Subtitle: 1 oración clara de 100-150 chars que resuma el proyecto
 - Body en markdown limpio: headers ##, listas, code blocks ``` ```, links

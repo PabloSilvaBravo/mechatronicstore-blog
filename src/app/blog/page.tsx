@@ -119,7 +119,7 @@ export default async function BlogHomePage() {
             letterSpacing: "-0.02em",
           }}
         >
-          Aprendé, construí, comprá.
+          Aprende, construye, compra.
         </h1>
         <p
           className="text-lg sm:text-xl leading-relaxed"

@@ -146,8 +146,8 @@ export default function WeeklyDigest({
           </Text>
           <Text style={footerSmallStyle}>
             Este email lo genera Routine F (blog weekly digest) los lunes
-            11:30 UTC. Si querés cambiar cadencia: editar trigger CCR
-            o ver docs/routines/blog-weekly-digest-prompt.md.
+            11:30 UTC. Para cambiar la cadencia: editar trigger CCR o ver
+            docs/routines/blog-weekly-digest-prompt.md.
           </Text>
         </Container>
       </Body>

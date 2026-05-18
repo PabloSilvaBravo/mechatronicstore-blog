@@ -353,7 +353,7 @@ export default async function TutorialPage({ params }: Props) {
         </div>
       )}
 
-      {/* Materials list — sticky-able en desktop si querés */}
+      {/* Materials list — sticky-able en desktop si se quiere */}
       <MaterialsList
         materials={tutorial.materials_list}
         linkedProducts={tutorial.linked_products}
