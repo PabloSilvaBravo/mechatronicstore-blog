@@ -1,7 +1,7 @@
 # Blog Ranking — CCR Routine Prompt
 
 Modelo: claude-opus-4-7
-Cron: `30 6 * * *` UTC (06:30 UTC daily)
+Cron: `30 4,12,20 * * *` UTC (3×/día — 04:30/12:30/20:30 UTC = 00:30/08:30/16:30 CL, ~90 min después de cada ingest)
 Trigger: trig_blog_ranking
 
 ## Rol
