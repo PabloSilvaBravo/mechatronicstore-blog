@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-19T13:30:31Z",
+  "ranked_at": "2026-05-19T15:18:41Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -27,94 +27,87 @@
     {
       "id": "66c5dc463984",
       "scores": {
-        "pedagogy": 5,
+        "pedagogy": 4,
         "code_quality": 3,
         "materials_clarity": 6,
         "step_completeness": 4,
-        "image_quality": 7,
+        "image_quality": 6,
         "relevance_to_store_catalog": 3,
-        "novelty": 6
+        "novelty": 4
       },
-      "verdict": "Overview de un accesorio BFF muy Adafruit-específico para QT Py/Xiao; no es un proyecto sino una ficha técnica, sin código ni pasos reproducibles y con baja relevancia para nuestro catálogo.",
+      "combined_score": 0.42,
+      "verdict": "Más página de producto que tutorial; el Terminal Block BFF es accesorio muy específico de Adafruit (QT Py/Xiao) con bajo encaje en catálogo MechatronicStore y casi sin código ni pasos reproducibles.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "QT Py",
-        "Headers 0.1\" 2.54mm",
-        "JST PH battery",
-        "STEMMA QT cable"
-      ],
-      "combined_score": 0.47
+        "Headers macho 2.54mm",
+        "Conectores tipo bornera"
+      ]
     },
     {
       "id": "2a3ef6e75e08",
       "scores": {
         "pedagogy": 7,
-        "code_quality": 6,
+        "code_quality": 7,
         "materials_clarity": 7,
         "step_completeness": 7,
-        "image_quality": 6,
+        "image_quality": 7,
         "relevance_to_store_catalog": 5,
         "novelty": 7
       },
-      "verdict": "Prop temático Star Trek con ESP32-S3 + sensor CO2/temp/humedad + haptic; estructura pedagógica completa pero usa boards Adafruit-propietarios poco disponibles en nuestro catálogo.",
+      "combined_score": 0.67,
+      "verdict": "Proyecto LCARS Star Trek prolijo con CircuitPython, diagrama de circuito y 3D printing; usa Feather ESP32-S3 Reverse TFT muy específico, pero el sensor CO2/Humedad/Temp y la batería LiPo son productos comunes.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "ESP32-S3",
-        "SHT41",
-        "DRV2605L",
-        "LiPo 3.7V",
-        "STEMMA QT cable",
-        "USB-C cable"
-      ],
-      "combined_score": 0.645
+        "Sensor CO2/Temp/Humedad",
+        "Batería LiPo 3.7V"
+      ]
     },
     {
       "id": "866a587ce24a",
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 5,
-        "materials_clarity": 7,
-        "step_completeness": 6,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 7,
-        "novelty": 5
+        "pedagogy": 8,
+        "code_quality": 7,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "image_quality": 6,
+        "relevance_to_store_catalog": 9,
+        "novelty": 6
       },
-      "verdict": "Guía software para convertir Raspberry Pi en router WiFi/Ethernet; buena estructura y componentes muy disponibles, pero el tema ya está cubierto extensamente en otros tutoriales.",
+      "combined_score": 0.745,
+      "verdict": "Tutorial sólido de Raspberry Pi como router WiFi con hostapd y bridging; hardware muy común en MechatronicStore (Pi 3/4/5 + fuente USB-C) y secciones bien organizadas paso a paso.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "Raspberry Pi 3B+",
         "Raspberry Pi 4",
         "Raspberry Pi 5",
-        "Fuente 5V USB-C",
-        "Cable Ethernet CAT6",
-        "Hub USB Ethernet"
-      ],
-      "combined_score": 0.635
+        "Fuente USB-C 5V",
+        "Tarjeta microSD"
+      ]
     },
     {
       "id": "07cbf6c824eb",
       "scores": {
         "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 6,
+        "code_quality": 8,
+        "materials_clarity": 8,
         "step_completeness": 7,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 6,
-        "novelty": 6
+        "image_quality": 6,
+        "relevance_to_store_catalog": 7,
+        "novelty": 4
       },
-      "verdict": "Breakout del sensor de lux MAX44009 con librerías Arduino y CircuitPython; tutorial sólido y reproducible aunque enfocado en breakout específico Adafruit con conector STEMMA QT.",
+      "combined_score": 0.69,
+      "verdict": "Guía clásica de sensor de luz MAX44009 con código CircuitPython, Arduino y WipperSnapper; útil y reproducible pero sin novedad, es contenido estándar de hoja de datos.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "MAX44009",
-        "STEMMA QT cable",
-        "ESP32 Feather",
-        "Raspberry Pi"
-      ],
-      "combined_score": 0.66
+        "Sensor MAX44009",
+        "Cable STEMMA QT/Qwiic",
+        "Arduino Uno"
+      ]
     },
     {
       "id": "bda956a198aa",
@@ -123,46 +116,41 @@
         "code_quality": 7,
         "materials_clarity": 7,
         "step_completeness": 7,
-        "image_quality": 6,
+        "image_quality": 7,
         "relevance_to_store_catalog": 5,
         "novelty": 6
       },
-      "verdict": "Teclado BLE de una sola tecla con QT Py ESP32 + switch Kailh + caja 3D; flujo completo Arduino+WebSerial, pero depende de NeoKey BFF y QT Py poco habituales en nuestro stock.",
+      "combined_score": 0.66,
+      "verdict": "Teclado Bluetooth de una tecla con QT Py ESP32 Pico y switch Kailh; pasos completos con Arduino IDE y 3D print, pero depende del NeoKey BFF poco común fuera de Adafruit.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "QT Py ESP32",
-        "Switch Kailh Blue",
-        "Keycap MX",
-        "LiPo 3.7V 150mAh",
-        "Headers Pico"
-      ],
-      "combined_score": 0.65
+        "Switch Kailh",
+        "Keycap mecánico"
+      ]
     },
     {
       "id": "e80c44751324",
       "scores": {
         "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 8,
+        "code_quality": 8,
+        "materials_clarity": 7,
         "step_completeness": 8,
         "image_quality": 7,
         "relevance_to_store_catalog": 6,
         "novelty": 8
       },
-      "verdict": "Walkie-talkies con ESP-NOW transmitiendo audio I2S entre dos Feathers ESP32-S3; proyecto novedoso, bien estructurado y reproducible aunque usa boards Adafruit específicas.",
+      "combined_score": 0.745,
+      "verdict": "Walkie talkies con ESP-NOW transportando audio I2S por paquetes es proyecto creativo y técnicamente rico; código y pasos completos, aunque el Feather Reverse TFT con antena w.FL es hardware nicho.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "ESP32-S3 Feather",
-        "Antena 2.4GHz dipolo",
-        "MAX98357A amplifier",
-        "ICS-43434 mic",
-        "Mini speaker 8 Ohm",
-        "Pulsador 16mm",
-        "Switch SPDT"
-      ],
-      "combined_score": 0.745
+        "ESP32-S3",
+        "Antena 2.4GHz dipolo SMA",
+        "Amplificador I2S MAX98357",
+        "Parlante 8 ohm"
+      ]
     },
     {
       "id": "4e1610cba496",
@@ -172,21 +160,18 @@
         "materials_clarity": 7,
         "step_completeness": 7,
         "image_quality": 7,
-        "relevance_to_store_catalog": 5,
-        "novelty": 7
+        "relevance_to_store_catalog": 6,
+        "novelty": 6
       },
-      "verdict": "Tablero LED RGB para Copa del Mundo FIFA con Matrix Portal S3 consumiendo API ESPN; oportuno y bien explicado, pero requiere Matrix Portal S3 que no manejamos.",
+      "combined_score": 0.675,
+      "verdict": "Marcador FIFA con matriz RGB y CircuitPython consultando API ESPN; pasos completos y settings.toml documentado, pero el Matrix Portal S3 es específico y la temática Mundial queda desactualizada.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "Matrix Portal S3",
-        "64x32 RGB LED Matrix",
-        "Fuente 5V 4A",
-        "Cable USB-C",
-        "Acrílico difusor",
-        "Tornillos M3"
-      ],
-      "combined_score": 0.67
+        "Matriz LED RGB 64x32 4mm",
+        "ESP32-S3",
+        "Acrílico difusor LED"
+      ]
     },
     {
       "id": "bb21433e6838",
@@ -194,90 +179,85 @@
         "pedagogy": 7,
         "code_quality": 7,
         "materials_clarity": 7,
-        "step_completeness": 8,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 6,
-        "novelty": 7
-      },
-      "verdict": "Pantuflas wearable con FSR y NeoPixel que reaccionan al pisar; proyecto largo y detallado con buen flujo de ensamblaje, FSR y NeoPixel disponibles pero usa Prop-Maker Feather Adafruit.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "RP2040 Prop-Maker Feather",
-        "FSR 0.3-10N",
-        "NeoPixel strip 1m",
-        "LiPo 3.7V 2000mAh",
-        "Cable AWG26 silicona",
-        "JST 2-pin switch"
-      ],
-      "combined_score": 0.69
-    },
-    {
-      "id": "a30ba3ea3667",
-      "scores": {
-        "pedagogy": 5,
-        "code_quality": 5,
-        "materials_clarity": 7,
-        "step_completeness": 5,
+        "step_completeness": 7,
         "image_quality": 7,
         "relevance_to_store_catalog": 6,
         "novelty": 7
       },
-      "verdict": "Monitor de señales con SDR y software iNTERCEPT en Raspberry Pi; guía corta de instalación/uso sin código propio ni profundidad pedagógica, pero componentes accesibles.",
+      "combined_score": 0.685,
+      "verdict": "Pantuflas wearable con sensor de fuerza FSR y tira NeoPixel reaccionando al paso; FSR y NeoPixels son productos muy demandados, pero requiere el RP2040 Prop-Maker Feather específico de Adafruit.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Sensor FSR fuerza",
+        "Tira NeoPixel WS2812B",
+        "RP2040",
+        "Batería LiPo"
+      ]
+    },
+    {
+      "id": "a30ba3ea3667",
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 5,
+        "materials_clarity": 7,
+        "step_completeness": 5,
+        "image_quality": 6,
+        "relevance_to_store_catalog": 6,
+        "novelty": 6
+      },
+      "combined_score": 0.585,
+      "verdict": "Review/install de iNTERCEPT para SDR en Raspberry Pi; aporta poco contenido pedagógico original porque solo cubre instalación y uso de una herramienta pre-hecha, sin código propio sustancial.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "Raspberry Pi 4",
         "Raspberry Pi 5",
-        "RTL-SDR USB stick RTL2832",
-        "Fuente 5V USB-C"
-      ],
-      "combined_score": 0.585
+        "Dongle USB SDR RTL"
+      ]
     },
     {
       "id": "bf1478a5dc5c",
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 4,
-        "materials_clarity": 6,
-        "step_completeness": 7,
+        "pedagogy": 8,
+        "code_quality": 5,
+        "materials_clarity": 8,
+        "step_completeness": 8,
         "image_quality": 7,
-        "relevance_to_store_catalog": 4,
-        "novelty": 6
+        "relevance_to_store_catalog": 5,
+        "novelty": 7
       },
-      "verdict": "Alerta de heladas no-code con WipperSnapper y Adafruit IO; bien explicado pero requiere suscripción paga Adafruit IO+ y QT Py específico, baja portabilidad fuera del ecosistema.",
+      "combined_score": 0.69,
+      "verdict": "Alerta de heladas para plantines sin código usando Adafruit IO + WipperSnapper; muy pedagógico y bien estructurado, pero atado al ecosistema cloud propietario de Adafruit limita su valor.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "QT Py ESP32-S3",
         "Cable USB-C",
-        "STEMMA QT cable"
-      ],
-      "combined_score": 0.585
+        "LED RGB difuso"
+      ]
     },
     {
       "id": "b3b6286d1c33",
       "scores": {
         "pedagogy": 7,
         "code_quality": 7,
-        "materials_clarity": 6,
-        "step_completeness": 7,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 4,
-        "novelty": 6
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "image_quality": 7,
+        "relevance_to_store_catalog": 6,
+        "novelty": 7
       },
-      "verdict": "Orejas wearable que reaccionan a beacons BLE de los parques Disney; uso de nicho geográfico, depende del CLUE de Adafruit y QT Py poco disponibles localmente.",
+      "combined_score": 0.7,
+      "verdict": "Orejas wearable con NeoPixel Jewel que reaccionan a beacons BLE de parques Disney; código CircuitPython tanto para CLUE como QT Py, ensamblado claro y diagrama de circuito incluido.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "QT Py ESP32-S3",
-        "Adafruit CLUE nRF52840",
-        "NeoPixel Jewel 7x",
-        "LiPo 3.7V 500mAh",
-        "LiPo 3.7V 1200mAh",
-        "Cable AWG silicona 4-wire"
-      ],
-      "combined_score": 0.62
+        "NeoPixel Jewel 7 LED",
+        "Cargador LiPo",
+        "Batería LiPo 3.7V"
+      ]
     }
   ]
 }
