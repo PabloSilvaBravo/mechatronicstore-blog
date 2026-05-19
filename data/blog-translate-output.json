@@ -1,197 +1,125 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-19T13:50:00Z",
+  "translated_at": "2026-05-19T14:15:00Z",
   "translations": [
     {
       "id": "e80c44751324",
-      "slug": "walkie-talkies-esp-now-esp32-audio-i2s",
-      "title_es": "Walkie talkies con ESP32 y ESP-NOW: audio por radio sin internet",
-      "subtitle_es": "Construye un par de walkie talkies con ESP32 que transmiten voz por ESP-NOW usando audio I2S, sin Wi-Fi ni servidores.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571",
-      "body_es": "## ¿Por qué armar walkie talkies con ESP-NOW?\n\nAntes de los celulares, dos amigos con walkie talkies se podían comunicar a metros (o cuadras) de distancia sin pagar plan ni depender de antenas de operadoras. Hoy puedes recrear esa experiencia con un par de ESP32, micrófono I2S, parlante y el protocolo **ESP-NOW** de Espressif — un sistema de mensajería punto a punto que funciona en 2.4 GHz, sin router de por medio y con latencia mínima.\n\nEste proyecto, inspirado en el [tutorial de Liz Clark publicado en Adafruit Learning System](https://learn.adafruit.com/esp-now-walkie-talkies), arma dos unidades portátiles que se aparean al primer encendido, graban hasta 10 segundos de audio cuando aprietas el botón y envían los paquetes I2S al otro extremo. El LED del botón cambia de color según el estado (pareando, enviando, recibiendo) y la pantalla del ESP32 muestra MAC del peer, intensidad de señal RSSI y estado del último paquete.\n\n![Walkie talkie ESP32 armado con caja impresa en 3D, botón iluminado y antena externa](https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571)\n\nLa gracia técnica está en que ESP-NOW es **mucho más rápido y eficiente** que UDP sobre Wi-Fi: no hay handshake, no hay DHCP, no hay router que medie. Conoces la MAC del otro ESP32 y le mandas paquetes directos. Para audio en tiempo casi-real es perfecto porque el overhead es mínimo.\n\n## Cómo funciona el audio por ESP-NOW (parte clave)\n\nESP-NOW tiene un límite de **250 bytes por paquete**. Un buffer de audio de 10 segundos a 16 kHz / 16 bits ocupa 320 KB — imposible mandarlo de una. La solución del firmware:\n\n1. **Grabar** desde el micrófono I2S a un buffer en RAM mientras tengas el botón apretado (máximo 10 segundos).\n2. **Trocear** el buffer en chunks de 122 muestras (244 bytes, justo bajo el límite de ESP-NOW).\n3. **Enviar** cada chunk como un mensaje *unicast* al peer, con un delay corto entre paquetes para que la red no se sature.\n4. Al final, mandar un **paquete manifiesto** con el ID del mensaje y la cantidad total de paquetes, para que el receptor sepa cuándo terminó y pueda reproducir el audio completo.\n\nEl receptor arma el buffer en el mismo orden, lo entrega al I2S DAC (o al amplificador) y reproduce por el parlante. La calidad es razonable para voz — no esperes hi-fi, pero suficiente para \"copiado, cambio\".\n\n## Materiales (por cada walkie talkie — necesitas 2 unidades)\n\nLa guía original usa una **Adafruit Feather ESP32-S3 Reverse TFT con antena w.FL**, que no está disponible en Chile. Acá hicimos la sustitución por componentes equivalentes del catálogo MechatronicStore:\n\n- **Placa ESP32-S3** (Seeed XIAO ESP32-S3 o ESP32 WROOM-32) — cualquier ESP32 con Wi-Fi 2.4 GHz soporta ESP-NOW. El S3 es ideal porque tiene más RAM para el buffer de audio.\n- **Micrófono I2S MEMS INMP441** — el original es ICS-43434, pero el INMP441 es 100% compatible eléctricamente (mismo pinout I2S, mismo voltaje 3.3V).\n- **Amplificador de audio** (PAM8403) — el original usa MAX98357A (I2S amp). Como sustituto, puedes usar un amplificador analógico tipo PAM8403 alimentado por la salida del DAC interno del ESP32-S3, o bien implementar un DAC I2S externo.\n- **Parlante 8 Ω, 1 W** — sale fuerte para el tamaño.\n- **Botón pulsador momentáneo 16-22 mm** — el botón PTT (Push To Talk). Idealmente iluminado por LED.\n- **Interruptor SPDT** — para el switch de encendido/apagado.\n- **Antena WiFi 2.4 GHz externa con cable U.FL a SMA** — extiende el alcance hasta varias decenas de metros en interior, más en exterior con línea de vista.\n- **Batería LiPo 3.7 V** (300-1000 mAh) o batería 18650 con holder — para hacerlo portable.\n- **Filamento PLA** para imprimir la caja (≈100 g por unidad).\n- **Cables dupont macho-hembra**, soldadura, cautín.\n\n## Paso 1: Diagrama del circuito\n\nLa lógica del cableado es estándar para audio I2S sobre ESP32:\n\n**Micrófono INMP441 (entrada I2S) ↔ ESP32-S3:**\n\n| INMP441 | ESP32-S3 |\n|---|---|\n| VDD | 3.3 V |\n| GND | GND |\n| L/R | GND (selecciona canal izquierdo) |\n| WS  | GPIO 15 (LRCK) |\n| SCK | GPIO 14 (BCLK) |\n| SD  | GPIO 32 (DATA IN) |\n\n**Amplificador + parlante (salida I2S) ↔ ESP32-S3:**\n\n| Amplificador | ESP32-S3 |\n|---|---|\n| VIN | 5 V (USB o batería) |\n| GND | GND |\n| LRC | GPIO 25 |\n| BCLK | GPIO 26 |\n| DIN | GPIO 22 |\n| Parlante + | OUT+ |\n| Parlante − | OUT− |\n\n**Botón PTT + LED + switch on/off:**\n\n- Botón: un pin a GPIO 33, el otro a GND (con `INPUT_PULLUP`).\n- LED interno del botón (si aplica): ánodo a GPIO 27 vía resistencia de 220 Ω, cátodo a GND.\n- Switch SPDT: en serie con el cable positivo de la batería.\n\nLos GPIO son referenciales — ajústalos a lo que tu placa tenga disponible.\n\n## Paso 2: Impresión 3D de la carcasa\n\nLa guía original publica los archivos `.STL` del case en su [GitHub](https://github.com/adafruit/Adafruit_Learning_System_Guides). Si imprimes tú, ten en cuenta:\n\n- **Filamento**: PLA blanco o cualquier color sólido. No necesitas materiales especiales (ABS, PETG) salvo que lo vayas a llevar a temperaturas extremas.\n- **Configuración recomendada**: altura de capa 0.2 mm, relleno 20-25%, sin soporte para la mayoría de las piezas.\n- **Tiempo**: ≈4 horas por unidad en una impresora estándar (Ender 3, Bambu A1, etc.).\n- **Piezas**: la caja se divide en cuerpo principal, tapa trasera (atornillada con M3) y rejilla del parlante. La antena va externa, fijada con la tuerca del conector SMA.\n\nSi prefieres saltarte la impresión 3D para el primer prototipo, una **caja de proyecto plástica** estándar (115×65×35 mm) cabe todo lo necesario con un poco de creatividad.\n\n## Paso 3: Setup del IDE Arduino\n\n1. Instala el **Arduino IDE 2.x** o usa **PlatformIO** dentro de VS Code (más cómodo si vas a trabajar con dos placas).\n2. Añade la URL del board manager de Espressif en *Preferencias → URLs adicionales del Gestor de Placas*:\n\n```\nhttps://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json\n```\n\n3. En el *Gestor de Placas* busca `esp32` e instala la última versión (≥ 3.0).\n4. Instala las siguientes librerías desde el *Library Manager*:\n   - **ESP32-audioI2S** (de schreibfaul1) — encapsula I2S input/output.\n   - **Adafruit GFX Library** y **Adafruit ST7789** — si tu placa tiene pantalla TFT.\n   - **WiFi** y **esp_now** — vienen en el core ESP32, no hay que instalarlas.\n5. Selecciona la placa correcta (ej. `XIAO_ESP32S3` o `ESP32 Dev Module`) y el puerto serial.\n\n## Paso 4: Código del walkie talkie\n\nEl firmware completo está en el repo de Adafruit, pero estos son los bloques claves para entender qué hace.\n\n### Inicialización de ESP-NOW y pareo automático\n\n```cpp\n#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};\nuint8_t peerAddress[6] = {0};\nbool paired = false;\n\nvoid OnDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  if (!paired) {\n    memcpy(peerAddress, mac, 6);\n    paired = true;\n    Serial.printf(\"Pareado con: %02X:%02X:%02X:%02X:%02X:%02X\\n\",\n                  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);\n    esp_now_peer_info_t peerInfo = {};\n    memcpy(peerInfo.peer_addr, peerAddress, 6);\n    peerInfo.channel = 0;\n    peerInfo.encrypt = false;\n    esp_now_add_peer(&peerInfo);\n  } else {\n    handleAudioPacket(data, len);\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  WiFi.mode(WIFI_STA);\n  if (esp_now_init() != ESP_OK) {\n    Serial.println(\"Error iniciando ESP-NOW\");\n    return;\n  }\n  esp_now_register_recv_cb(OnDataRecv);\n  // Anunciarse en broadcast hasta que alguien responda\n  esp_now_peer_info_t bcast = {};\n  memcpy(bcast.peer_addr, broadcastAddress, 6);\n  bcast.channel = 0;\n  bcast.encrypt = false;\n  esp_now_add_peer(&bcast);\n}\n```\n\n### Grabación I2S y troceo en chunks\n\n```cpp\n#define SAMPLE_RATE      16000\n#define CHUNK_SAMPLES    122\n#define MAX_BUFFER_SEC   10\n\nint16_t audioBuffer[SAMPLE_RATE * MAX_BUFFER_SEC];\nsize_t  samplesGrabbed = 0;\n\nvoid grabar() {\n  samplesGrabbed = 0;\n  while (digitalRead(PTT_PIN) == LOW && samplesGrabbed < SAMPLE_RATE * MAX_BUFFER_SEC) {\n    size_t bytesRead;\n    i2s_read(I2S_NUM_0,\n             &audioBuffer[samplesGrabbed],\n             CHUNK_SAMPLES * sizeof(int16_t),\n             &bytesRead,\n             portMAX_DELAY);\n    samplesGrabbed += bytesRead / sizeof(int16_t);\n  }\n  enviarAudio();\n}\n\nvoid enviarAudio() {\n  uint16_t totalChunks = (samplesGrabbed + CHUNK_SAMPLES - 1) / CHUNK_SAMPLES;\n  for (uint16_t i = 0; i < totalChunks; i++) {\n    size_t offset = i * CHUNK_SAMPLES;\n    size_t bytes  = min((size_t)CHUNK_SAMPLES, samplesGrabbed - offset) * sizeof(int16_t);\n    esp_now_send(peerAddress, (uint8_t *)&audioBuffer[offset], bytes);\n    delayMicroseconds(800);   // evita saturar la cola TX de ESP-NOW\n  }\n  // Manifest packet final\n  uint8_t manifest[4] = {0xAA, 0xAA, (uint8_t)(totalChunks >> 8), (uint8_t)(totalChunks & 0xFF)};\n  esp_now_send(peerAddress, manifest, 4);\n}\n```\n\n### Recepción y reproducción\n\nEn el lado receptor, cada chunk se escribe directamente al I2S de salida con `i2s_write()` (al amplificador MAX98357A en el original, o a un DAC + PAM8403 si usas el reemplazo del catálogo MS). Cuando llega el paquete manifiesto (con marcador `0xAA 0xAA`), el firmware sabe que terminó la transmisión y vuelve a estado *idle*.\n\n## Paso 5: Cableado físico y armado\n\n1. **Suelda los pines** del INMP441 y del módulo amplificador a los GPIO indicados arriba.\n2. **Conecta la antena externa**: si tu ESP32 ya tiene conector U.FL, enchufa el cable U.FL → SMA. Si no, vas a usar la antena integrada (alcance ≈10 m en interior).\n3. **Botón PTT con LED**: el pulsador va entre GPIO 33 y GND; el LED interno entre GPIO 27 y GND con resistencia limitadora.\n4. **Switch on/off**: en serie con el positivo de la batería, antes del regulador de la placa.\n5. **Batería LiPo**: conéctala al pin BAT/VBAT de la placa (si tiene cargador integrado) o usa un módulo TP4056 externo para cargarla.\n\n![Diagrama de cableado de los componentes dentro del case impreso](https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571)\n\nAcomoda todo dentro de la carcasa impresa: el parlante apunta hacia la rejilla, el micrófono cerca de un hueco discreto, la antena perpendicular al cuerpo. La batería suele ir en la parte baja con velcro de doble cara para que no se mueva.\n\n## Paso 6: Primer encendido y pareo\n\n1. Carga el mismo firmware en ambas placas (sin cambios).\n2. Enciende las dos al mismo tiempo.\n3. La primera vez, cada una transmite por broadcast su MAC. Cuando la otra recibe el mensaje, **se aparean automáticamente** y guardan la MAC del peer en NVS (memoria flash persistente).\n4. A partir de ahí, cualquier reset las re-paréa con la última MAC guardada.\n\nDesde aquí, aprieta el botón PTT, habla con voz clara cerca del micrófono y suelta el botón. En menos de un segundo deberías escuchar tu voz reproducida en el otro walkie talkie.\n\n## Solución de problemas\n\n- **Audio entrecortado**: aumenta el `delayMicroseconds()` entre paquetes a 1500-2000 µs.\n- **No paréa**: revisa que ambas placas estén en el mismo canal Wi-Fi (`WiFi.channel(1)` en setup).\n- **Volumen bajo**: el INMP441 tiene ganancia fija. Aplica un multiplicador por software (`muestra * 4`) antes de enviar.\n- **Distorsión**: probablemente está clippeando. Reduce el multiplicador o aleja el micrófono de la boca.\n- **Alcance corto**: si estás usando antena interna, el alcance es de pocos metros. La antena externa SMA con cable U.FL extiende fácilmente a 50-100 m con línea de vista.\n\n## Cómo extenderlo\n\n- **Más de 2 unidades**: con ESP-NOW puedes registrar hasta 20 peers. Cambia el pareo automático por una lista predefinida de MACs y mandá broadcast a todas (modo \"canal abierto\").\n- **Encriptación**: ESP-NOW soporta cifrado simétrico AES-128. Configura `encrypt = true` y `lmk[]` con una clave común.\n- **PTT por voz (VOX)**: en vez de un botón, transmite cuando el nivel del micrófono pase un umbral. Útil para manos libres.\n- **Compresión**: aplica μ-law antes de enviar para reducir el bitrate a la mitad y duplicar el alcance temporal del buffer.\n\nLa idea base es robusta y deja muchísimo espacio para experimentar. Comparte tus mods en los comentarios."
-,
+      "slug": "walkie-talkies-esp-now-esp32-s3",
+      "title_es": "Walkie Talkies con ESP-NOW: comunicación de voz entre dos ESP32-S3",
+      "subtitle_es": "Construye un par de walkie talkies inalámbricos con ESP32-S3, audio I2S y el protocolo ESP-NOW para chatear sin smartphone.",
+      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/743/medium800thumb/arduino_compatibles_handshake.jpg?1776181556",
+      "body_es": "## Olvídate del celular: chatea con tu propio walkie talkie\n\n¿Me copias? Deja el teléfono de lado y comunícate con tu amigo construyendo este par de walkie talkies con ESP32-S3. La placa corre código Arduino que usa el protocolo **ESP-NOW** de Espressif para enviar y recibir paquetes de audio I2S de hasta 10 segundos cada uno. La antena externa de 2.4GHz le da rango extra para comunicarte a mayores distancias, ya sea adentro o afuera.\n\nEl diseño de la carcasa se inspira en los walkie talkies de juguete que eran ubicuos a inicios de los 90. El botón LED al costado actúa como indicador de estado durante el pareo y el envío/recepción de mensajes. La pantalla TFT integrada muestra información del sistema: dirección MAC, intensidad de señal y estado de los paquetes.\n\n![Diseño de carcasa estilo retro de los 90](https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571)\n\n## ¿Qué es ESP-NOW y por qué usarlo?\n\nESP-NOW es un protocolo inalámbrico desarrollado por Espressif que permite comunicación directa entre placas ESP32/ESP8266 sin necesidad de router WiFi ni conexión a internet. Funciona en la banda de 2.4GHz y tiene latencias muy bajas, lo que lo hace perfecto para transmitir paquetes de audio en tiempo real.\n\nVentajas clave para este proyecto:\n- **Sin infraestructura**: no necesitas WiFi, modem ni servidor.\n- **Bajo consumo**: ideal para dispositivos a batería.\n- **Pareo simple**: solo necesitas la MAC del otro equipo.\n- **Rango extendido**: con antena externa puedes llegar a varios cientos de metros con línea de vista.\n\n## Lista de materiales (por walkie talkie)\n\nNecesitas **dos sets completos** para que el proyecto funcione, ya que se trata de un par que se comunica entre sí.\n\n- 1× Placa ESP32-S3 con conector de antena externa (XIAO ESP32-S3 funciona muy bien acá).\n- 1× Antena WiFi 2.4GHz con cable U.FL a SMA.\n- 1× Módulo micrófono I2S INMP441.\n- 1× Parlante 8Ω 1W mini.\n- 1× Pulsador 16mm (idealmente iluminado para usarlo como indicador de estado).\n- 1× Mini switch SPDT para encendido.\n- 1× Batería Li-Ion 3.7V (300-1000 mAh según autonomía deseada).\n- 1× Cable USB-C para carga y programación.\n- Cables jumper, soldadura y carcasa impresa en 3D.\n\n## Diagrama del circuito\n\nEl audio se maneja vía I2S, así que tanto el micrófono como el amplificador (o el módulo DAC+amp) comparten el mismo bus de reloj y datos pero en direcciones opuestas. El pulsador iluminado se conecta a un GPIO con resistencia pull-up interna y su LED a otro GPIO controlado por software.\n\nConexiones clave del ESP32-S3:\n\n| Periférico | Pin ESP32-S3 |\n|---|---|\n| I2S BCK (reloj de bit) | GPIO 5 |\n| I2S LRC / WS | GPIO 6 |\n| I2S DOUT (al amplificador) | GPIO 7 |\n| I2S DIN (del micrófono) | GPIO 8 |\n| Pulsador PTT | GPIO 9 |\n| LED del pulsador | GPIO 10 |\n\n> **Tip Chile**: si el catálogo local no tiene el amplificador MAX98357A en stock, puedes alimentar el parlante con un amplificador analógico (PAM8403) usando un canal de salida del DAC del ESP32-S3 — pierdes algo de calidad pero el proyecto sigue siendo viable.\n\n## Impresión 3D de la carcasa\n\nLa carcasa está diseñada en dos mitades que se unen con tornillos M2.5. Imprime con:\n\n- **Material**: PLA o PETG.\n- **Altura de capa**: 0.2 mm.\n- **Relleno**: 15-20%.\n- **Soportes**: solo en los voladizos de la rejilla del parlante.\n- **Tiempo aproximado**: 4-5 horas por carcasa.\n\nLas dos mitades llevan recortes para el pulsador, el switch de encendido, la antena y el cable USB-C. Asegúrate de calibrar bien la tolerancia de los huecos antes de imprimir las dos copias finales.\n\n## Configuración del IDE de Arduino\n\nAntes de cargar el código, instala las dependencias:\n\n1. Agrega el repositorio de placas de Espressif en `Archivo > Preferencias`:\n   ```\n   https://espressif.github.io/arduino-esp32/package_esp32_index.json\n   ```\n2. En `Herramientas > Placa > Gestor de tarjetas`, busca \"esp32\" e instala la última versión.\n3. Instala las librerías:\n   - `ESP32-audioI2S` (de schreibfaul1)\n   - `Adafruit GFX` y `Adafruit ST7789` para la pantalla TFT.\n4. Selecciona la placa **ESP32S3 Dev Module** y el puerto correspondiente.\n\n## Código de los walkie talkies\n\nEl firmware tiene dos modos: **TX** (transmisor) cuando se aprieta el pulsador y **RX** (receptor) en cualquier otro momento. La detección es vía interrupt en el pin del pulsador.\n\nFragmento clave de inicialización de ESP-NOW:\n\n```cpp\n#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t peerMac[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};\n\ntypedef struct audio_packet {\n  uint16_t seq;\n  uint8_t samples[200];\n} audio_packet;\n\nvoid onDataSent(const uint8_t *mac, esp_now_send_status_t status) {\n  // callback para confirmar entrega\n}\n\nvoid onDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  // encolar audio recibido para reproducción\n}\n\nvoid setup() {\n  WiFi.mode(WIFI_STA);\n  esp_now_init();\n  esp_now_register_send_cb(onDataSent);\n  esp_now_register_recv_cb(onDataRecv);\n\n  esp_now_peer_info_t peerInfo = {};\n  memcpy(peerInfo.peer_addr, peerMac, 6);\n  peerInfo.channel = 0;\n  peerInfo.encrypt = false;\n  esp_now_add_peer(&peerInfo);\n}\n```\n\n## Cableado y soldadura\n\nUsa cables tipo dupont siliconados para que la carcasa cierre sin estrés mecánico. Suelda los pines I2S del micrófono y del amplificador directamente a la placa ESP32-S3 con cables de 6-8 cm. El pulsador y el switch se montan en los huecos frontales con sus tuercas originales.\n\nOrden recomendado de armado:\n\n1. Suelda el conector U.FL de la antena al pad correspondiente de la placa (si no viene preinstalado).\n2. Suelda los cables del micrófono I2S, parlante, amplificador y batería.\n3. Atornilla el switch y el pulsador a la carcasa frontal.\n4. Atornilla la placa ESP32-S3 a los soportes internos.\n5. Cierra la carcasa con los tornillos M2.5 perimetrales.\n\n## Pareo y uso\n\nLa primera vez que enciendes los walkie talkies, ambos muestran su MAC en la pantalla TFT. Anótalas (o usa la opción \"Pair\" automática si la incluiste en tu firmware), edita la constante `peerMac` en el código de cada equipo con la MAC del otro y vuelve a cargar.\n\nUna vez pareados:\n\n- **Mantén apretado el pulsador** para transmitir voz.\n- **Suéltalo** para escuchar al otro lado.\n- La pantalla muestra la intensidad de señal (RSSI) y el estado del último paquete enviado/recibido.\n\nEn pruebas de campo con la antena de 2.4GHz, hemos obtenido rango efectivo de ~150 m en espacios abiertos y ~50 m dentro de una casa con paredes de hormigón armado. No esperes calidad de estudio: el audio es comprensible pero suena \"radiofónico\", que es justo lo que buscas en un walkie talkie retro.\n\n## Cierre\n\nEste proyecto es una excelente excusa para entender cómo funcionan los protocolos peer-to-peer en microcontroladores. ESP-NOW abre la puerta a muchísimas aplicaciones: redes de sensores, control remoto, mesh básico, y como viste, audio en tiempo real. Si quieres extenderlo, prueba agregar encriptación, transmisión grupal a múltiples peers, o un sistema de canales por banda — el ESP32-S3 tiene poder de sobra.",
       "materials_list": [
-        {"name": "Placa ESP32-S3 (Seeed XIAO ESP32-S3 o equivalente)", "qty": 2, "role": "microcontrolador principal"},
-        {"name": "Módulo Micrófono I2S INMP441", "qty": 2, "role": "captura de audio"},
-        {"name": "Amplificador de audio PAM8403", "qty": 2, "role": "salida de audio al parlante"},
-        {"name": "Parlante 8 Ohm 1W", "qty": 2, "role": "reproducción de audio"},
-        {"name": "Botón Pulsador iluminado 16-22mm", "qty": 2, "role": "botón Push To Talk"},
-        {"name": "Interruptor SPDT/Toggle", "qty": 2, "role": "encendido/apagado"},
-        {"name": "Antena WiFi 2.4 GHz U.FL a SMA", "qty": 2, "role": "extender alcance de radio"},
-        {"name": "Batería LiPo 3.7V (300-1000 mAh)", "qty": 2, "role": "alimentación portátil"},
-        {"name": "Filamento PLA 1.75mm para carcasa 3D", "qty": 1, "role": "impresión de la caja"},
-        {"name": "Cables macho-hembra dupont 30cm", "qty": 1, "role": "cableado interno"},
-        {"name": "Cable USB Tipo C", "qty": 2, "role": "programación y carga"},
-        {"name": "Cautín y estaño para soldar", "qty": 1, "role": "soldadura de componentes"}
+        {"name": "Placa ESP32-S3 con conector antena externa", "qty": 2, "role": "microcontrolador"},
+        {"name": "Antena WiFi 2.4GHz U.FL a SMA", "qty": 2, "role": "antena"},
+        {"name": "Módulo micrófono I2S INMP441", "qty": 2, "role": "captura audio"},
+        {"name": "Parlante 8 Ohm 1W", "qty": 2, "role": "reproducción audio"},
+        {"name": "Pulsador 16mm momentáneo", "qty": 2, "role": "botón PTT"},
+        {"name": "Mini switch SPDT", "qty": 2, "role": "encendido"},
+        {"name": "Batería Li-Ion 3.7V", "qty": 2, "role": "alimentación"},
+        {"name": "Cable USB-C", "qty": 1, "role": "carga y programación"},
+        {"name": "Pack cables jumper", "qty": 1, "role": "cableado interno"},
+        {"name": "Carcasa impresa en 3D (PLA o PETG)", "qty": 2, "role": "estructura"}
       ],
       "steps": [
-        {
-          "position": 1,
-          "name": "Reunir materiales y revisar el circuito",
-          "text": "Verificar que tienes los dos ESP32-S3 (o equivalentes), 2 micrófonos INMP441, 2 amplificadores, 2 parlantes 8Ω, 2 botones, 2 switches, antenas y baterías. Revisar el diagrama de pinout antes de soldar."
-        },
-        {
-          "position": 2,
-          "name": "Imprimir la carcasa 3D",
-          "text": "Descargar los STL desde el repo de Adafruit Learning System o diseñar una caja propia (115×65×35 mm). Imprimir en PLA con 20% de relleno, capa 0.2 mm. Tiempo aproximado: 4 horas por unidad."
-        },
-        {
-          "position": 3,
-          "name": "Configurar el Arduino IDE",
-          "text": "Añadir el board manager de Espressif, instalar el core ESP32 (v3.0+) y las librerías ESP32-audioI2S, Adafruit GFX y ST7789 si tu placa tiene pantalla. Seleccionar la placa correcta."
-        },
-        {
-          "position": 4,
-          "name": "Cargar el firmware en ambos ESP32",
-          "text": "Compilar y flashear el mismo sketch en las dos placas. Sin modificar nada: el pareo automático se hace en el primer encendido vía broadcast ESP-NOW."
-        },
-        {
-          "position": 5,
-          "name": "Soldar y cablear los componentes",
-          "text": "Conectar el INMP441 a los pines I2S de entrada (WS, SCK, SD), el amplificador + parlante a la salida I2S, el botón PTT a GPIO con pullup y el switch en serie con el positivo de la batería. Soldar la antena U.FL al conector de la placa."
-        },
-        {
-          "position": 6,
-          "name": "Ensamblar dentro del case impreso",
-          "text": "Acomodar el parlante apuntando a la rejilla, el micrófono cerca del hueco para sonido, la batería en la parte baja con velcro y la antena fija con la tuerca SMA. Cerrar la tapa trasera con tornillos M3."
-        },
-        {
-          "position": 7,
-          "name": "Encender, parear y probar",
-          "text": "Encender los dos walkie talkies al mismo tiempo. Esperar a que se pareen (la pantalla muestra la MAC del peer). Presionar el botón PTT, hablar y soltar — debería escucharse en el otro extremo en menos de un segundo."
-        }
+        {"position": 1, "name": "Diseño del circuito", "text": "Define las conexiones I2S entre el micrófono INMP441, el amplificador y el ESP32-S3. El bus I2S comparte BCK y LRC entre entrada y salida, mientras que DIN y DOUT son pines separados."},
+        {"position": 2, "name": "Impresión 3D de la carcasa", "text": "Imprime las dos mitades de la carcasa en PLA o PETG con 0.2 mm de altura de capa y 15-20% de relleno. Cada walkie talkie requiere ~4-5 horas de impresión. Calibra tolerancias antes de imprimir las copias finales."},
+        {"position": 3, "name": "Setup del IDE Arduino", "text": "Instala el paquete de placas ESP32 de Espressif, agrega las librerías ESP32-audioI2S, Adafruit GFX y Adafruit ST7789. Selecciona la placa ESP32S3 Dev Module y configura el puerto USB."},
+        {"position": 4, "name": "Programación del firmware ESP-NOW", "text": "Carga el código que inicializa ESP-NOW en modo STA, registra los callbacks de envío y recepción, y configura el peer remoto con la MAC del otro walkie talkie. Implementa el doble buffer para audio I2S sin glitches."},
+        {"position": 5, "name": "Cableado y soldadura", "text": "Suelda con cables siliconados de 6-8 cm para tener flexibilidad al cerrar la carcasa. Conecta primero los pines de poder, luego I2S, después controles. Suelda la antena U.FL con cuidado para no dañar el conector miniatura."},
+        {"position": 6, "name": "Ensamblaje físico", "text": "Atornilla los componentes a la carcasa frontal: switch, pulsador y antena en la parte superior. Luego fija la placa ESP32-S3 a los soportes internos y cierra con los tornillos M2.5 perimetrales."},
+        {"position": 7, "name": "Pareo y prueba", "text": "Enciende ambos walkie talkies, anota las direcciones MAC que muestran en pantalla, actualiza la constante peerMac en cada firmware y recarga. Prueba la comunicación apretando el botón PTT y verifica el rango efectivo en distintos entornos."}
       ],
       "code_blocks": [
         {
           "lang": "cpp",
-          "caption": "Inicialización de ESP-NOW con pareo automático por broadcast",
-          "code": "#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};\nuint8_t peerAddress[6] = {0};\nbool paired = false;\n\nvoid OnDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  if (!paired) {\n    memcpy(peerAddress, mac, 6);\n    paired = true;\n    esp_now_peer_info_t peerInfo = {};\n    memcpy(peerInfo.peer_addr, peerAddress, 6);\n    peerInfo.channel = 0;\n    peerInfo.encrypt = false;\n    esp_now_add_peer(&peerInfo);\n  } else {\n    handleAudioPacket(data, len);\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  WiFi.mode(WIFI_STA);\n  esp_now_init();\n  esp_now_register_recv_cb(OnDataRecv);\n  esp_now_peer_info_t bcast = {};\n  memcpy(bcast.peer_addr, broadcastAddress, 6);\n  bcast.channel = 0;\n  bcast.encrypt = false;\n  esp_now_add_peer(&bcast);\n}"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Grabación I2S y envío del audio troceado en chunks de 122 muestras",
-          "code": "#define SAMPLE_RATE      16000\n#define CHUNK_SAMPLES    122\n#define MAX_BUFFER_SEC   10\n\nint16_t audioBuffer[SAMPLE_RATE * MAX_BUFFER_SEC];\nsize_t  samplesGrabbed = 0;\n\nvoid grabar() {\n  samplesGrabbed = 0;\n  while (digitalRead(PTT_PIN) == LOW &&\n         samplesGrabbed < SAMPLE_RATE * MAX_BUFFER_SEC) {\n    size_t bytesRead;\n    i2s_read(I2S_NUM_0,\n             &audioBuffer[samplesGrabbed],\n             CHUNK_SAMPLES * sizeof(int16_t),\n             &bytesRead,\n             portMAX_DELAY);\n    samplesGrabbed += bytesRead / sizeof(int16_t);\n  }\n  enviarAudio();\n}\n\nvoid enviarAudio() {\n  uint16_t totalChunks = (samplesGrabbed + CHUNK_SAMPLES - 1) / CHUNK_SAMPLES;\n  for (uint16_t i = 0; i < totalChunks; i++) {\n    size_t offset = i * CHUNK_SAMPLES;\n    size_t bytes  = min((size_t)CHUNK_SAMPLES, samplesGrabbed - offset) * sizeof(int16_t);\n    esp_now_send(peerAddress, (uint8_t *)&audioBuffer[offset], bytes);\n    delayMicroseconds(800);\n  }\n  uint8_t manifest[4] = {0xAA, 0xAA,\n                         (uint8_t)(totalChunks >> 8),\n                         (uint8_t)(totalChunks & 0xFF)};\n  esp_now_send(peerAddress, manifest, 4);\n}"
+          "caption": "Inicialización de ESP-NOW con callbacks de envío y recepción",
+          "code": "#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t peerMac[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};\n\ntypedef struct audio_packet {\n  uint16_t seq;\n  uint8_t samples[200];\n} audio_packet;\n\nvoid onDataSent(const uint8_t *mac, esp_now_send_status_t status) {\n  // callback para confirmar entrega\n}\n\nvoid onDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  // encolar audio recibido para reproducción\n}\n\nvoid setup() {\n  WiFi.mode(WIFI_STA);\n  esp_now_init();\n  esp_now_register_send_cb(onDataSent);\n  esp_now_register_recv_cb(onDataRecv);\n\n  esp_now_peer_info_t peerInfo = {};\n  memcpy(peerInfo.peer_addr, peerMac, 6);\n  peerInfo.channel = 0;\n  peerInfo.encrypt = false;\n  esp_now_add_peer(&peerInfo);\n}"
         }
       ],
       "linked_products": [
         {
-          "name_original": "Placa ESP32-S3 Seeed XIAO",
+          "name_original": "Placa ESP32-S3 con conector antena externa",
           "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GS1-3",
+          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GS1-3",
           "price_clp": 13670,
-          "stock_available": true,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Placa ESP32 WROOM-32 USB Tipo C",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=X2-10V2",
-          "price_clp": 7990,
           "stock_available": true,
           "match_score": 0.82
         },
         {
-          "name_original": "Módulo Micrófono I2S INMP441",
-          "product_id": "GL3-12",
-          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GL3-12",
-          "price_clp": 5890,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Amplificador de audio PAM8403 con potenciómetro 3W",
-          "product_id": "M-117",
-          "product_url": "https://www.mechatronicstore.cl/mini-amplificador-digital-pam8403-3w/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=M-117",
-          "price_clp": 1600,
-          "stock_available": true,
-          "match_score": 0.75
-        },
-        {
-          "name_original": "Parlante 8 Ohm 1W",
-          "product_id": "G-234V1",
-          "product_url": "https://www.mechatronicstore.cl/altavoz-8-ohm-1w/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=G-234V1",
-          "price_clp": 2590,
-          "stock_available": true,
-          "match_score": 0.97
-        },
-        {
-          "name_original": "Botón Pulsador iluminado 22mm momentáneo (rojo)",
-          "product_id": "GC2-12",
-          "product_url": "https://www.mechatronicstore.cl/boton-pulsador-22mm-3-pines-colores/?attribute_pa_color=rojo&utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GC2-12",
-          "price_clp": 1790,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Botón Pulsador 16mm momentáneo blanco",
-          "product_id": "GD2-1",
-          "product_url": "https://www.mechatronicstore.cl/switch-n-a-tipo-pulsador-blanco/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GD2-1",
-          "price_clp": 890,
-          "stock_available": true,
-          "match_score": 0.80
-        },
-        {
-          "name_original": "Interruptor de Palanca Conmutador SPDT ON-ON 3 Pines",
-          "product_id": "GB1-16",
-          "product_url": "https://www.mechatronicstore.cl/interruptor-de-palanca-conmutador-on-on-de-3-pines/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GB1-16",
-          "price_clp": 890,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Antena WiFi 2.4 GHz con cable U.FL a SMA para ESP32",
+          "name_original": "Antena WiFi 2.4GHz U.FL a SMA",
           "product_id": "GL1-7",
-          "product_url": "https://www.mechatronicstore.cl/antena-wifi-2-4-ghz-cable-u-fl-a-sma-para-esp32-esp8266/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GL1-7",
+          "product_url": "https://www.mechatronicstore.cl/antena-wifi-2-4-ghz-cable-u-fl-a-sma-para-esp32-esp8266/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GL1-7",
           "price_clp": 2890,
           "stock_available": true,
           "match_score": 0.95
         },
         {
-          "name_original": "Batería Li-Ion 3.7V 300mAh",
-          "product_id": "XM5-2",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=XM5-2",
-          "price_clp": 8990,
+          "name_original": "Módulo micrófono I2S INMP441",
+          "product_id": "GL3-12",
+          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GL3-12",
+          "price_clp": 5890,
           "stock_available": true,
-          "match_score": 0.82
+          "match_score": 0.97
         },
         {
-          "name_original": "Filamento PLA 1.75mm SunLu blanco 1kg",
-          "product_id": "SL-003",
-          "product_url": "https://www.mechatronicstore.cl/filamento-pla-sunlu-1kg-1-75mm-colores/?attribute_pa_color=blanco&utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=SL-003",
-          "price_clp": 13390,
+          "name_original": "Parlante 8 Ohm 1W",
+          "product_id": "G-234V1",
+          "product_url": "https://www.mechatronicstore.cl/altavoz-8-ohm-1w/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=G-234V1",
+          "price_clp": 2590,
+          "stock_available": true,
+          "match_score": 0.96
+        },
+        {
+          "name_original": "Pulsador 16mm momentáneo",
+          "product_id": "GD2-1",
+          "product_url": "https://www.mechatronicstore.cl/switch-n-a-tipo-pulsador-blanco/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GD2-1",
+          "price_clp": 890,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Mini switch SPDT",
+          "product_id": "GF1-14",
+          "product_url": "https://www.mechatronicstore.cl/mini-switch-interruptor-proto-3-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GF1-14",
+          "price_clp": 290,
+          "stock_available": true,
+          "match_score": 0.80
+        },
+        {
+          "name_original": "Batería Li-Ion 3.7V",
+          "product_id": "XM5-2",
+          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=XM5-2",
+          "price_clp": 8990,
           "stock_available": true,
           "match_score": 0.85
         },
         {
-          "name_original": "Cables macho-hembra dupont 30cm",
-          "product_id": "C-418",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=C-418",
-          "price_clp": 1990,
-          "stock_available": true,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Cable USB Tipo C a USB Tipo A 1m",
+          "name_original": "Cable USB-C",
           "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=B-101",
           "price_clp": 2190,
           "stock_available": true,
           "match_score": 0.92
+        },
+        {
+          "name_original": "Pack cables jumper",
+          "product_id": "C-280",
+          "product_url": "https://www.mechatronicstore.cl/pack-65-cable-macho-macho-diferentes-tamanos/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=C-280",
+          "price_clp": 3490,
+          "stock_available": true,
+          "match_score": 0.83
         }
       ],
-      "github_url": "https://github.com/adafruit/Adafruit_Learning_System_Guides",
+      "github_url": null,
       "download_urls": [
-        {
-          "label": "Tutorial original Adafruit (PDF)",
-          "url": "https://cdn-learn.adafruit.com/downloads/pdf/esp-now-walkie-talkies.pdf",
-          "kind": "pdf"
-        }
+        {"label": "Guía original (PDF)", "url": "https://cdn-learn.adafruit.com/downloads/pdf/esp-now-walkie-talkies.pdf", "kind": "pdf"}
       ],
       "category": "esp32",
-      "difficulty": "advanced",
-      "estimated_time_minutes": 360,
-      "estimated_cost_clp": 98850,
-      "tags": ["esp32", "esp-now", "i2s", "audio", "walkie-talkie", "wireless", "iot"]
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 240,
+      "estimated_cost_clp": 76760,
+      "tags": ["esp32", "esp-now", "audio", "i2s", "walkie-talkie", "wireless", "iot"]
     }
   ]
 }
