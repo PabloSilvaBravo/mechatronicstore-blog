@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-18T06:35:58.702+00:00",
+  "ranked_at": "2026-05-19T07:05:55Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,129 +25,69 @@
   },
   "rankings": [
     {
-      "id": "584e9ad93cd6",
-      "scores": {
-        "pedagogy": 9,
-        "code_quality": 9,
-        "materials_clarity": 8,
-        "step_completeness": 9,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 9,
-        "novelty": 6
-      },
-      "verdict": "Tutorial muy completo del TM1637 con RPi Pico en MicroPython: ToC clara, librería incluida, ejemplos de funciones y proyecto con sensor interno. Componentes 100% vendibles.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Raspberry Pi Pico",
-        "TM1637 4-Digit 7-Segment Display",
-        "Jumper wires"
-      ],
-      "combined_score": 0.845
-    },
-    {
-      "id": "0abbbb441679",
-      "scores": {
-        "pedagogy": 9,
-        "code_quality": 9,
-        "materials_clarity": 8,
-        "step_completeness": 9,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 9,
-        "novelty": 5
-      },
-      "verdict": "TM1637 con ESP32/ESP8266 en MicroPython, paralelo al de Pico. Buena calidad pero solapa contenido del candidato Pico TM1637 con misma librería y ejemplos.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32",
-        "ESP8266",
-        "TM1637 4-Digit 7-Segment Display",
-        "Jumper wires"
-      ],
-      "combined_score": 0.835
-    },
-    {
-      "id": "9d2b09690521",
-      "scores": {
-        "pedagogy": 9,
-        "code_quality": 9,
-        "materials_clarity": 8,
-        "step_completeness": 9,
-        "image_quality": 9,
-        "relevance_to_store_catalog": 9,
-        "novelty": 7
-      },
-      "verdict": "Proyecto integrador ESP32 + TM1637 + WeatherAPI: combina display, HTTP requests y formato custom de símbolos °C/°F. Aplicación práctica con buen impacto comercial.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32",
-        "TM1637 4-Digit 7-Segment Display",
-        "Jumper wires"
-      ],
-      "combined_score": 0.865
-    },
-    {
-      "id": "7cb2921fe490",
-      "scores": {
-        "pedagogy": 9,
-        "code_quality": 9,
-        "materials_clarity": 6,
-        "step_completeness": 8,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 7,
-        "novelty": 8
-      },
-      "verdict": "Web server ESP32 con ESP-IDF: framework menos cubierto que Arduino IDE, código C completo y screenshots de configuración. Pocos componentes físicos asociados.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32"
-      ],
-      "combined_score": 0.79
-    },
-    {
-      "id": "7aa0c097827a",
-      "scores": {
-        "pedagogy": 9,
-        "code_quality": 9,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 8,
-        "novelty": 7
-      },
-      "verdict": "ESP32 web server con timer schedule para LED: incluye HTML, CSS, JS y código Arduino. Proyecto reproducible con LED y resistor estándar.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32",
-        "LED 5mm",
-        "Resistor 220 ohm",
-        "Jumper wires",
-        "Protoboard"
-      ],
-      "combined_score": 0.8
-    },
-    {
       "id": "8a884b6de94d",
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 9,
-        "materials_clarity": 5,
-        "step_completeness": 8,
+        "pedagogy": 9,
+        "code_quality": 8,
+        "materials_clarity": 6,
+        "step_completeness": 9,
         "image_quality": 8,
-        "relevance_to_store_catalog": 6,
-        "novelty": 8
+        "relevance_to_store_catalog": 9,
+        "novelty": 7
       },
-      "verdict": "ESP-IDF con HTTP basic auth: tema avanzado y poco cubierto, pero sin componentes físicos relevantes para venta. Más software que hardware.",
+      "verdict": "Tutorial RNT muy claro de ESP-IDF con autenticación HTTP básica; código C completo y pasos detallados en VS Code. Lista de materiales escueta (solo menciona un ESP32). ESP32 alineado al catálogo.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "ESP32"
+        "ESP32",
+        "ESP32-S3",
+        "Cable USB"
       ],
-      "combined_score": 0.74
+      "combined_score": 0.81
+    },
+    {
+      "id": "4fbf4752fcf4",
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 7,
+        "materials_clarity": 9,
+        "step_completeness": 8,
+        "image_quality": 8,
+        "relevance_to_store_catalog": 5,
+        "novelty": 8
+      },
+      "verdict": "Proyecto Tetris en NeoPixel Pebbles inspirado en el MIT Green Building, original y bien documentado. Depende de productos Adafruit específicos (RP2040 PropMaker Feather, Pebble strand, gamepad STEMMA QT) poco probables en el catálogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Tira NeoPixel WS2812B",
+        "Batería LiPo 3.7V",
+        "Switch deslizante SPDT",
+        "Acrílico difusor"
+      ],
+      "combined_score": 0.755
+    },
+    {
+      "id": "4e1610cba496",
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "image_quality": 8,
+        "relevance_to_store_catalog": 5,
+        "novelty": 6
+      },
+      "verdict": "Marcador del Mundial FIFA con cuatro matrices RGB 64x32 controladas por Matrix Portal S3 vía ESPN API. Concepto interesante pero depende de hardware Adafruit niche y de una API externa potencialmente inestable.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Matriz RGB 64x32 P4",
+        "Fuente 5V 4A",
+        "Cable USB-C",
+        "Tornillería M3"
+      ],
+      "combined_score": 0.685
     }
   ]
 }
