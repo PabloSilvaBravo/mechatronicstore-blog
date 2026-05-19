@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import db
-from scraper import fetch_full_page, slugify, short_hash
+from scraper import fetch_full_page, fetch_adafruit_multipage, slugify, short_hash
 from sources import get as get_parser
 from hard_filters import apply_all
 
@@ -65,7 +65,14 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
             stats["skipped_existing"] += 1
             continue
 
-        page = fetch_full_page(cand.source_url)
+        # Pablo 19-may-2026: Adafruit Learn tiene tutoriales multi-page.
+        # El fetch_full_page genérico solo trae el overview → la mayoría
+        # quedaba rejected. fetch_adafruit_multipage sigue subpages y
+        # concatena. Otras sources usan el genérico.
+        if cand.source_id == "adafruit-learn":
+            page = fetch_adafruit_multipage(cand.source_url)
+        else:
+            page = fetch_full_page(cand.source_url)
         if page.error:
             print(f"  ✗ {cand.title_en[:50]} — {page.error}")
             stats["scrape_failed"] += 1

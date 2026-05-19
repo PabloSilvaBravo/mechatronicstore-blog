@@ -120,6 +120,121 @@ def fetch_full_page(url: str) -> FullPage:
     )
 
 
+def fetch_adafruit_multipage(url: str) -> FullPage:
+    """
+    Fetch tutorial Adafruit Learn que está distribuido en múltiples subpages.
+
+    Adafruit Learn tutoriales tienen estructura:
+        /<slug>           ← overview (página landing)
+        /<slug>/overview
+        /<slug>/pinouts
+        /<slug>/hardware
+        /<slug>/wiring
+        /<slug>/software
+        /<slug>/code
+        /<slug>/downloads
+        /<slug>/featured_products
+        ... etc (varía por tutorial)
+
+    Pablo 19-may-2026: el scraper genérico (fetch_full_page) solo traía el
+    overview → la mayoría de tutoriales Adafruit quedaban rejected con
+    `no_code, steps_below_5, no_materials_list` aunque las subpages tenían
+    todo. Esta función:
+      1. Fetch el overview
+      2. Enumera links a subpages siguiendo el patrón /<slug>/<subpage>
+      3. Fetch cada subpage (con sleep entre requests para no saturar)
+      4. Concatena bodies HTML en orden + dedupe título
+      5. Devuelve FullPage con body_html = concatenación
+
+    Si el tutorial es de 1 sola página (sin subpages), se comporta igual
+    que fetch_full_page.
+    """
+    import time
+
+    # Paso 1: fetch overview
+    overview = fetch_full_page(url)
+    if overview.error or overview.status_code >= 400:
+        return overview
+
+    soup = BeautifulSoup(overview.body_html, "lxml")
+
+    # Paso 2: detectar slug base
+    m = re.match(r"(https?://learn\.adafruit\.com/[^/?#]+)", overview.final_url)
+    if not m:
+        return overview  # No es Adafruit, devolver lo del overview
+    base = m.group(1)
+
+    # Paso 3: extraer subpages únicas
+    subpage_urls: list[str] = []
+    seen = {overview.final_url.rstrip("/")}
+    # Buscar en TODO el HTML de la página (no solo body), porque el nav suele
+    # estar fuera del <article>
+    full_soup = BeautifulSoup(_get_raw(url), "lxml")
+    for a in full_soup.find_all("a", href=True):
+        href = a["href"]
+        if href.startswith("/"):
+            href = "https://learn.adafruit.com" + href
+        if not href.startswith(base + "/"):
+            continue
+        tail = href[len(base) + 1:]
+        # Solo subpages directas, sin query/fragment, no auxiliares
+        if not tail or "/" in tail or "?" in tail or "#" in tail:
+            continue
+        if tail in ("featured_products",):  # skip product listing
+            continue
+        if href.rstrip("/") in seen:
+            continue
+        seen.add(href.rstrip("/"))
+        subpage_urls.append(href)
+
+    if not subpage_urls:
+        return overview  # Tutorial de 1 sola página
+
+    # Paso 4: fetch cada subpage + concatenar
+    combined_html = overview.body_html
+    combined_text = overview.body_text
+    extras = list(overview.extra_images)
+
+    for sub_url in subpage_urls[:10]:  # cap 10 subpages para evitar abuso
+        try:
+            sub = fetch_full_page(sub_url)
+            if sub.error or sub.status_code >= 400:
+                continue
+            combined_html += f"\n<!-- subpage: {sub_url} -->\n" + sub.body_html
+            combined_text += "\n\n" + sub.body_text
+            for img in sub.extra_images:
+                if img not in extras:
+                    extras.append(img)
+            time.sleep(0.8)  # sleep entre subpages, evitar rate limit
+        except Exception:
+            continue
+
+    return FullPage(
+        url=overview.url,
+        final_url=overview.final_url,
+        title=overview.title,
+        body_html=combined_html,
+        body_text=combined_text,
+        main_image_url=overview.main_image_url,
+        extra_images=extras[:30],
+        status_code=200,
+    )
+
+
+def _get_raw(url: str) -> str:
+    """Helper interno: fetch HTML raw sin parsing — para multi-pass extraction."""
+    try:
+        resp = requests.get(
+            url,
+            timeout=TIMEOUT_S,
+            headers={"User-Agent": USER_AGENT},
+            allow_redirects=True,
+        )
+        return resp.text if resp.status_code < 400 else ""
+    except Exception:
+        return ""
+
+
 def slugify(text: str, max_len: int = 80) -> str:
     """URL-safe slug lower case."""
     s = text.lower()
