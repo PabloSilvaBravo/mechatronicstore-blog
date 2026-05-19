@@ -1,6 +1,16 @@
 """
 Dump de tutoriales status='ranked' a JSON para que la CCR routine
 los reescriba + traduzca + detecte productos.
+
+Pablo 19-may-2026: ANTES filtraba también `AND t.title_es IS NULL`,
+asumiendo que ranked + title_es=NULL = candidato fresco. Pero ese
+filtro creaba un limbo: si por cualquier bug previo un tutorial
+quedaba en status='ranked' con title_es ya poblado (caso real
+ocurrido cuando persist_blog_rankings.py regresaba 'published' a
+'ranked'), ese tutorial era INVISIBLE para el pipeline para
+siempre. Ahora el filtro es solo `status='ranked'` y dejamos que
+Routine C lo procese — si ya tiene title_es, la routine puede
+saltearlo o re-traducirlo (idempotente).
 """
 import json
 import sys
@@ -31,7 +41,6 @@ def main():
         FROM tutorials t
         LEFT JOIN sources s ON s.id = t.source_id
         WHERE t.status = 'ranked'
-          AND t.title_es IS NULL
         ORDER BY t.combined_score DESC, t.ranked_at DESC
         LIMIT ?
     """

@@ -29,16 +29,42 @@ def main():
     ranked_at = data.get("ranked_at") or utc_now_sqlite()
     ts_sqlite = ranked_at[:19].replace("T", " ") if "T" in ranked_at else ranked_at
 
-    stats = {"persisted_ranked": 0, "persisted_rejected": 0, "blocked": 0, "missing_tutorial": 0}
+    stats = {
+        "persisted_ranked": 0,
+        "persisted_rejected": 0,
+        "blocked": 0,
+        "missing_tutorial": 0,
+        "skipped_terminal": 0,  # status='published' o 'rejected' (no se regresan)
+    }
 
     for rk in rankings:
         tid = rk.get("id")
         if not tid:
             continue
 
-        existing = db.execute("SELECT id FROM tutorials WHERE id = ?", [tid]).fetchone()
+        # Pablo 19-may-2026: chequeo de status PREVIO. Antes solo se
+        # comprobaba que el tid existiera, lo que permitía que rank-persist
+        # REGRESARA un tutorial 'published' a 'ranked' (destruyendo el
+        # progreso del pipeline). Bug real ocurrido el 18-may: 2 tutoriales
+        # ya publicados fueron rankeados de nuevo por Routine B (con input
+        # stale del dump previo), persist los regresó a 'ranked', y como
+        # `dump_blog_translate_input.py` filtra `title_es IS NULL`, quedaron
+        # invisibles para el pipeline → limbo eterno hasta intervención
+        # manual. Detectamos el bug porque /blog mostraba 4 tutoriales
+        # cuando debían haber sido 6.
+        existing = db.execute(
+            "SELECT id, status FROM tutorials WHERE id = ?",
+            [tid],
+        ).fetchone()
         if not existing:
             stats["missing_tutorial"] += 1
+            continue
+        if existing[1] in ("published", "rejected"):
+            stats["skipped_terminal"] += 1
+            print(
+                f"  ↷ skip {tid}: status='{existing[1]}' es terminal "
+                "(no se sobreescribe desde rank-persist)"
+            )
             continue
 
         scores = rk.get("scores", {})
@@ -58,6 +84,10 @@ def main():
             reason = f"below_threshold:cs={cs:.3f}<{THRESHOLD}"
             stats["persisted_rejected"] += 1
 
+        # Defense-in-depth: el WHERE incluye el guard también en el UPDATE
+        # por si el SELECT/UPDATE corre en transacciones distintas (libsql
+        # commit-en-batch). Si una concurrent racea con un workflow de
+        # translate-persist que sube a 'published', el UPDATE no afecta.
         db.execute(
             """UPDATE tutorials
                SET status = ?,
@@ -74,7 +104,8 @@ def main():
                    rejected_reason = ?,
                    ranked_at = ?,
                    updated_at = datetime('now')
-               WHERE id = ?""",
+               WHERE id = ?
+                 AND status NOT IN ('published', 'rejected')""",
             [
                 status,
                 int(scores.get("pedagogy", 0)),
