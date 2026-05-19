@@ -1,125 +1,595 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-19T14:15:00Z",
+  "translated_at": "2026-05-19T15:54:00Z",
   "translations": [
     {
-      "id": "e80c44751324",
-      "slug": "walkie-talkies-esp-now-esp32-s3",
-      "title_es": "Walkie Talkies con ESP-NOW: comunicación de voz entre dos ESP32-S3",
-      "subtitle_es": "Construye un par de walkie talkies inalámbricos con ESP32-S3, audio I2S y el protocolo ESP-NOW para chatear sin smartphone.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/743/medium800thumb/arduino_compatibles_handshake.jpg?1776181556",
-      "body_es": "## Olvídate del celular: chatea con tu propio walkie talkie\n\n¿Me copias? Deja el teléfono de lado y comunícate con tu amigo construyendo este par de walkie talkies con ESP32-S3. La placa corre código Arduino que usa el protocolo **ESP-NOW** de Espressif para enviar y recibir paquetes de audio I2S de hasta 10 segundos cada uno. La antena externa de 2.4GHz le da rango extra para comunicarte a mayores distancias, ya sea adentro o afuera.\n\nEl diseño de la carcasa se inspira en los walkie talkies de juguete que eran ubicuos a inicios de los 90. El botón LED al costado actúa como indicador de estado durante el pareo y el envío/recepción de mensajes. La pantalla TFT integrada muestra información del sistema: dirección MAC, intensidad de señal y estado de los paquetes.\n\n![Diseño de carcasa estilo retro de los 90](https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571)\n\n## ¿Qué es ESP-NOW y por qué usarlo?\n\nESP-NOW es un protocolo inalámbrico desarrollado por Espressif que permite comunicación directa entre placas ESP32/ESP8266 sin necesidad de router WiFi ni conexión a internet. Funciona en la banda de 2.4GHz y tiene latencias muy bajas, lo que lo hace perfecto para transmitir paquetes de audio en tiempo real.\n\nVentajas clave para este proyecto:\n- **Sin infraestructura**: no necesitas WiFi, modem ni servidor.\n- **Bajo consumo**: ideal para dispositivos a batería.\n- **Pareo simple**: solo necesitas la MAC del otro equipo.\n- **Rango extendido**: con antena externa puedes llegar a varios cientos de metros con línea de vista.\n\n## Lista de materiales (por walkie talkie)\n\nNecesitas **dos sets completos** para que el proyecto funcione, ya que se trata de un par que se comunica entre sí.\n\n- 1× Placa ESP32-S3 con conector de antena externa (XIAO ESP32-S3 funciona muy bien acá).\n- 1× Antena WiFi 2.4GHz con cable U.FL a SMA.\n- 1× Módulo micrófono I2S INMP441.\n- 1× Parlante 8Ω 1W mini.\n- 1× Pulsador 16mm (idealmente iluminado para usarlo como indicador de estado).\n- 1× Mini switch SPDT para encendido.\n- 1× Batería Li-Ion 3.7V (300-1000 mAh según autonomía deseada).\n- 1× Cable USB-C para carga y programación.\n- Cables jumper, soldadura y carcasa impresa en 3D.\n\n## Diagrama del circuito\n\nEl audio se maneja vía I2S, así que tanto el micrófono como el amplificador (o el módulo DAC+amp) comparten el mismo bus de reloj y datos pero en direcciones opuestas. El pulsador iluminado se conecta a un GPIO con resistencia pull-up interna y su LED a otro GPIO controlado por software.\n\nConexiones clave del ESP32-S3:\n\n| Periférico | Pin ESP32-S3 |\n|---|---|\n| I2S BCK (reloj de bit) | GPIO 5 |\n| I2S LRC / WS | GPIO 6 |\n| I2S DOUT (al amplificador) | GPIO 7 |\n| I2S DIN (del micrófono) | GPIO 8 |\n| Pulsador PTT | GPIO 9 |\n| LED del pulsador | GPIO 10 |\n\n> **Tip Chile**: si el catálogo local no tiene el amplificador MAX98357A en stock, puedes alimentar el parlante con un amplificador analógico (PAM8403) usando un canal de salida del DAC del ESP32-S3 — pierdes algo de calidad pero el proyecto sigue siendo viable.\n\n## Impresión 3D de la carcasa\n\nLa carcasa está diseñada en dos mitades que se unen con tornillos M2.5. Imprime con:\n\n- **Material**: PLA o PETG.\n- **Altura de capa**: 0.2 mm.\n- **Relleno**: 15-20%.\n- **Soportes**: solo en los voladizos de la rejilla del parlante.\n- **Tiempo aproximado**: 4-5 horas por carcasa.\n\nLas dos mitades llevan recortes para el pulsador, el switch de encendido, la antena y el cable USB-C. Asegúrate de calibrar bien la tolerancia de los huecos antes de imprimir las dos copias finales.\n\n## Configuración del IDE de Arduino\n\nAntes de cargar el código, instala las dependencias:\n\n1. Agrega el repositorio de placas de Espressif en `Archivo > Preferencias`:\n   ```\n   https://espressif.github.io/arduino-esp32/package_esp32_index.json\n   ```\n2. En `Herramientas > Placa > Gestor de tarjetas`, busca \"esp32\" e instala la última versión.\n3. Instala las librerías:\n   - `ESP32-audioI2S` (de schreibfaul1)\n   - `Adafruit GFX` y `Adafruit ST7789` para la pantalla TFT.\n4. Selecciona la placa **ESP32S3 Dev Module** y el puerto correspondiente.\n\n## Código de los walkie talkies\n\nEl firmware tiene dos modos: **TX** (transmisor) cuando se aprieta el pulsador y **RX** (receptor) en cualquier otro momento. La detección es vía interrupt en el pin del pulsador.\n\nFragmento clave de inicialización de ESP-NOW:\n\n```cpp\n#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t peerMac[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};\n\ntypedef struct audio_packet {\n  uint16_t seq;\n  uint8_t samples[200];\n} audio_packet;\n\nvoid onDataSent(const uint8_t *mac, esp_now_send_status_t status) {\n  // callback para confirmar entrega\n}\n\nvoid onDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  // encolar audio recibido para reproducción\n}\n\nvoid setup() {\n  WiFi.mode(WIFI_STA);\n  esp_now_init();\n  esp_now_register_send_cb(onDataSent);\n  esp_now_register_recv_cb(onDataRecv);\n\n  esp_now_peer_info_t peerInfo = {};\n  memcpy(peerInfo.peer_addr, peerMac, 6);\n  peerInfo.channel = 0;\n  peerInfo.encrypt = false;\n  esp_now_add_peer(&peerInfo);\n}\n```\n\n## Cableado y soldadura\n\nUsa cables tipo dupont siliconados para que la carcasa cierre sin estrés mecánico. Suelda los pines I2S del micrófono y del amplificador directamente a la placa ESP32-S3 con cables de 6-8 cm. El pulsador y el switch se montan en los huecos frontales con sus tuercas originales.\n\nOrden recomendado de armado:\n\n1. Suelda el conector U.FL de la antena al pad correspondiente de la placa (si no viene preinstalado).\n2. Suelda los cables del micrófono I2S, parlante, amplificador y batería.\n3. Atornilla el switch y el pulsador a la carcasa frontal.\n4. Atornilla la placa ESP32-S3 a los soportes internos.\n5. Cierra la carcasa con los tornillos M2.5 perimetrales.\n\n## Pareo y uso\n\nLa primera vez que enciendes los walkie talkies, ambos muestran su MAC en la pantalla TFT. Anótalas (o usa la opción \"Pair\" automática si la incluiste en tu firmware), edita la constante `peerMac` en el código de cada equipo con la MAC del otro y vuelve a cargar.\n\nUna vez pareados:\n\n- **Mantén apretado el pulsador** para transmitir voz.\n- **Suéltalo** para escuchar al otro lado.\n- La pantalla muestra la intensidad de señal (RSSI) y el estado del último paquete enviado/recibido.\n\nEn pruebas de campo con la antena de 2.4GHz, hemos obtenido rango efectivo de ~150 m en espacios abiertos y ~50 m dentro de una casa con paredes de hormigón armado. No esperes calidad de estudio: el audio es comprensible pero suena \"radiofónico\", que es justo lo que buscas en un walkie talkie retro.\n\n## Cierre\n\nEste proyecto es una excelente excusa para entender cómo funcionan los protocolos peer-to-peer en microcontroladores. ESP-NOW abre la puerta a muchísimas aplicaciones: redes de sensores, control remoto, mesh básico, y como viste, audio en tiempo real. Si quieres extenderlo, prueba agregar encriptación, transmisión grupal a múltiples peers, o un sistema de canales por banda — el ESP32-S3 tiene poder de sobra.",
+      "id": "bb21433e6838",
+      "slug": "pantuflas-led-reactivas-presion-neopixel-rp2040",
+      "title_es": "Pantuflas LED reactivas a la presión con NeoPixel y RP2040",
+      "subtitle_es": "Construye pantuflas peludas que se iluminan al pisar usando un sensor FSR y tiras NeoPixel programadas en CircuitPython.",
+      "hero_image_url": null,
+      "body_es": "## Pantuflas que se prenden al pisar\n\nUna idea simple, pero muy entretenida: pantuflas que detectan tu pisada y disparan animaciones de colores en una tira LED. El truco está en un **sensor de fuerza resistivo (FSR)** que mide cuánta presión aplicas al apoyar el pie. Esa lectura analógica se traduce en patrones de luz con tiras **NeoPixel** controladas desde una placa con RP2040.\n\nEs un proyecto wearable ideal para iniciarse en electrónica vestible: poco soldar, sin cajas complicadas, y un resultado que llama la atención al tiro.\n\n## ¿Qué hace este proyecto?\n\n- Detecta cuándo apoyas el pie usando un FSR pegado bajo la plantilla.\n- Lee la presión en tiempo real con el conversor ADC del microcontrolador.\n- Reproduce animaciones de color (arcoíris, ondas, destellos) en una tira NeoPixel cosida al borde de la pantufla.\n- Funciona con batería LiPo de 3.7V, así que es 100% portátil.\n\n## Lista de materiales\n\nUn par de pantuflas (idealmente con suela gruesa para esconder la electrónica) más los siguientes componentes electrónicos:\n\n- Placa con microcontrolador RP2040 (1 por pantufla)\n- Sensor de fuerza resistivo (FSR) circular, ~0.3 a 10 N (1 por pantufla)\n- Tira NeoPixel WS2812B de 1 metro (1 por pantufla)\n- Batería LiPo 3.7V (300–1200 mAh)\n- Cable de extensión JST con switch on/off\n- Cable flexible 24–26 AWG para soldaduras\n- Hilo y aguja, pistola de silicona\n\n## Conexiones\n\nLa lógica es simple:\n\n- **FSR**: un terminal a 3.3V, el otro al pin ADC + resistencia pull-down de 10kΩ a GND. Eso te da un divisor de voltaje cuya salida sube cuando aprietas el sensor.\n- **NeoPixel**: VCC al pin de 3.3V o 5V (depende de la placa), GND a tierra, y DATA al pin GPIO con soporte PIO/RMT (en RP2040 funciona en casi cualquier GPIO).\n- **Batería**: conector JST en el puerto BAT de la placa. Si tu placa no trae circuito de carga, agrega un módulo TP4056.\n\n## Código en CircuitPython\n\n```python\nimport time\nimport board\nimport analogio\nimport neopixel\n\nfsr = analogio.AnalogIn(board.A0)\npixels = neopixel.NeoPixel(board.D5, 30, brightness=0.4, auto_write=False)\n\nUMBRAL = 25000\n\ndef arcoiris(offset):\n    for i in range(len(pixels)):\n        idx = (i * 256 // len(pixels) + offset) & 255\n        if idx < 85:\n            pixels[i] = (idx * 3, 255 - idx * 3, 0)\n        elif idx < 170:\n            idx -= 85\n            pixels[i] = (255 - idx * 3, 0, idx * 3)\n        else:\n            idx -= 170\n            pixels[i] = (0, idx * 3, 255 - idx * 3)\n    pixels.show()\n\noffset = 0\nwhile True:\n    if fsr.value > UMBRAL:\n        arcoiris(offset)\n        offset = (offset + 8) % 256\n    else:\n        pixels.fill((0, 0, 0))\n        pixels.show()\n    time.sleep(0.02)\n```\n\nGuarda el archivo como `code.py` en la unidad CIRCUITPY de la placa y se recargará solo.\n\n## Montaje en la pantufla\n\n1. **Pega el FSR** bajo la plantilla, en la zona del talón o el metatarso. Asegúralo con cinta doble faz para que no se mueva al caminar.\n2. **Cose o pega la tira NeoPixel** al borde superior de la pantufla, cuidando que los puntos de soldadura queden hacia adentro.\n3. **Esconde la placa y la batería** en una bolsita cosida en la parte trasera o lateral. Deja accesible el switch on/off.\n4. **Sella las uniones soldadas** con silicona caliente para que aguanten el movimiento.\n\n## Personalización\n\nUna vez que funciona el patrón básico, puedes jugar con:\n\n- Diferentes animaciones según el umbral de presión (caminar suave vs. saltar).\n- Detección de pasos consecutivos para activar un \"modo fiesta\".\n- Coordinar las dos pantuflas vía Bluetooth para que se sincronicen.\n\n## Consideraciones de seguridad\n\nLa batería LiPo va dentro del calzado, así que asegúrate de:\n\n- Usar batería con protección incorporada (BMS).\n- Que ningún cable quede pellizcado al doblar el pie.\n- Apagar el switch antes de guardarlas.\n\nUn proyecto wearable rápido, vistoso y perfecto para introducir a alguien al mundo de los makers.",
       "materials_list": [
-        {"name": "Placa ESP32-S3 con conector antena externa", "qty": 2, "role": "microcontrolador"},
-        {"name": "Antena WiFi 2.4GHz U.FL a SMA", "qty": 2, "role": "antena"},
-        {"name": "Módulo micrófono I2S INMP441", "qty": 2, "role": "captura audio"},
-        {"name": "Parlante 8 Ohm 1W", "qty": 2, "role": "reproducción audio"},
-        {"name": "Pulsador 16mm momentáneo", "qty": 2, "role": "botón PTT"},
-        {"name": "Mini switch SPDT", "qty": 2, "role": "encendido"},
-        {"name": "Batería Li-Ion 3.7V", "qty": 2, "role": "alimentación"},
-        {"name": "Cable USB-C", "qty": 1, "role": "carga y programación"},
-        {"name": "Pack cables jumper", "qty": 1, "role": "cableado interno"},
-        {"name": "Carcasa impresa en 3D (PLA o PETG)", "qty": 2, "role": "estructura"}
+        {"name": "Placa RP2040 (Raspberry Pi Pico o similar)", "qty": 2, "role": "microcontrolador"},
+        {"name": "Sensor de fuerza resistivo FSR", "qty": 2, "role": "sensor de presión"},
+        {"name": "Tira NeoPixel WS2812B 1m", "qty": 2, "role": "iluminación"},
+        {"name": "Batería LiPo 3.7V 300-1200mAh", "qty": 2, "role": "alimentación"},
+        {"name": "Cable de extensión JST con switch on/off", "qty": 2, "role": "encendido"},
+        {"name": "Cable flexible 24-26 AWG", "qty": 1, "role": "cableado"},
+        {"name": "Pantuflas peludas", "qty": 1, "role": "base mecánica"}
       ],
       "steps": [
-        {"position": 1, "name": "Diseño del circuito", "text": "Define las conexiones I2S entre el micrófono INMP441, el amplificador y el ESP32-S3. El bus I2S comparte BCK y LRC entre entrada y salida, mientras que DIN y DOUT son pines separados."},
-        {"position": 2, "name": "Impresión 3D de la carcasa", "text": "Imprime las dos mitades de la carcasa en PLA o PETG con 0.2 mm de altura de capa y 15-20% de relleno. Cada walkie talkie requiere ~4-5 horas de impresión. Calibra tolerancias antes de imprimir las copias finales."},
-        {"position": 3, "name": "Setup del IDE Arduino", "text": "Instala el paquete de placas ESP32 de Espressif, agrega las librerías ESP32-audioI2S, Adafruit GFX y Adafruit ST7789. Selecciona la placa ESP32S3 Dev Module y configura el puerto USB."},
-        {"position": 4, "name": "Programación del firmware ESP-NOW", "text": "Carga el código que inicializa ESP-NOW en modo STA, registra los callbacks de envío y recepción, y configura el peer remoto con la MAC del otro walkie talkie. Implementa el doble buffer para audio I2S sin glitches."},
-        {"position": 5, "name": "Cableado y soldadura", "text": "Suelda con cables siliconados de 6-8 cm para tener flexibilidad al cerrar la carcasa. Conecta primero los pines de poder, luego I2S, después controles. Suelda la antena U.FL con cuidado para no dañar el conector miniatura."},
-        {"position": 6, "name": "Ensamblaje físico", "text": "Atornilla los componentes a la carcasa frontal: switch, pulsador y antena en la parte superior. Luego fija la placa ESP32-S3 a los soportes internos y cierra con los tornillos M2.5 perimetrales."},
-        {"position": 7, "name": "Pareo y prueba", "text": "Enciende ambos walkie talkies, anota las direcciones MAC que muestran en pantalla, actualiza la constante peerMac en cada firmware y recarga. Prueba la comunicación apretando el botón PTT y verifica el rango efectivo en distintos entornos."}
+        {"position": 1, "name": "Preparar componentes", "text": "Verifica el funcionamiento del FSR y la tira NeoPixel por separado con un código de prueba antes de coser nada."},
+        {"position": 2, "name": "Conexiones eléctricas", "text": "Conecta el FSR a un pin analógico con resistencia pull-down de 10kΩ. La tira NeoPixel a un pin GPIO con soporte de señal a 800kHz."},
+        {"position": 3, "name": "Cargar firmware CircuitPython", "text": "Instala CircuitPython en la placa, copia el archivo code.py y la librería neopixel.mpy. Ajusta el umbral del FSR según tu peso."},
+        {"position": 4, "name": "Montaje en la pantufla", "text": "Pega el FSR bajo la plantilla, cose la tira NeoPixel al borde superior y esconde la placa y batería en una bolsita cosida en la parte trasera."},
+        {"position": 5, "name": "Pruebas finales", "text": "Camina, salta y verifica que las animaciones se disparen correctamente. Sella las soldaduras con silicona caliente."}
       ],
       "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Inicialización de ESP-NOW con callbacks de envío y recepción",
-          "code": "#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t peerMac[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};\n\ntypedef struct audio_packet {\n  uint16_t seq;\n  uint8_t samples[200];\n} audio_packet;\n\nvoid onDataSent(const uint8_t *mac, esp_now_send_status_t status) {\n  // callback para confirmar entrega\n}\n\nvoid onDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  // encolar audio recibido para reproducción\n}\n\nvoid setup() {\n  WiFi.mode(WIFI_STA);\n  esp_now_init();\n  esp_now_register_send_cb(onDataSent);\n  esp_now_register_recv_cb(onDataRecv);\n\n  esp_now_peer_info_t peerInfo = {};\n  memcpy(peerInfo.peer_addr, peerMac, 6);\n  peerInfo.channel = 0;\n  peerInfo.encrypt = false;\n  esp_now_add_peer(&peerInfo);\n}"
-        }
+        {"lang": "python", "caption": "Código principal para detectar pisada y animar la tira NeoPixel", "code": "import time\nimport board\nimport analogio\nimport neopixel\n\nfsr = analogio.AnalogIn(board.A0)\npixels = neopixel.NeoPixel(board.D5, 30, brightness=0.4, auto_write=False)\n\nUMBRAL = 25000\n\ndef arcoiris(offset):\n    for i in range(len(pixels)):\n        idx = (i * 256 // len(pixels) + offset) & 255\n        if idx < 85:\n            pixels[i] = (idx * 3, 255 - idx * 3, 0)\n        elif idx < 170:\n            idx -= 85\n            pixels[i] = (255 - idx * 3, 0, idx * 3)\n        else:\n            idx -= 170\n            pixels[i] = (0, idx * 3, 255 - idx * 3)\n    pixels.show()\n\noffset = 0\nwhile True:\n    if fsr.value > UMBRAL:\n        arcoiris(offset)\n        offset = (offset + 8) % 256\n    else:\n        pixels.fill((0, 0, 0))\n        pixels.show()\n    time.sleep(0.02)"}
       ],
       "linked_products": [
         {
-          "name_original": "Placa ESP32-S3 con conector antena externa",
+          "name_original": "Placa RP2040 (Raspberry Pi Pico)",
+          "product_id": "N-340",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico-2/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=N-340",
+          "price_clp": 9990,
+          "stock_available": true,
+          "match_score": 0.82
+        },
+        {
+          "name_original": "Sensor de fuerza resistivo FSR",
+          "product_id": "GB6-14",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-fuerza-resistivo/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=GB6-14",
+          "price_clp": 10100,
+          "stock_available": false,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Tira NeoPixel WS2812B 1m",
+          "product_id": "G-599",
+          "product_url": "https://www.mechatronicstore.cl/ws2812b-5-v-5050-rgb-162-tira-de-luz-led-60-pcb-negro-5m-ip65/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=G-599",
+          "price_clp": 16990,
+          "stock_available": false,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Batería LiPo 3.7V 300mAh",
+          "product_id": "XM5-2",
+          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=XM5-2",
+          "price_clp": 8990,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Cable flexible 24 AWG",
+          "product_id": "V-109_5",
+          "product_url": "https://www.mechatronicstore.cl/cable-paralelo-variedad-calibres/?attribute_medidas=24+awg&utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=V-109_5",
+          "price_clp": 200,
+          "stock_available": true,
+          "match_score": 0.72
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "otros",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 180,
+      "estimated_cost_clp": 56260,
+      "tags": ["wearable", "neopixel", "rp2040", "circuitpython", "fsr", "led"]
+    },
+    {
+      "id": "4e1610cba496",
+      "slug": "marcador-mundial-fifa-matriz-led-rgb-esp32-s3",
+      "title_es": "Marcador del Mundial FIFA con matrices LED RGB y ESP32-S3",
+      "subtitle_es": "Arma un display gigante con cuatro matrices RGB 64x32 que muestra partidos del Mundial en tiempo real usando la API de ESPN.",
+      "hero_image_url": null,
+      "body_es": "## Un marcador del Mundial gigante hecho por ti\n\nSi quieres seguir el Mundial FIFA con un display que llame la atención, este proyecto te muestra cómo combinar **cuatro matrices LED RGB de 64x32 pixeles** controladas por un ESP32-S3 para crear un panel de 128x64 pixeles que consulta la API de ESPN y dibuja los resultados, banderas y minuto del partido en vivo.\n\nLa parte interesante: la cantidad de datos JSON que devuelve ESPN es grande, y procesar cuatro paneles RGB simultáneos requiere harto poder de cómputo. Por eso necesitas un ESP32-S3, no un ESP32 clásico.\n\n## ¿Por qué ESP32-S3?\n\nEl ESP32-S3 tiene:\n\n- 8 MB de flash y 2 MB de PSRAM, suficiente para guardar banderas pre-procesadas y procesar JSONs grandes.\n- Doble núcleo a 240 MHz para repartir la tarea de refrescar matrices y consultar la API.\n- WiFi nativo para conectarse a la red doméstica.\n\nPlacas más simples (ESP8266, ESP32 clásico, SAMD51) no logran refrescar cuatro paneles sin parpadeos.\n\n## Lista de materiales\n\n- Placa de desarrollo ESP32-S3 con WiFi (Matrix Portal S3 o equivalente)\n- 4 matrices LED RGB de 64x32 pixeles, paso 4mm (P4)\n- 4 paneles acrílicos negros difusores (10.2\" x 5.1\")\n- 2 fuentes switching 5V 4A (una por cada par de paneles)\n- Cable USB-C para alimentar y programar la placa\n- Cables HUB75 (vienen incluidos con las matrices)\n- Tornillos M3 para fijar los paneles\n\n## Esquema de alimentación (¡crítico!)\n\nCuatro matrices encendidas a brillo completo pueden consumir más de 15 A en el peor caso. **No alimentes las matrices desde la placa**. La distribución recomendada:\n\n- **Fuente 1 (5V 4A)**: las dos matrices superiores\n- **Fuente 2 (5V 4A)**: las dos matrices inferiores\n- **USB-C**: solo la placa controladora\n\nUne las tierras (GND) de todas las fuentes y la placa para tener una referencia común.\n\n## Cableado HUB75\n\nCada matriz usa un conector HUB75 de 16 pines. La cadena va:\n\n```\nESP32-S3 → Matriz 1 (IN) → Matriz 1 (OUT) → Matriz 2 (IN) → Matriz 2 (OUT) → ...\n```\n\nConfigura la librería para tratar las cuatro matrices como una sola pantalla de 128x64 con `chain_length=4` y el modo de tiling adecuado (horizontal o serpentina, según tu armado físico).\n\n## Código CircuitPython base\n\n```python\nimport time\nimport board\nimport displayio\nimport rgbmatrix\nimport framebufferio\nimport adafruit_requests\nimport wifi\nimport socketpool\nimport ssl\n\ndisplayio.release_displays()\n\nmatrix = rgbmatrix.RGBMatrix(\n    width=128, height=64, bit_depth=4,\n    rgb_pins=[board.MTX_R1, board.MTX_G1, board.MTX_B1,\n              board.MTX_R2, board.MTX_G2, board.MTX_B2],\n    addr_pins=[board.MTX_ADDRA, board.MTX_ADDRB,\n               board.MTX_ADDRC, board.MTX_ADDRD,\n               board.MTX_ADDRE],\n    clock_pin=board.MTX_CLK,\n    latch_pin=board.MTX_LAT,\n    output_enable_pin=board.MTX_OE,\n    tile=2, serpentine=True)\n\ndisplay = framebufferio.FramebufferDisplay(matrix)\n\nwifi.radio.connect(\"TU_SSID\", \"TU_CLAVE\")\npool = socketpool.SocketPool(wifi.radio)\nrequests = adafruit_requests.Session(pool, ssl.create_default_context())\n\nURL = \"https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard\"\n\nwhile True:\n    resp = requests.get(URL)\n    data = resp.json()\n    # ... procesar y dibujar partidos\n    time.sleep(60)\n```\n\n## Banderas pre-procesadas\n\nLas banderas vienen del CDN de ESPN como PNG grandes. Necesitas:\n\n1. Descargarlas una vez.\n2. Reescalarlas a 16x12 pixeles.\n3. Aplicar corrección gamma (las matrices RGB tienen respuesta no lineal).\n4. Guardarlas como `bitmap` en flash para acceso rápido.\n\n## Carcasa y montaje\n\nLos paneles acrílicos negros van delante de cada matriz, separados ~5mm para difuminar el grano. Una caja de MDF de 6mm con corte láser deja todo prolijo. Pon ventilación pasiva: 4 matrices a brillo medio generan calor.\n\n## Personalización\n\nCambia la URL de la API para seguir otra liga (Premier League, Champions, NBA). El JSON cambia, pero la estructura general (eventos, equipos, score) es similar entre deportes de ESPN.\n\nProyecto entretenido para fanáticos del fútbol y el hardware al mismo tiempo.",
+      "materials_list": [
+        {"name": "Placa ESP32-S3 con WiFi", "qty": 1, "role": "controlador"},
+        {"name": "Matriz LED RGB 64x32 P4", "qty": 4, "role": "display"},
+        {"name": "Fuente switching 5V 4A", "qty": 2, "role": "alimentación matrices"},
+        {"name": "Cable USB Tipo C", "qty": 1, "role": "programación/alimentación placa"},
+        {"name": "Panel acrílico negro difusor", "qty": 4, "role": "difusión visual"},
+        {"name": "Cables HUB75 16 pines", "qty": 4, "role": "datos matriz"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Verificar una matriz sola", "text": "Antes de montar las cuatro, conecta una matriz al ESP32-S3 con su fuente dedicada y prueba ejemplos de la librería rgbmatrix."},
+        {"position": 2, "name": "Encadenar las matrices", "text": "Une las matrices en cadena con los cables HUB75. Configura chain_length=4 y verifica el tiling (horizontal o serpentina) según tu disposición física."},
+        {"position": 3, "name": "Alimentación dual", "text": "Conecta dos fuentes 5V 4A: una para los dos paneles superiores y otra para los inferiores. Une todos los GND. Alimenta la placa solo por USB-C."},
+        {"position": 4, "name": "Conexión WiFi y API ESPN", "text": "Configura las credenciales WiFi en secrets.py. Prueba la petición HTTPS al endpoint scoreboard de ESPN. Verifica que el JSON parsea sin quedarse sin memoria."},
+        {"position": 5, "name": "Banderas y corrección gamma", "text": "Descarga las banderas de los equipos, reescálalas a 16x12 px y aplica corrección gamma. Guárdalas como bitmaps en flash."},
+        {"position": 6, "name": "Montaje físico", "text": "Atornilla las matrices a una base rígida (MDF 6mm), instala los acrílicos difusores 5mm por delante y deja ventilación pasiva."}
+      ],
+      "code_blocks": [
+        {"lang": "python", "caption": "Inicialización de las 4 matrices encadenadas + conexión WiFi", "code": "import time\nimport board\nimport displayio\nimport rgbmatrix\nimport framebufferio\nimport adafruit_requests\nimport wifi\nimport socketpool\nimport ssl\n\ndisplayio.release_displays()\n\nmatrix = rgbmatrix.RGBMatrix(\n    width=128, height=64, bit_depth=4,\n    rgb_pins=[board.MTX_R1, board.MTX_G1, board.MTX_B1,\n              board.MTX_R2, board.MTX_G2, board.MTX_B2],\n    addr_pins=[board.MTX_ADDRA, board.MTX_ADDRB,\n               board.MTX_ADDRC, board.MTX_ADDRD,\n               board.MTX_ADDRE],\n    clock_pin=board.MTX_CLK,\n    latch_pin=board.MTX_LAT,\n    output_enable_pin=board.MTX_OE,\n    tile=2, serpentine=True)\n\ndisplay = framebufferio.FramebufferDisplay(matrix)\n\nwifi.radio.connect(\"TU_SSID\", \"TU_CLAVE\")\npool = socketpool.SocketPool(wifi.radio)\nrequests = adafruit_requests.Session(pool, ssl.create_default_context())\n\nURL = \"https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard\"\n\nwhile True:\n    resp = requests.get(URL)\n    data = resp.json()\n    time.sleep(60)"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Placa ESP32-S3",
           "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GS1-3",
+          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=GS1-3",
+          "price_clp": 13670,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Matriz LED RGB",
+          "product_id": "GN3-12",
+          "product_url": "https://www.mechatronicstore.cl/matriz-led-8x8-rgb-ws2812/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=GN3-12",
+          "price_clp": 17800,
+          "stock_available": true,
+          "match_score": 0.72
+        },
+        {
+          "name_original": "Fuente switching 5V",
+          "product_id": "K-444",
+          "product_url": "https://www.mechatronicstore.cl/fuente-de-poder-switching-5v-10a-dc/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=K-444",
+          "price_clp": 10900,
+          "stock_available": true,
+          "match_score": 0.82
+        },
+        {
+          "name_original": "Cable USB Tipo C a USB A 1m",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=B-101",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.95
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "esp32",
+      "difficulty": "advanced",
+      "estimated_time_minutes": 360,
+      "estimated_cost_clp": 119860,
+      "tags": ["esp32-s3", "matriz-led", "rgb", "wifi", "api", "mundial"]
+    },
+    {
+      "id": "866a587ce24a",
+      "slug": "raspberry-pi-como-router-wifi-bridge-linux",
+      "title_es": "Convierte tu Raspberry Pi en un router WiFi con bridge",
+      "subtitle_es": "Configura un Raspberry Pi 3, 4 o 5 como router WiFi que comparte internet desde ethernet o WiFi upstream con bridging entre redes.",
+      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/451/medium800/hacks_hero_photo.png?1775489680",
+      "body_es": "## Un router casero con Raspberry Pi\n\nCualquier computador que corre Linux y tiene interfaces de red puede funcionar como router. El **Raspberry Pi** es ideal: barato, eficiente energéticamente y con WiFi + Ethernet integrado en los modelos modernos.\n\nNo va a ganar carreras de ancho de banda contra un router comercial, pero es perfectamente capaz de:\n\n- Enrutar tráfico de dispositivos IoT.\n- Capturar paquetes para analizarlos (con `tcpdump` o Wireshark).\n- Compartir internet de WiFi a Ethernet (o al revés).\n- Crear redes aisladas para experimentos sin afectar la red principal.\n\nIncluso un viejo Raspberry Pi 3 B+ tirado en el cajón sirve para esto.\n\n![Raspberry Pi configurado como router ethernet compartiendo internet](https://cdn-learn.adafruit.com/assets/assets/000/143/451/medium800/hacks_hero_photo.png?1775489680)\n\n## Materiales\n\n- Raspberry Pi 3 B+, 4 o 5 (cualquiera con WiFi integrado)\n- Tarjeta microSD 16 GB o más con Raspberry Pi OS Lite\n- Fuente de poder USB-C (5V 3A para Pi 4/5, microUSB 5V 2.5A para Pi 3)\n- Cable Ethernet CAT5e o CAT6\n- Cable HDMI y monitor (solo para configuración inicial)\n- Opcionalmente: hub USB con Ethernet adicional si quieres más puertos\n\n## Preparación del sistema\n\n1. **Instala Raspberry Pi OS Lite (64-bit)** con Raspberry Pi Imager. Habilita SSH y configura la red WiFi de tu casa antes de grabar la tarjeta.\n\n2. **Actualiza el sistema** apenas arranque:\n\n```bash\nsudo apt update && sudo apt upgrade -y\nsudo apt install -y hostapd dnsmasq iptables-persistent bridge-utils\n```\n\n3. **Asigna IP estática** a la interfaz que será LAN. Editas `/etc/dhcpcd.conf`:\n\n```\ninterface eth0\n    static ip_address=192.168.4.1/24\n    nohook wpa_supplicant\n```\n\n## Configurar el access point WiFi\n\nCrea `/etc/hostapd/hostapd.conf`:\n\n```\ninterface=wlan0\ndriver=nl80211\nssid=PiRouter\nhw_mode=g\nchannel=7\nwmm_enabled=0\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=ClaveSuperSegura\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP\n```\n\nApunta hostapd a este archivo en `/etc/default/hostapd`:\n\n```\nDAEMON_CONF=\"/etc/hostapd/hostapd.conf\"\n```\n\n## DHCP con dnsmasq\n\nReemplaza `/etc/dnsmasq.conf` por algo mínimo:\n\n```\ninterface=wlan0\ndhcp-range=192.168.4.10,192.168.4.100,255.255.255.0,24h\n```\n\n## NAT con iptables\n\nHabilita el forwarding en `/etc/sysctl.conf`:\n\n```\nnet.ipv4.ip_forward=1\n```\n\nAgrega las reglas iptables:\n\n```bash\nsudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\nsudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT\nsudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT\nsudo netfilter-persistent save\n```\n\n## Modo bridge (mismo dominio de broadcast)\n\nSi quieres que los clientes WiFi vean los dispositivos en la red Ethernet (como si todo fuera la misma LAN), reemplaza el NAT por un bridge:\n\n```bash\nsudo brctl addbr br0\nsudo brctl addif br0 eth0\n```\n\nY configura hostapd para usar `bridge=br0`. En este modo el Pi no enruta: solo une dos interfaces como un switch.\n\n## Habilitar e iniciar todo\n\n```bash\nsudo systemctl unmask hostapd\nsudo systemctl enable hostapd\nsudo systemctl enable dnsmasq\nsudo systemctl restart hostapd dnsmasq dhcpcd\n```\n\nReinicia el Pi y deberías ver la red \"PiRouter\" desde tu teléfono.\n\n## Verificación\n\n- Conecta el celular a `PiRouter` con la clave que configuraste.\n- Verifica con `ip addr` en el Pi que `wlan0` tiene 192.168.4.1.\n- Mira los leases en `/var/lib/misc/dnsmasq.leases`.\n- Prueba navegar: el tráfico sale por `eth0` con tu IP de internet.\n\n## Casos de uso reales\n\n- **Lab de IoT aislado**: conecta ESP32, cámaras IP, etc. a la red `PiRouter` para inspeccionar su tráfico sin contaminar la red familiar.\n- **Hotspot portátil**: un Pi 4 con LTE USB stick puede ser router 4G en cualquier lugar.\n- **VPN gateway**: instala WireGuard en el Pi y todos los dispositivos conectados salen por VPN automáticamente.\n\nUn proyecto Linux clásico que enseña networking, systemd, iptables y bridging en un solo paquete.",
+      "materials_list": [
+        {"name": "Raspberry Pi 3 B+ / 4 / 5", "qty": 1, "role": "computador principal"},
+        {"name": "Tarjeta microSD 16GB+", "qty": 1, "role": "almacenamiento sistema operativo"},
+        {"name": "Fuente USB-C 5V 3A", "qty": 1, "role": "alimentación"},
+        {"name": "Cable Ethernet CAT6", "qty": 1, "role": "conexión upstream"},
+        {"name": "Cable HDMI", "qty": 1, "role": "configuración inicial"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Flash de Raspberry Pi OS Lite", "text": "Usa Raspberry Pi Imager para grabar OS Lite 64-bit en la microSD. Habilita SSH y configura WiFi inicial en las opciones avanzadas."},
+        {"position": 2, "name": "Instalar paquetes base", "text": "Instala hostapd, dnsmasq, iptables-persistent y bridge-utils. Actualiza el sistema con apt update && apt upgrade."},
+        {"position": 3, "name": "Configurar IP estática en wlan0", "text": "Edita /etc/dhcpcd.conf para asignar 192.168.4.1/24 a la interfaz que servirá como LAN."},
+        {"position": 4, "name": "Configurar access point", "text": "Crea /etc/hostapd/hostapd.conf con SSID, clave WPA2 y canal. Apunta hostapd al archivo en /etc/default/hostapd."},
+        {"position": 5, "name": "Configurar DHCP con dnsmasq", "text": "Define un rango DHCP (ej. 192.168.4.10 a 192.168.4.100) en /etc/dnsmasq.conf con lease de 24 horas."},
+        {"position": 6, "name": "Habilitar NAT con iptables", "text": "Activa ip_forward en sysctl y agrega reglas de MASQUERADE y FORWARD. Guarda con netfilter-persistent save."},
+        {"position": 7, "name": "Habilitar servicios y reiniciar", "text": "systemctl enable hostapd dnsmasq, reinicia el Pi y conecta un cliente a la nueva red WiFi para validar."}
+      ],
+      "code_blocks": [
+        {"lang": "bash", "caption": "Instalación de paquetes necesarios", "code": "sudo apt update && sudo apt upgrade -y\nsudo apt install -y hostapd dnsmasq iptables-persistent bridge-utils"},
+        {"lang": "ini", "caption": "Configuración del access point en /etc/hostapd/hostapd.conf", "code": "interface=wlan0\ndriver=nl80211\nssid=PiRouter\nhw_mode=g\nchannel=7\nwmm_enabled=0\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=ClaveSuperSegura\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP"},
+        {"lang": "bash", "caption": "Reglas iptables para NAT outbound", "code": "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\nsudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT\nsudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT\nsudo netfilter-persistent save"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Raspberry Pi 5 4GB",
+          "product_id": "X5-14",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-5-4gb-ram/?attribute_ram=4gb+Ram&utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=X5-14",
+          "price_clp": 107990,
+          "stock_available": false,
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Tarjeta microSD 32GB",
+          "product_id": "B-450",
+          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=32gb&utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=B-450",
+          "price_clp": 9990,
+          "stock_available": false,
+          "match_score": 0.90
+        },
+        {
+          "name_original": "Cable Ethernet CAT6 5m",
+          "product_id": "F-504",
+          "product_url": "https://www.mechatronicstore.cl/cable-ethernet-cat6e-30-metros/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=F-504",
+          "price_clp": 3190,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Fuente 5V 3A USB-C",
+          "product_id": "B-006",
+          "product_url": "https://www.mechatronicstore.cl/transformador-cargador-fuente-de-alimentacion-5v-3a/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=B-006",
+          "price_clp": 3990,
+          "stock_available": false,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Cable HDMI 1.8m",
+          "product_id": "F-512",
+          "product_url": "https://www.mechatronicstore.cl/cable-hdmi-dorado-macho-macho1-8-3-5-m/?attribute_largo-cable=1.8+metros&utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=F-512",
+          "price_clp": 3990,
+          "stock_available": true,
+          "match_score": 0.88
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "rpi",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 120,
+      "estimated_cost_clp": 129150,
+      "tags": ["raspberry-pi", "router", "linux", "hostapd", "iptables", "networking"]
+    },
+    {
+      "id": "bda956a198aa",
+      "slug": "teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython",
+      "title_es": "Teclado Bluetooth de una sola tecla mecánica con ESP32",
+      "subtitle_es": "Construye un teclado BLE inalámbrico con un solo switch mecánico para usar como mute, atajo macro o disparador remoto.",
+      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/828/medium800/3d_printing_onekey_actionb.jpg?1776209888",
+      "body_es": "## Un teclado de una sola tecla. ¿Para qué?\n\nUn teclado de una sola tecla suena ridículo, pero piensa en todos los gestos repetitivos del día a día:\n\n- **Mute / unmute** en Zoom o Meet.\n- **Disparar el obturador** de la cámara del celular sin tocarla.\n- **Avanzar slide** en una presentación.\n- **Lanzar un macro** que escribe un texto largo.\n- **Botón pánico** que abre la pestaña del email.\n\nUn dispositivo BLE alimentado por LiPo que aparece como teclado HID en tu PC o celular es la solución elegante. Sin software adicional, sin drivers, sin cables.\n\n![Teclado de una tecla en acción con switch mecánico](https://cdn-learn.adafruit.com/assets/assets/000/143/828/medium800/3d_printing_onekey_actionb.jpg?1776209888)\n\n## Materiales\n\n- Placa ESP32 con Bluetooth Low Energy y soporte CircuitPython (QT Py ESP32-S3 o equivalente)\n- 1 switch mecánico tipo Cherry MX / Kailh (Blue para click, Brown para soft, Red para gamer)\n- 1 keycap MX (cualquier color)\n- Batería LiPo 3.7V 150-300 mAh con conector JST\n- Cargador LiPo (TP4056 o similar) si la placa no trae integrado\n- Headers macho/hembra 2.54mm\n- Carcasa impresa 3D (opcional)\n\n## Diseño del circuito\n\nUn solo switch entre GND y un pin GPIO con `INPUT_PULLUP`. Eso es todo el hardware activo. El truco está en el firmware:\n\n```\nSwitch --- GPIO9 --- (pull-up interno)\n           |\n           +--- GND (cuando se presiona)\n```\n\nPara ahorrar batería, configura el ESP32 para entrar en `deep sleep` con wake-up por GPIO. Cuando aprietas, el chip despierta, envía la tecla por BLE y se vuelve a dormir.\n\n## Código CircuitPython\n\n```python\nimport time\nimport board\nimport digitalio\nimport alarm\nfrom adafruit_hid.keyboard import Keyboard\nfrom adafruit_hid.keycode import Keycode\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\nfrom adafruit_ble.advertising.standard import ProvideServicesAdvertisement\nfrom adafruit_ble.services.standard.hid import HIDService\n\nhid = HIDService()\nadvertisement = ProvideServicesAdvertisement(hid)\nadvertisement.appearance = 961\nble = BLERadio()\nble.name = \"OneKey\"\n\nif not ble.connected:\n    ble.start_advertising(advertisement)\n    while not ble.connected:\n        pass\nble.stop_advertising()\n\nk = Keyboard(hid.devices)\n\nboton = digitalio.DigitalInOut(board.D9)\nboton.direction = digitalio.Direction.INPUT\nboton.pull = digitalio.Pull.UP\n\nwhile True:\n    if not boton.value:\n        k.send(Keycode.F13)  # Tecla custom (no se usa en sistemas normales)\n        time.sleep(0.2)\n```\n\n## Personalización vía WebSerial\n\nUna mejora simple: en lugar de hardcodear la tecla, expón una página WebSerial donde puedas elegir la combinación. La placa guarda la config en `settings.toml` y se relee al arrancar.\n\nLista de teclas útiles:\n\n- `Keycode.F13` a `F24`: teclas que no existen en teclados normales, perfectas para mapear macros en el sistema operativo.\n- `Keycode.GUI + Keycode.D`: mostrar escritorio (Windows).\n- `Keycode.CONTROL + Keycode.SHIFT + Keycode.A`: mute en Zoom.\n- `ConsumerControlCode.PLAY_PAUSE`: control multimedia.\n\n## Montaje en carcasa 3D\n\nImprime una carcasa de dos piezas:\n\n- **Base**: aloja la placa y la batería, con clip para el switch on/off.\n- **Tapa**: con un orificio cuadrado de 14x14 mm para el switch MX.\n\nUsa tornillos M2 para unir las piezas. El keycap encaja a presión sobre el switch.\n\n## Pairing\n\n1. Carga el código.\n2. En tu PC/celular ve a Bluetooth y busca dispositivos.\n3. Aparece como \"OneKey\". Empareja.\n4. Listo: cada vez que presiones, envía la tecla configurada.\n\n## Autonomía\n\nCon deep sleep entre pulsaciones, una batería de 150 mAh dura semanas. Si usas la placa siempre activa, dura horas.\n\nUn proyecto mínimo en hardware, máximo en utilidad diaria.",
+      "materials_list": [
+        {"name": "Placa ESP32 con BLE", "qty": 1, "role": "controlador BLE"},
+        {"name": "Switch mecánico tipo Cherry MX / Kailh", "qty": 1, "role": "botón principal"},
+        {"name": "Keycap MX", "qty": 1, "role": "tapa visual"},
+        {"name": "Batería LiPo 3.7V 150-300mAh", "qty": 1, "role": "alimentación"},
+        {"name": "Headers 2.54mm", "qty": 1, "role": "conexiones"},
+        {"name": "Carcasa 3D impresa", "qty": 1, "role": "estética"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Cableado del switch", "text": "Suelda dos cables entre los pines del switch mecánico. Uno va a GND y otro a un GPIO (ej. D9) de la placa ESP32."},
+        {"position": 2, "name": "Instalar CircuitPython y librerías", "text": "Flashea CircuitPython 9.x. Copia adafruit_ble, adafruit_hid y adafruit_bus_device a la carpeta lib/."},
+        {"position": 3, "name": "Cargar código BLE HID", "text": "Sube code.py con el ejemplo. Verifica en la consola serial que el ESP32 anuncia el servicio HID por BLE."},
+        {"position": 4, "name": "Emparejar con dispositivo", "text": "Desde tu PC o celular, busca dispositivos Bluetooth. Aparece como 'OneKey'. Acepta el pairing."},
+        {"position": 5, "name": "Imprimir carcasa 3D", "text": "Imprime base y tapa con la placa y batería adentro. Atornilla con M2 y monta el keycap a presión sobre el switch."},
+        {"position": 6, "name": "Optimizar autonomía", "text": "Implementa deep sleep con wake-up por GPIO para que la batería dure semanas en lugar de horas."}
+      ],
+      "code_blocks": [
+        {"lang": "python", "caption": "Teclado HID BLE de una sola tecla", "code": "import time\nimport board\nimport digitalio\nimport alarm\nfrom adafruit_hid.keyboard import Keyboard\nfrom adafruit_hid.keycode import Keycode\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\nfrom adafruit_ble.advertising.standard import ProvideServicesAdvertisement\nfrom adafruit_ble.services.standard.hid import HIDService\n\nhid = HIDService()\nadvertisement = ProvideServicesAdvertisement(hid)\nadvertisement.appearance = 961\nble = BLERadio()\nble.name = \"OneKey\"\n\nif not ble.connected:\n    ble.start_advertising(advertisement)\n    while not ble.connected:\n        pass\nble.stop_advertising()\n\nk = Keyboard(hid.devices)\n\nboton = digitalio.DigitalInOut(board.D9)\nboton.direction = digitalio.Direction.INPUT\nboton.pull = digitalio.Pull.UP\n\nwhile True:\n    if not boton.value:\n        k.send(Keycode.F13)\n        time.sleep(0.2)"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Placa ESP32-S3 BLE",
+          "product_id": "GS1-3",
+          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=GS1-3",
           "price_clp": 13670,
           "stock_available": true,
           "match_score": 0.82
         },
         {
-          "name_original": "Antena WiFi 2.4GHz U.FL a SMA",
-          "product_id": "GL1-7",
-          "product_url": "https://www.mechatronicstore.cl/antena-wifi-2-4-ghz-cable-u-fl-a-sma-para-esp32-esp8266/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GL1-7",
-          "price_clp": 2890,
+          "name_original": "Switch pulsador 4 pines kit (alternativa al Kailh)",
+          "product_id": "D-504",
+          "product_url": "https://www.mechatronicstore.cl/kit-25-botones-pulsadores-switch-4-pines-con-tapas-de-colores-12x12mm-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=D-504",
+          "price_clp": 2090,
           "stock_available": true,
-          "match_score": 0.95
+          "match_score": 0.72
         },
         {
-          "name_original": "Módulo micrófono I2S INMP441",
-          "product_id": "GL3-12",
-          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GL3-12",
-          "price_clp": 5890,
-          "stock_available": true,
-          "match_score": 0.97
-        },
-        {
-          "name_original": "Parlante 8 Ohm 1W",
-          "product_id": "G-234V1",
-          "product_url": "https://www.mechatronicstore.cl/altavoz-8-ohm-1w/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=G-234V1",
-          "price_clp": 2590,
-          "stock_available": true,
-          "match_score": 0.96
-        },
-        {
-          "name_original": "Pulsador 16mm momentáneo",
-          "product_id": "GD2-1",
-          "product_url": "https://www.mechatronicstore.cl/switch-n-a-tipo-pulsador-blanco/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GD2-1",
-          "price_clp": 890,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Mini switch SPDT",
-          "product_id": "GF1-14",
-          "product_url": "https://www.mechatronicstore.cl/mini-switch-interruptor-proto-3-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=GF1-14",
-          "price_clp": 290,
+          "name_original": "Batería LiPo 3.7V 300mAh",
+          "product_id": "XM5-2",
+          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=XM5-2",
+          "price_clp": 8990,
           "stock_available": true,
           "match_score": 0.80
         },
         {
-          "name_original": "Batería Li-Ion 3.7V",
-          "product_id": "XM5-2",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=XM5-2",
-          "price_clp": 8990,
+          "name_original": "Headers macho 2.54mm",
+          "product_id": "GI5-3",
+          "product_url": "https://www.mechatronicstore.cl/fila-pin-header-macho-2x40-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=GI5-3",
+          "price_clp": 490,
           "stock_available": true,
           "match_score": 0.85
-        },
-        {
-          "name_original": "Cable USB-C",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=B-101",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Pack cables jumper",
-          "product_id": "C-280",
-          "product_url": "https://www.mechatronicstore.cl/pack-65-cable-macho-macho-diferentes-tamanos/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-s3&utm_content=C-280",
-          "price_clp": 3490,
-          "stock_available": true,
-          "match_score": 0.83
         }
       ],
       "github_url": null,
-      "download_urls": [
-        {"label": "Guía original (PDF)", "url": "https://cdn-learn.adafruit.com/downloads/pdf/esp-now-walkie-talkies.pdf", "kind": "pdf"}
-      ],
+      "download_urls": [],
       "category": "esp32",
       "difficulty": "intermediate",
+      "estimated_time_minutes": 90,
+      "estimated_cost_clp": 25240,
+      "tags": ["esp32", "bluetooth", "ble", "hid", "teclado", "circuitpython"]
+    },
+    {
+      "id": "2a3ef6e75e08",
+      "slug": "dispensador-datos-ambientales-star-trek-lcars-esp32-s3",
+      "title_es": "Dispensador de datos ambientales estilo Star Trek LCARS",
+      "subtitle_es": "Arma un prop estilo Star Trek con pantalla LCARS que muestra CO2, temperatura y humedad en gráficos en tiempo real.",
+      "hero_image_url": null,
+      "body_es": "## Un prop de Star Trek que sí hace cosas\n\nLos paneles **LCARS** (Library Computer Access/Retrieval System) son los displays icónicos de las series modernas de Star Trek (TNG en adelante): grandes botones de colores planos, esquinas redondeadas, tipografía geométrica. Quedan muy bien en una vitrina, pero quedan aún mejor cuando muestran datos reales del ambiente.\n\nEste tutorial te guía para armar un prop alimentado por **ESP32-S3 con pantalla TFT reverse-mounted** que lee CO2, temperatura y humedad de un sensor I2C y los grafica con la estética LCARS clásica.\n\n## ¿Qué hace?\n\n- Lee CO2 (ppm), temperatura (°C) y humedad relativa (%) cada 5 segundos.\n- Dibuja tres gráficos rolling con los últimos 60 datos.\n- Pulsa un motor vibrador háptico cuando un valor cruza el umbral (CO2 > 1000 ppm = mala ventilación).\n- Imprime los datos sobre la estética LCARS con paleta naranjo/púrpura/cian.\n- Se monta en el pecho con un pin magnético, como un comunicador de la Federación.\n\n## Lista de materiales\n\n- Placa ESP32-S3 con pantalla TFT integrada (\"reverse TFT\" o similar)\n- Sensor I2C de CO2 + temperatura + humedad (STC31, SCD41, o BME280 + sensor CO2 aparte)\n- Driver háptico DRV2605L (I2C)\n- Motor de vibración tipo disco (3V)\n- Batería LiPo 3.7V 420-500 mAh con JST\n- Cable USB-C para programar y cargar\n- Cable STEMMA QT / JST-SH 4 pines (o Dupont si tu sensor no es STEMMA)\n- Pin magnético tipo solapa para sujeción\n\n## Conexiones I2C\n\nTodo el periférico va por I2C, lo que simplifica el cableado a 4 hilos compartidos:\n\n```\nESP32-S3       Sensor + DRV2605L\n  SDA  ──────────  SDA\n  SCL  ──────────  SCL\n  3V3  ──────────  VCC\n  GND  ──────────  GND\n```\n\nEl DRV2605L tiene dos pines extra para conectar el motor háptico (LRA o ERM).\n\n## Estilo LCARS\n\nLCARS se reconoce por:\n\n- Paleta: **naranjo (#FF9900)**, púrpura (#CC99CC), cian (#99CCFF), beige.\n- Esquinas redondeadas grandes con \"asas\" rectangulares.\n- Tipografía geométrica condensada.\n- Bloques de color sólido como botones.\n\nEn CircuitPython usa `displayio` con `RoundRect` y `Rect` para los bloques. Para la fuente, usa una BDF/PCF estilo Swiss911 o Helvetica Condensed (libre uso).\n\n## Código (lectura sensor + dibujo gráfico)\n\n```python\nimport time\nimport board\nimport busio\nimport displayio\nimport terminalio\nfrom adafruit_display_text import label\nfrom adafruit_display_shapes.roundrect import RoundRect\nfrom adafruit_display_shapes.rect import Rect\n\ni2c = busio.I2C(board.SCL, board.SDA)\n\n# Inicializar tu sensor: BME280, SCD41, etc.\n# from adafruit_bme280 import basic as adafruit_bme280\n# bme = adafruit_bme280.Adafruit_BME280_I2C(i2c)\n\ndisplay = board.DISPLAY\nsplash = displayio.Group()\ndisplay.root_group = splash\n\nNARANJO = 0xFF9900\nPURPURA = 0xCC99CC\nCIAN = 0x99CCFF\n\nsplash.append(RoundRect(0, 0, 80, 30, 12, fill=NARANJO))\nsplash.append(RoundRect(0, 100, 80, 30, 12, fill=PURPURA))\n\netiqueta_co2 = label.Label(terminalio.FONT, text=\"CO2\", color=NARANJO, x=85, y=15)\nsplash.append(etiqueta_co2)\nvalor_co2 = label.Label(terminalio.FONT, text=\"---\", color=0xFFFFFF, x=85, y=35)\nsplash.append(valor_co2)\n\nhistorial = []\n\nwhile True:\n    # co2 = sensor.CO2\n    co2 = 420  # placeholder; reemplaza con tu sensor real\n    valor_co2.text = f\"{co2} ppm\"\n    historial.append(co2)\n    if len(historial) > 60:\n        historial.pop(0)\n    time.sleep(5)\n```\n\n## Disparar el motor háptico\n\n```python\nimport adafruit_drv2605\nhaptico = adafruit_drv2605.DRV2605(i2c)\nhaptico.sequence[0] = adafruit_drv2605.Effect(47)  # buzz corto\n\nif co2 > 1000:\n    haptico.play()\n```\n\n## Montaje físico\n\n1. **Imprime una carcasa** con frontal estilo combadge: rectangular con esquinas redondeadas.\n2. Pega el sensor cerca de **una rejilla** lateral para que respire aire ambiente, no aire interno.\n3. La batería va por detrás, el motor háptico **pegado a la carcasa** (no flotando: necesita masa para transmitir vibración).\n4. Imán y pin solapa fijan el dispositivo a la ropa.\n\n## Casos de uso\n\n- **Monitor de ventilación de oficina**: te avisa silenciosamente cuando el CO2 sube.\n- **Demo en convenciones cosplay**: \"sí, mi combadge mide CO2 y vibra cuando hay que ventilar\".\n- **Logger ambiental portátil** con SD opcional (agregando un módulo SD por SPI).\n\nDiversión nerd con utilidad real.",
+      "materials_list": [
+        {"name": "Placa ESP32-S3 con pantalla TFT integrada", "qty": 1, "role": "controlador + display"},
+        {"name": "Sensor I2C CO2 + temperatura + humedad", "qty": 1, "role": "sensor ambiental"},
+        {"name": "Driver háptico DRV2605L", "qty": 1, "role": "control motor vibrador"},
+        {"name": "Motor vibrador disco 3V", "qty": 1, "role": "retroalimentación táctil"},
+        {"name": "Batería LiPo 3.7V 420mAh", "qty": 1, "role": "alimentación"},
+        {"name": "Cable USB Tipo C", "qty": 1, "role": "programación/carga"},
+        {"name": "Cable STEMMA QT/JST-SH 4 pines", "qty": 1, "role": "conexión I2C"},
+        {"name": "Pin solapa magnético", "qty": 1, "role": "sujeción"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Probar sensores por separado", "text": "Conecta el sensor I2C y verifica con un script básico que entrega CO2, temperatura y humedad. Confirma la dirección I2C con i2c.scan()."},
+        {"position": 2, "name": "Probar driver háptico", "text": "Conecta el DRV2605L al motor disco. Carga ejemplo de la librería adafruit_drv2605 y dispara distintos efectos para elegir el patrón."},
+        {"position": 3, "name": "Diseñar UI LCARS", "text": "Crea grupos displayio con RoundRect en naranjo/púrpura, etiquetas de texto y áreas para los tres gráficos rolling."},
+        {"position": 4, "name": "Integrar lectura periódica", "text": "Bucle que cada 5 segundos lee el sensor, actualiza valores en pantalla y agrega al historial circular."},
+        {"position": 5, "name": "Alertas hápticas", "text": "Cuando CO2 > 1000 ppm dispara el motor háptico con un patrón corto. Repite cada minuto si la condición persiste."},
+        {"position": 6, "name": "Montaje en carcasa", "text": "Imprime la carcasa estilo combadge, monta sensor cerca de rejilla, batería atrás y motor pegado a la pared interna para transmitir vibración."}
+      ],
+      "code_blocks": [
+        {"lang": "python", "caption": "Lectura del sensor + UI LCARS básica", "code": "import time\nimport board\nimport busio\nimport displayio\nimport terminalio\nfrom adafruit_display_text import label\nfrom adafruit_display_shapes.roundrect import RoundRect\nfrom adafruit_display_shapes.rect import Rect\n\ni2c = busio.I2C(board.SCL, board.SDA)\n\ndisplay = board.DISPLAY\nsplash = displayio.Group()\ndisplay.root_group = splash\n\nNARANJO = 0xFF9900\nPURPURA = 0xCC99CC\nCIAN = 0x99CCFF\n\nsplash.append(RoundRect(0, 0, 80, 30, 12, fill=NARANJO))\nsplash.append(RoundRect(0, 100, 80, 30, 12, fill=PURPURA))\n\netiqueta_co2 = label.Label(terminalio.FONT, text=\"CO2\", color=NARANJO, x=85, y=15)\nsplash.append(etiqueta_co2)\nvalor_co2 = label.Label(terminalio.FONT, text=\"---\", color=0xFFFFFF, x=85, y=35)\nsplash.append(valor_co2)\n\nhistorial = []\n\nwhile True:\n    co2 = 420\n    valor_co2.text = f\"{co2} ppm\"\n    historial.append(co2)\n    if len(historial) > 60:\n        historial.pop(0)\n    time.sleep(5)"},
+        {"lang": "python", "caption": "Disparar el motor háptico cuando CO2 sube", "code": "import adafruit_drv2605\nhaptico = adafruit_drv2605.DRV2605(i2c)\nhaptico.sequence[0] = adafruit_drv2605.Effect(47)\n\nif co2 > 1000:\n    haptico.play()"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Placa ESP32 con pantalla TFT",
+          "product_id": "D-512",
+          "product_url": "https://www.mechatronicstore.cl/esp32-con-pantalla-tactil-tft-1-28-pulgadas/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=D-512",
+          "price_clp": 34990,
+          "stock_available": false,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Sensor temperatura humedad BME280 I2C",
+          "product_id": "GR1-10",
+          "product_url": "https://www.mechatronicstore.cl/sensor-barometrico-bme280-spi-i2c-3-3v/?attribute_comunicacion=I2C&utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=GR1-10",
+          "price_clp": 8690,
+          "stock_available": false,
+          "match_score": 0.75
+        },
+        {
+          "name_original": "Driver háptico DRV2605L",
+          "product_id": "GL2-6",
+          "product_url": "https://www.mechatronicstore.cl/gravity-haptic-motor-driver/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=GL2-6",
+          "price_clp": 10650,
+          "stock_available": true,
+          "match_score": 0.96
+        },
+        {
+          "name_original": "Motor vibrador disco 3V",
+          "product_id": "GB3-6",
+          "product_url": "https://www.mechatronicstore.cl/motor-de-vibracion-3v-60ma-plano/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=GB3-6",
+          "price_clp": 1200,
+          "stock_available": true,
+          "match_score": 0.90
+        },
+        {
+          "name_original": "Batería LiPo 3.7V 300mAh",
+          "product_id": "XM5-2",
+          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=XM5-2",
+          "price_clp": 8990,
+          "stock_available": true,
+          "match_score": 0.76
+        },
+        {
+          "name_original": "Cable USB Tipo C a USB A",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=B-101",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.92
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "esp32",
+      "difficulty": "advanced",
       "estimated_time_minutes": 240,
-      "estimated_cost_clp": 76760,
-      "tags": ["esp32", "esp-now", "audio", "i2s", "walkie-talkie", "wireless", "iot"]
+      "estimated_cost_clp": 66710,
+      "tags": ["esp32-s3", "star-trek", "lcars", "co2", "haptico", "sensor-ambiental"]
+    },
+    {
+      "id": "a30ba3ea3667",
+      "slug": "monitoreo-senales-radio-sdr-raspberry-pi-intercept",
+      "title_es": "Monitor de señales de radio con SDR y Raspberry Pi",
+      "subtitle_es": "Instala iNTERCEPT en tu Raspberry Pi con un dongle SDR USB para escanear BLE, ADS-B, AIS, ham radio y más en un dashboard web.",
+      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/908/medium800/wifi_overview_hero_lg.png?1776873624",
+      "body_es": "## Un centro de monitoreo de señales en casa\n\nUn Raspberry Pi conectado a un dongle SDR (Software Defined Radio) USB barato puede escanear y decodificar una variedad enorme de señales de radio:\n\n- **Bluetooth Low Energy (BLE)**: detectar AirTags, dispositivos cercanos, beacons.\n- **ADS-B (1090 MHz)**: ver aviones en vuelo a tu alrededor en un mapa.\n- **AIS (162 MHz)**: ver barcos y embarcaciones.\n- **AM / FM / HAM**: sintonizar emisoras comerciales o de radioaficionados.\n- **Morse code**: decodificar transmisiones CW automáticamente.\n\nEl problema histórico: configurar todo ese software (rtl-sdr, dump1090, gqrx, gr-air-modes, etc.) es una pesadilla. **iNTERCEPT** es un proyecto open-source que empaqueta todas estas herramientas detrás de una UI web con estética de película de espías. La instalación es un script y queda funcionando.\n\n![Raspberry Pi con SDR USB y antena monitoreando señales de radio](https://cdn-learn.adafruit.com/assets/assets/000/143/908/medium800/wifi_overview_hero_lg.png?1776873624)\n\n## ¿Qué necesitas?\n\n- **Raspberry Pi 3, 4 o 5** (mejor el 5 para procesamiento de ADS-B/AIS sin saltos)\n- **Dongle SDR USB** basado en RTL2832U (los \"RTL-SDR Blog v3\" o equivalentes baratos)\n- **Antena**: la genérica del dongle sirve para empezar. Para mejor recepción ADS-B, antena 1090 MHz dedicada.\n- **Tarjeta microSD 16 GB+** con Raspberry Pi OS\n- **Fuente USB-C** para el Pi (5V 3A)\n- **Cable Ethernet** opcional (para no depender del WiFi al usar BLE)\n\n## Funciones que dependen del modelo\n\n| Función | Pi 3 | Pi 4 | Pi 5 |\n|---|---|---|---|\n| BLE scanning (WiFi/BT integrado) | sí | sí | sí |\n| ADS-B (vía SDR) | lento | sí | sí |\n| AIS (vía SDR) | parcial | sí | sí |\n| FM/AM con waterfall | parcial | sí | sí |\n| HackRF (1 MHz a 6 GHz) | sí | sí | sí |\n\nUn Pi 3 sirve si solo te interesa BLE y radio comercial. Para todo lo demás, Pi 4/5.\n\n## Preparación del sistema\n\n```bash\n# Flash Raspberry Pi OS Lite 64-bit con Raspberry Pi Imager\n# SSH habilitado, WiFi configurado\nsudo apt update && sudo apt upgrade -y\nsudo apt install -y git curl python3 python3-pip\n```\n\n## Instalar iNTERCEPT\n\n```bash\ngit clone https://github.com/openintercept/intercept.git\ncd intercept\nsudo ./install.sh\n```\n\nEl script:\n\n1. Instala las herramientas SDR (`rtl-sdr`, `dump1090`, `gnuradio`, `gqrx`).\n2. Configura `systemd` para que iNTERCEPT arranque al boot.\n3. Crea un usuario sin privilegios para correr los servicios.\n4. Abre el puerto 8080 con la interfaz web.\n\nDespués de la instalación, conecta el dongle SDR a un puerto USB del Pi.\n\n## Verificar el SDR\n\n```bash\nrtl_test -t\n```\n\nDebería mostrar el chip RTL2832U y el sintonizador (R820T, FC0013, etc.). Si dice \"device not found\", revisa que el dongle esté conectado y vuelve a probar.\n\n## Acceder al dashboard\n\nAbre tu navegador en `http://<IP_DEL_PI>:8080` y verás:\n\n- **Map**: aviones ADS-B en tiempo real sobre un mapa Leaflet.\n- **Spectrum**: waterfall en vivo del rango sintonizado.\n- **BLE Scanner**: lista de dispositivos BLE cercanos con RSSI.\n- **AIS**: barcos visibles si estás cerca del mar.\n- **HAM**: presets para bandas de radioaficionados (2m, 70cm).\n\n## Consideraciones legales\n\nRecibir señales de radio es legal en casi todos los países (Chile incluido). **Transmitir** sin licencia no lo es. iNTERCEPT solo recibe, así que estás OK.\n\nUna excepción: las transmisiones cifradas (telefonía celular moderna, redes WiFi) no las puedes decodificar de forma útil sin la clave, y compartir contenido decodificado de comunicaciones privadas puede ser ilegal.\n\n## Antena para ADS-B\n\nSi quieres ver aviones a 200+ km, vale la pena fabricar una antena \"cantenna\" o dipolo de 1/4 de onda para 1090 MHz. Es solo un cable de cobre de 6.9 cm como elemento. Hay tutoriales abundantes.\n\n## Casos de uso\n\n- **AirTag scanner casero**: detecta AirTags Apple que viajan contigo sin tu consentimiento.\n- **Spotter de aviación**: identifica vuelos que pasan sobre tu casa.\n- **Radio amateur**: punto de partida para entrar al hobby ham.\n- **Captura de tramas CW (morse)**: traducción automática para aprender el código.\n\nUn proyecto que abre el mundo del espectro radioeléctrico con muy poco hardware.",
+      "materials_list": [
+        {"name": "Raspberry Pi 5 (o Pi 4 / Pi 3)", "qty": 1, "role": "computador principal"},
+        {"name": "Dongle SDR USB RTL2832U", "qty": 1, "role": "receptor de radio"},
+        {"name": "Antena 1090 MHz (opcional para ADS-B)", "qty": 1, "role": "captación de señal"},
+        {"name": "Tarjeta microSD 16GB+", "qty": 1, "role": "almacenamiento sistema"},
+        {"name": "Fuente USB-C 5V 3A", "qty": 1, "role": "alimentación"},
+        {"name": "Cable Ethernet (opcional)", "qty": 1, "role": "conexión red"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Preparar Raspberry Pi OS", "text": "Flashea Raspberry Pi OS Lite 64-bit con SSH habilitado y WiFi configurado desde Raspberry Pi Imager."},
+        {"position": 2, "name": "Actualizar e instalar dependencias", "text": "apt update && apt upgrade. Instala git, curl y python3-pip como base para el script de iNTERCEPT."},
+        {"position": 3, "name": "Clonar e instalar iNTERCEPT", "text": "git clone del repo, ejecuta sudo ./install.sh. El script descarga rtl-sdr, dump1090, gnuradio y configura systemd."},
+        {"position": 4, "name": "Conectar dongle SDR", "text": "Inserta el RTL-SDR en un puerto USB. Verifica con rtl_test -t que el chip se detecta y reporta el sintonizador."},
+        {"position": 5, "name": "Acceder al dashboard web", "text": "Abre http://<IP_PI>:8080 desde otro dispositivo en la red. Explora las pestañas: ADS-B, BLE, AIS, espectro."},
+        {"position": 6, "name": "Mejorar antena (opcional)", "text": "Para mejor recepción ADS-B, fabrica una dipolo de 1/4 onda para 1090 MHz: cable de cobre de 6.9 cm como elemento radiante."}
+      ],
+      "code_blocks": [
+        {"lang": "bash", "caption": "Preparar sistema e instalar dependencias", "code": "sudo apt update && sudo apt upgrade -y\nsudo apt install -y git curl python3 python3-pip"},
+        {"lang": "bash", "caption": "Clonar e instalar iNTERCEPT", "code": "git clone https://github.com/openintercept/intercept.git\ncd intercept\nsudo ./install.sh"},
+        {"lang": "bash", "caption": "Verificar el dongle SDR", "code": "rtl_test -t"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Raspberry Pi 5 4GB",
+          "product_id": "X5-14",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-5-4gb-ram/?attribute_ram=4gb+Ram&utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=X5-14",
+          "price_clp": 107990,
+          "stock_available": false,
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Tarjeta microSD 32GB",
+          "product_id": "B-450",
+          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=32gb&utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=B-450",
+          "price_clp": 9990,
+          "stock_available": false,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Fuente USB-C 5V 3A",
+          "product_id": "B-006",
+          "product_url": "https://www.mechatronicstore.cl/transformador-cargador-fuente-de-alimentacion-5v-3a/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=B-006",
+          "price_clp": 3990,
+          "stock_available": false,
+          "match_score": 0.76
+        },
+        {
+          "name_original": "Cable Ethernet CAT6 5m",
+          "product_id": "F-504",
+          "product_url": "https://www.mechatronicstore.cl/cable-ethernet-cat6e-30-metros/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=F-504",
+          "price_clp": 3190,
+          "stock_available": true,
+          "match_score": 0.85
+        }
+      ],
+      "github_url": "https://github.com/openintercept/intercept",
+      "download_urls": [],
+      "category": "rpi",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 90,
+      "estimated_cost_clp": 125160,
+      "tags": ["raspberry-pi", "sdr", "rtl-sdr", "ads-b", "ble", "radio"]
+    },
+    {
+      "id": "b3b6286d1c33",
+      "slug": "orejas-led-beacon-bluetooth-disney-esp32-s3",
+      "title_es": "Orejas con NeoPixel que reaccionan a beacons BLE de Disney",
+      "subtitle_es": "Construye unas orejas wearables que detectan los beacons Bluetooth de los parques Disney y se iluminan en sincronía con el show.",
+      "hero_image_url": null,
+      "body_es": "## Orejas que se prenden con la magia\n\nEn los parques Disney hay zonas (especialmente durante shows nocturnos y desfiles) donde se emiten **beacons Bluetooth Low Energy** que las orejas oficiales \"Made With Magic\" usan para sincronizar colores con la música y los fuegos artificiales. Es una experiencia inmersiva muy bien hecha.\n\nCon una placa ESP32-S3 (o un Adafruit CLUE con nRF52840) puedes escanear esos beacons tú mismo y replicar el efecto en tus propias orejas con un anillo NeoPixel de 7 LEDs por lado. Sin pagar las oficiales y con la posibilidad de hackear los colores, patrones y triggers.\n\n## ¿Cómo funcionan los beacons?\n\nLos beacons BLE transmiten paquetes de advertisement periódicos (típicamente cada 100-1000 ms) con un payload corto. Disney usa códigos que identifican zona y \"evento\" actual. Tu hardware solo necesita:\n\n1. Estar en **modo scanner BLE pasivo** (no se conecta, solo escucha).\n2. Filtrar los advertisements por **UUID conocido** o por **manufacturer data**.\n3. Mapear el contenido del paquete → patrón de color.\n\n## Materiales\n\n- Placa ESP32-S3 con BLE (QT Py ESP32-S3 o ESP32-C3 SuperMini)\n- 2 anillos NeoPixel de 7 LEDs (uno por oreja)\n- Batería LiPo 3.7V 500-1200 mAh\n- Módulo cargador LiPo con conector JST (si tu placa no integra carga)\n- Cable plano flexible 4 hilos (1 metro) para llevar señal a las orejas\n- Headers macho 2.54mm cortos\n- Diadema con orejas o cintillo (la base mecánica)\n- Hilo conductor, aguja, silicona caliente\n\n## Esquema\n\n```\nESP32-S3 ─── GPIO5 ─── Datos NeoPixel oreja izquierda (7 LED)\n     └────── GPIO6 ─── Datos NeoPixel oreja derecha (7 LED)\nGND y 3.3V compartidos\nBatería LiPo en JST de la placa\n```\n\nUna sola placa controla ambas orejas. El cable plano de 4 hilos lleva VCC, GND, DATA-IZQ, DATA-DER por debajo del cintillo.\n\n## Código (scanner BLE + animación)\n\n```python\nimport time\nimport board\nimport neopixel\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\n\nizq = neopixel.NeoPixel(board.D5, 7, brightness=0.5, auto_write=False)\nder = neopixel.NeoPixel(board.D6, 7, brightness=0.5, auto_write=False)\n\nble = BLERadio()\n\nUUID_DISNEY = b\"\\xfd\\x6f\"  # placeholder, depende del beacon\n\ndef pintar(color):\n    izq.fill(color)\n    der.fill(color)\n    izq.show()\n    der.show()\n\nwhile True:\n    found = False\n    for adv in ble.start_scan(Advertisement, timeout=1):\n        # Si el manufacturer data contiene tu UUID conocido\n        if UUID_DISNEY in (adv.manufacturer_specific_data or b\"\"):\n            # Decodifica el byte de \"escena\" del payload\n            escena = adv.manufacturer_specific_data[-1]\n            if escena % 3 == 0:\n                pintar((255, 0, 0))\n            elif escena % 3 == 1:\n                pintar((0, 255, 0))\n            else:\n                pintar((0, 0, 255))\n            found = True\n            break\n    ble.stop_scan()\n    if not found:\n        pintar((20, 20, 60))  # color por defecto: azul tenue\n    time.sleep(0.1)\n```\n\n> **Nota legal**: este proyecto es para uso personal/educativo. Los UUIDs y formatos exactos de los beacons no se publican públicamente; este código es un esqueleto que tendrás que adaptar observando el tráfico BLE con apps como nRF Connect.\n\n## Montaje en el cintillo\n\n1. **Cose una bolsita** en la parte trasera del cintillo para la placa y batería. Que el switch on/off quede accesible.\n2. **Esconde el cable plano** corriendo por dentro del forro del cintillo, hasta cada oreja.\n3. **Pega los anillos NeoPixel** detrás de un círculo de tela traslúcida o filamento PETG blanco que difunde la luz.\n4. **Sella las soldaduras** con silicona caliente para que no se cortocircuiten al moverse.\n\n## Modo \"sin beacons\"\n\nPara que las orejas se vean bien también fuera del parque, programa varios modos seleccionables con un botón corto:\n\n- Modo arcoíris.\n- Modo respiración (fade in/out).\n- Modo música (reactivo a un micrófono, si lo agregas).\n- Modo \"beacons\" (el principal).\n\n## Autonomía\n\nCon escaneo BLE constante y los 14 LEDs prendidos al 50% de brillo, una LiPo de 1200 mAh dura unas 4-5 horas. Suficiente para un show + desfile.\n\nUn wearable BLE con utilidad real para fanáticos del parque.",
+      "materials_list": [
+        {"name": "Placa ESP32-S3 con BLE", "qty": 1, "role": "controlador"},
+        {"name": "Anillo NeoPixel 7 LEDs", "qty": 2, "role": "iluminación por oreja"},
+        {"name": "Batería LiPo 3.7V 500-1200mAh", "qty": 1, "role": "alimentación"},
+        {"name": "Cable plano 4 hilos 1m", "qty": 1, "role": "señal a orejas"},
+        {"name": "Headers macho 2.54mm", "qty": 1, "role": "conexiones"},
+        {"name": "Cintillo con orejas", "qty": 1, "role": "base mecánica"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Verificar anillos NeoPixel", "text": "Conecta un anillo a un GPIO de la placa y prueba un ejemplo simple de fill con la librería neopixel para confirmar polaridad y orden de colores."},
+        {"position": 2, "name": "Probar scanner BLE", "text": "Carga un script básico de adafruit_ble que imprima por consola los advertisements detectados. Identifica los beacons objetivo por UUID o manufacturer data."},
+        {"position": 3, "name": "Mapear payloads a colores", "text": "Decodifica el campo de escena/zona del beacon y define una tabla payload->color. Empieza con 3-4 colores hasta entender el patrón."},
+        {"position": 4, "name": "Implementar modo standalone", "text": "Agrega un botón corto para alternar entre modos: arcoíris, respiración, beacons. El modo activo se guarda en RAM (no persistente)."},
+        {"position": 5, "name": "Coser al cintillo", "text": "Cose una bolsita trasera para placa y batería con acceso al switch on/off. Pasa el cable plano por dentro del forro hasta cada oreja."},
+        {"position": 6, "name": "Difusión de luz", "text": "Pega los anillos detrás de un círculo de tela traslúcida o filamento PETG blanco para difuminar y evitar puntos de luz duros."}
+      ],
+      "code_blocks": [
+        {"lang": "python", "caption": "Scanner BLE + animación de los dos anillos NeoPixel", "code": "import time\nimport board\nimport neopixel\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\n\nizq = neopixel.NeoPixel(board.D5, 7, brightness=0.5, auto_write=False)\nder = neopixel.NeoPixel(board.D6, 7, brightness=0.5, auto_write=False)\n\nble = BLERadio()\n\nUUID_DISNEY = b\"\\xfd\\x6f\"\n\ndef pintar(color):\n    izq.fill(color)\n    der.fill(color)\n    izq.show()\n    der.show()\n\nwhile True:\n    found = False\n    for adv in ble.start_scan(Advertisement, timeout=1):\n        if UUID_DISNEY in (adv.manufacturer_specific_data or b\"\"):\n            escena = adv.manufacturer_specific_data[-1]\n            if escena % 3 == 0:\n                pintar((255, 0, 0))\n            elif escena % 3 == 1:\n                pintar((0, 255, 0))\n            else:\n                pintar((0, 0, 255))\n            found = True\n            break\n    ble.stop_scan()\n    if not found:\n        pintar((20, 20, 60))\n    time.sleep(0.1)"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Placa ESP32-S3 con BLE",
+          "product_id": "GS1-3",
+          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=GS1-3",
+          "price_clp": 13670,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Anillo NeoPixel 7 LEDs RGB",
+          "product_id": "GN2-10",
+          "product_url": "https://www.mechatronicstore.cl/modulo-led-rgb-de-7-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=GN2-10",
+          "price_clp": 1990,
+          "stock_available": false,
+          "match_score": 0.90
+        },
+        {
+          "name_original": "Batería LiPo 3.7V 600mAh",
+          "product_id": "L-330",
+          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-602535-3-7v-600mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=L-330",
+          "price_clp": 9990,
+          "stock_available": false,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Cable paralelo flexible 24 AWG",
+          "product_id": "V-109_5",
+          "product_url": "https://www.mechatronicstore.cl/cable-paralelo-variedad-calibres/?attribute_medidas=24+awg&utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=V-109_5",
+          "price_clp": 200,
+          "stock_available": true,
+          "match_score": 0.70
+        },
+        {
+          "name_original": "Headers macho 2.54mm 2x40 pin",
+          "product_id": "GI5-3",
+          "product_url": "https://www.mechatronicstore.cl/fila-pin-header-macho-2x40-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=GI5-3",
+          "price_clp": 490,
+          "stock_available": true,
+          "match_score": 0.82
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "esp32",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 180,
+      "estimated_cost_clp": 28330,
+      "tags": ["esp32", "ble", "neopixel", "wearable", "beacon", "disney"]
+    },
+    {
+      "id": "07cbf6c824eb",
+      "slug": "sensor-luz-lux-max44009-i2c-arduino-circuitpython",
+      "title_es": "Sensor de luz MAX44009: lux precisos con I2C para Arduino y CircuitPython",
+      "subtitle_es": "Aprende a usar el sensor de luz MAX44009 con 22 bits de rango dinámico desde 0.045 hasta 188.000 lux con auto-range y conexión I2C plug-and-play.",
+      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/719/medium800/adafruit_products_max44009_demo_photo.jpg?1776115863",
+      "body_es": "## Un sensor de luz que entrega lux, no \"números\"\n\nLa mayoría de los sensores de luz baratos (LDR, fotodiodos genéricos) te dan un valor crudo entre 0 y 1023 (o 0 y 4095) que es proporcional al brillo, pero no es una **unidad real**. Para calibrarlo necesitas otro sensor patrón o aceptar que tus números no comparan entre proyectos.\n\nEl **MAX44009** es distinto: entrega directamente **lux**, la unidad SI de iluminancia. Y lo hace en un rango brutal: desde **0.045 lux** (noche cerrada, casi sin luz) hasta **188.000 lux** (sol directo del mediodía en verano). Eso es **22 bits de rango dinámico**, suficiente para usar el mismo sensor adentro y afuera sin cambiar nada.\n\n![Sensor MAX44009 conectado a una breakout TFT mostrando lectura de lux](https://cdn-learn.adafruit.com/assets/assets/000/143/719/medium800/adafruit_products_max44009_demo_photo.jpg?1776115863)\n\n## ¿Por qué importa medir en lux?\n\n- Comparas datos entre lugares y horas distintas sin recalibrar.\n- Tus algoritmos (\"si está oscuro, prende la luz\") usan umbrales con significado real (50 lux = mesa de trabajo iluminada, 500 lux = oficina).\n- Tu logger ambiental queda con datos publicables si quieres compartirlos.\n\n## Características clave\n\n- **Rango**: 0.045 a 188.000 lux\n- **Resolución**: hasta 0.045 lux por bit (mínimo más fino)\n- **Interfaz**: I2C estándar (3.3V o 5V con level-shifter)\n- **Auto-range**: el chip elige solo el tiempo de integración y la ganancia\n- **Bajo consumo**: ~1 µA en idle\n- **Direcciones I2C**: 0x4A o 0x4B (puente solder selecciona)\n\n![Vista superior del módulo MAX44009 con conectores STEMMA QT](https://cdn-learn.adafruit.com/assets/assets/000/143/720/medium800/adafruit_products_max44009_top_straight.jpg?1776115929)\n\n## Conexión\n\nEl breakout viene con cuatro pines I2C estándar:\n\n```\nMáster (ESP32/Arduino)     MAX44009\n     SDA   ──────────────  SDA\n     SCL   ──────────────  SCL\n     3.3V  ──────────────  VIN\n     GND   ──────────────  GND\n```\n\nSi tu placa tiene conector **STEMMA QT / Qwiic** (JST-SH 4 pines), enchufas directo sin soldar.\n\n## Código en CircuitPython\n\nInstala la librería `adafruit_max44009` desde el bundle:\n\n```python\nimport time\nimport board\nimport busio\nimport adafruit_max44009\n\ni2c = busio.I2C(board.SCL, board.SDA)\nsensor = adafruit_max44009.MAX44009(i2c)\n\nwhile True:\n    print(f\"Iluminancia: {sensor.lux:.2f} lux\")\n    time.sleep(1)\n```\n\nSalida típica:\n\n```\nIluminancia: 245.30 lux       # mesa de oficina\nIluminancia: 1.50 lux         # pieza apagada con luz de pasillo\nIluminancia: 65000.00 lux     # sol indirecto a través de ventana\n```\n\n## Código en Arduino\n\n```cpp\n#include <Wire.h>\n#include <Adafruit_MAX44009.h>\n\nAdafruit_MAX44009 sensor;\n\nvoid setup() {\n  Serial.begin(115200);\n  if (!sensor.begin()) {\n    Serial.println(\"No se detecta el MAX44009. Verifica cableado.\");\n    while (1) delay(10);\n  }\n}\n\nvoid loop() {\n  float lux = sensor.readLuminosity();\n  Serial.print(\"Iluminancia: \");\n  Serial.print(lux);\n  Serial.println(\" lux\");\n  delay(1000);\n}\n```\n\n## Aplicaciones típicas\n\n- **Reloj con backlight adaptativo**: ajusta el brillo del display según luz ambiente.\n- **Persiana motorizada inteligente**: cierra cuando el sol pega directo.\n- **Foco solar tracker**: orienta paneles solares siguiendo el máximo de lux.\n- **Logger lumínico**: registra exposición de plantas durante el día.\n- **Cámara astrofotográfica**: detecta cuándo es \"noche cerrada\" para empezar a capturar.\n\n## Auto-range vs. configuración manual\n\nPor defecto el chip ajusta solo el tiempo de integración (de 6.25 ms a 800 ms) y la ganancia. Para la mayoría de los proyectos, deja auto-range encendido.\n\nSi tu aplicación necesita lecturas **muy rápidas** (>10 Hz), puedes fijar manualmente integración de 6.25 ms y aceptar menor resolución a niveles bajos de luz.\n\n## I2C scan para verificar conexión\n\n```python\nimport board, busio\ni2c = busio.I2C(board.SCL, board.SDA)\nwhile not i2c.try_lock(): pass\nprint([hex(x) for x in i2c.scan()])\ni2c.unlock()\n```\n\nDeberías ver `0x4a` (o `0x4b` si moviste el jumper).\n\n## Alternativas en el catálogo\n\nSi el MAX44009 no está disponible, otros sensores de luz I2C con respuesta similar:\n\n- **BH1750 (GY-302)**: también entrega lux directos, rango 1-65.535 lux, más económico.\n- **TEMT6000**: salida analógica, requiere calibración pero es muy barato.\n- **APDS-9930**: incluye proximidad además de luz.\n\nPara la mayoría de proyectos donde quieres lux reales, el **GY-302 (BH1750)** es el reemplazo más directo y disponible.",
+      "materials_list": [
+        {"name": "Sensor de luz MAX44009 (o BH1750 alternativo)", "qty": 1, "role": "sensor lux"},
+        {"name": "Microcontrolador con I2C (Arduino / ESP32)", "qty": 1, "role": "lectura datos"},
+        {"name": "Cable STEMMA QT / Dupont 4 hilos", "qty": 1, "role": "conexión I2C"}
+      ],
+      "steps": [
+        {"position": 1, "name": "Conectar I2C", "text": "Conecta VIN a 3.3V, GND a GND, SDA al SDA del micro y SCL al SCL. Si tu micro tiene STEMMA QT, enchufa directo el cable."},
+        {"position": 2, "name": "Verificar dirección I2C", "text": "Corre un i2c.scan(). Debe aparecer 0x4A (por defecto) o 0x4B si moviste el jumper en el módulo."},
+        {"position": 3, "name": "Instalar librería", "text": "Copia adafruit_max44009.mpy a la carpeta lib/ de CircuitPython, o instala Adafruit_MAX44009 desde el Library Manager de Arduino."},
+        {"position": 4, "name": "Lectura básica", "text": "Carga el ejemplo. Cubre el sensor con la mano: el valor cae bajo 5 lux. Apunta a una ventana: sube a miles. Confirma que funciona el auto-range."},
+        {"position": 5, "name": "Integrar a tu proyecto", "text": "Usa los lux como input de un termostato, brillo adaptativo de pantalla, o trigger de actuadores."}
+      ],
+      "code_blocks": [
+        {"lang": "python", "caption": "Lectura simple del MAX44009 en CircuitPython", "code": "import time\nimport board\nimport busio\nimport adafruit_max44009\n\ni2c = busio.I2C(board.SCL, board.SDA)\nsensor = adafruit_max44009.MAX44009(i2c)\n\nwhile True:\n    print(f\"Iluminancia: {sensor.lux:.2f} lux\")\n    time.sleep(1)"},
+        {"lang": "cpp", "caption": "Lectura simple del MAX44009 en Arduino", "code": "#include <Wire.h>\n#include <Adafruit_MAX44009.h>\n\nAdafruit_MAX44009 sensor;\n\nvoid setup() {\n  Serial.begin(115200);\n  if (!sensor.begin()) {\n    Serial.println(\"No se detecta el MAX44009. Verifica cableado.\");\n    while (1) delay(10);\n  }\n}\n\nvoid loop() {\n  float lux = sensor.readLuminosity();\n  Serial.print(\"Iluminancia: \");\n  Serial.print(lux);\n  Serial.println(\" lux\");\n  delay(1000);\n}"},
+        {"lang": "python", "caption": "Scanner I2C para verificar la conexión", "code": "import board, busio\ni2c = busio.I2C(board.SCL, board.SDA)\nwhile not i2c.try_lock(): pass\nprint([hex(x) for x in i2c.scan()])\ni2c.unlock()"}
+      ],
+      "linked_products": [
+        {
+          "name_original": "Sensor de luz lux GY-302 BH1750 (alternativa al MAX44009)",
+          "product_id": "GN1-6",
+          "product_url": "https://www.mechatronicstore.cl/modulo-sensor-de-intensidad-luminosa-gy-302/?utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=GN1-6",
+          "price_clp": 3990,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Sensor de luz TEMT6000",
+          "product_id": "GO1-5",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-luz-temt-6000/?utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=GO1-5",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.72
+        },
+        {
+          "name_original": "Sensor luz RGB APDS-9930",
+          "product_id": "GC3-7",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-postura-rgb-apds-9930/?utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=GC3-7",
+          "price_clp": 3690,
+          "stock_available": true,
+          "match_score": 0.70
+        },
+        {
+          "name_original": "Placa ESP32 microcontrolador I2C",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=X2-10V2",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.75
+        }
+      ],
+      "github_url": null,
+      "download_urls": [],
+      "category": "sensores",
+      "difficulty": "beginner",
+      "estimated_time_minutes": 30,
+      "estimated_cost_clp": 11980,
+      "tags": ["sensor", "luz", "lux", "i2c", "max44009", "bh1750"]
     }
   ]
 }
