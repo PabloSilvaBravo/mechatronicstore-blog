@@ -70,7 +70,8 @@ los rankings a DB.
 ## Reglas
 
 - combined_score con 3 decimales
-- Si combined_score < 0.78 → el watcher marca rejected automáticamente
+- Si combined_score < 0.72 → el watcher marca rejected automáticamente
+  (threshold bajado de 0.78 a 0.72 el 19-may-2026 — más candidatos pasan)
 - `verdict` SIEMPRE en español, sin markdown, conciso
 - `matched_products_hint` lista de keywords de productos que probablemente
   estén en MechatronicStore (lo usa después la traducción Week 3)
