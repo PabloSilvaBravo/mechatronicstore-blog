@@ -23,7 +23,7 @@ import libsql
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from hard_filters import apply_all  # noqa: E402
-from scraper import fetch_full_page  # noqa: E402
+from scraper import fetch_full_page, fetch_adafruit_multipage  # noqa: E402
 
 
 TIER1_SOURCES = {
@@ -74,7 +74,11 @@ def main() -> int:
     promoted = 0
     for i, row in enumerate(rows):
         tid, source_id, source_url, title = row
-        page = fetch_full_page(source_url)
+        # Adafruit Learn → multipage fetcher (sigue subpages)
+        if source_id == "adafruit-learn":
+            page = fetch_adafruit_multipage(source_url)
+        else:
+            page = fetch_full_page(source_url)
         if page.error or page.status_code >= 400:
             print(f"  ✗ {tid[:12]} fetch failed: {page.error or page.status_code}")
             time.sleep(args.sleep)
