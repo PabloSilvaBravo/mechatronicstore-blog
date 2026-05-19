@@ -65,7 +65,7 @@ def has_code(body: str) -> bool:
 
 
 def count_steps(body: str) -> int:
-    """Cuenta cuántos pasos identificables hay (MD + HTML headers + numeric list)."""
+    """Cuenta cuántos pasos identificables hay (MD + HTML headers + numeric list + ol/li)."""
     if not body:
         return 0
     numeric_steps = len(set(int(m.group(1)) for m in _RE_STEP_NUMERIC.finditer(body)))
@@ -74,7 +74,19 @@ def count_steps(body: str) -> int:
     html_header_steps = len(_RE_STEP_HTML_HEADER.findall(body))
     # Conteo H2/H3 total como proxy de pasos (cualquier tutorial estructurado los tiene)
     all_h2_h3 = len(re.findall(r"<h[23]\b[^>]*>", body, re.IGNORECASE))
-    return max(numeric_steps, header_steps, bold_steps, html_header_steps, all_h2_h3)
+    # Pablo 19-may-2026: agregar <li> dentro de <ol> (ordered list HTML).
+    # Adafruit/Make-Magazine usan ol/li sin headers numerados. Antes contaba
+    # 0 pasos en tutoriales con 6-10 <li> válidos.
+    ol_li_steps = 0
+    for ol_match in re.finditer(r"<ol\b[^>]*>(.*?)</ol>", body, re.IGNORECASE | re.DOTALL):
+        ol_li_steps = max(
+            ol_li_steps,
+            len(re.findall(r"<li\b", ol_match.group(1), re.IGNORECASE)),
+        )
+    return max(
+        numeric_steps, header_steps, bold_steps,
+        html_header_steps, all_h2_h3, ol_li_steps,
+    )
 
 
 def count_images(body: str) -> int:
@@ -124,9 +136,9 @@ def apply_all(
     body: str,
     excluded_keywords: list[str] | None = None,
     min_steps: int = 3,
-    min_images: int = 3,
-    min_words: int = 800,
-    code_required_unless_steps: int = 5,
+    min_images: int = 2,
+    min_words: int = 600,
+    code_required_unless_steps: int = 4,
 ) -> dict:
     """Aplica los hard filters. Devuelve resumen.
 
