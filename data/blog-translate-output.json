@@ -1,297 +1,197 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-19T07:16:28Z",
+  "translated_at": "2026-05-19T13:50:00Z",
   "translations": [
     {
-      "id": "8a884b6de94d",
-      "slug": "esp32-servidor-web-autenticacion-http-esp-idf",
-      "title_es": "ESP32 con ESP-IDF: servidor web protegido con login y logout",
-      "subtitle_es": "Aprende a montar en el ESP32 un servidor web local protegido con autenticación HTTP básica usando el framework oficial ESP-IDF.",
-      "hero_image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Web-Server-Basic-HTTP-Authentication.jpg",
-      "body_es": "## Por qué este proyecto vale la pena\n\nTienes un ESP32 sirviendo una página web en tu red local — todos los que estén\nconectados al Wi-Fi pueden abrirla escribiendo la IP. ¿Qué pasa si quieres que\nsolo tú (o quienes tú decidas) puedan ver esa página? La autenticación HTTP\nbásica es la respuesta más simple: un popup pide usuario y contraseña, y sin\nlas credenciales correctas el contenido no se sirve.\n\nEn este tutorial vas a montar un servidor web en el ESP32 programado con\n**ESP-IDF** (el framework oficial de Espressif) que protege la página con login\ny permite cerrar sesión cuando quieras.\n\n![ESP32 Web Server con autenticación HTTP básica](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Web-Server-Basic-HTTP-Authentication.jpg)\n\n## Antes de empezar\n\nNecesitas:\n\n- Tener instalada la **extensión ESP-IDF para VS Code** (Visual Studio Code de Microsoft). Si nunca la has usado, busca la guía oficial de Espressif para programar ESP32 con ESP-IDF.\n- Una **placa de desarrollo ESP32** (cualquier variante: ESP32-WROOM, ESP32-S3, ESP32-C3 — todas funcionan).\n- Un **cable USB** para conectar la placa al computador.\n\n### Sobre la seguridad\n\nEsto está pensado para tu red local, no para exponer el ESP32 a internet. La\nautenticación básica HTTP **no encripta** las credenciales — viajan codificadas\nen base64, que cualquiera puede revertir. Si alguien ya entró a tu Wi-Fi, esto\nno lo detiene. Para uso doméstico (evitar que un visitante curioso acceda\nescribiendo la IP) es más que suficiente.\n\n## Qué va a hacer el proyecto\n\n![Resumen del flujo de login y logout](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/04/ESP-IDF-ESP32-Web-Server-Basic-HTTP-Authentication-Login-Logout-Overview.png)\n\n- Cuando alguien intenta abrir la IP del ESP32, aparece un popup pidiendo usuario y contraseña.\n- Si las credenciales son correctas, se muestra la página principal con un botón **Logout**.\n- Al hacer clic en Logout, eres redirigido a una página de cierre de sesión y luego al login otra vez.\n- Cada dispositivo nuevo (notebook, celular, tablet) que abra la página tiene que loguearse por su cuenta.\n\n## Paso 1: Crea un proyecto ESP-IDF desde cero\n\nLa extensión de VS Code tiene un asistente para generar la estructura del proyecto.\n\n1. Abre el panel **ESP-IDF Espressif** en la barra lateral.\n2. Expande **Advanced** y haz clic en **New Project Wizard**.\n3. Elige la versión del framework: **ESP-IDF v5.4.1**.\n\n![Asistente de nuevo proyecto en VS Code](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Create-Open-New-Project-Wizard-Menu.png)\n\nEn la siguiente ventana:\n\n- **Project Name**: el nombre que quieras.\n- **Project Directory**: una carpeta local. **NO uses carpetas de Google Drive, OneDrive o Dropbox** — la compilación crea miles de archivos y la sincronización en la nube vuelve todo lentísimo.\n- **ESP-IDF Target**: el chip de tu placa (yo uso `esp32s3`).\n- **ESP-IDF Board**: la configuración correspondiente al chip (para S3 elige *ESP32-S chip via builtin USB-JTAG*).\n- **Serial Port**: el COM/tty donde está conectada la placa.\n- **Choose Template**: presiona el botón azul para crear desde plantilla.\n\n![Configurando el wizard del proyecto](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2025/05/ESP-IDF-ESP32-Create-Open-New-Project-Wizard-Menu-Select-Directory-Board-Template.png)\n\nSelecciona **ESP-IDF Templates → sample project** y presiona *Create project using template sample project*.\n\n![Selección del template sample project](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/ESP-IDF-ESP32-Create-New-Sample-Project-using-IDF-Template.png)\n\nCuando aparezca la notificación, haz clic en **Open Project** y VS Code abrirá el proyecto recién creado.\n\n![Notificación para abrir el nuevo proyecto](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/ESP-IDF-ESP32-Open-New-Project-Sample.png)\n\nSolo vas a editar `main/main.c`. El resto de archivos (CMakeLists, sdkconfig, etc.) puedes dejarlos como están.\n\n## Paso 2: Configura SSID y contraseña con Kconfig.projbuild\n\nEn vez de hardcodear las credenciales Wi-Fi dentro del `.c`, lo limpio es\nexponerlas en el **SDK Configuration Editor** (menuconfig). Para eso necesitas\ncrear un archivo `Kconfig.projbuild` dentro de la carpeta `main/`.\n\nClick derecho sobre `main` → **New File** → nómbralo exactamente `Kconfig.projbuild` y pega:\n\n```kconfig\nmenu \"Wi-Fi Configuration\"\n    config ESP_WIFI_SSID\n        string \"WiFi SSID\"\n        help\n            SSID (network name) you want to connect to.\n\n    config ESP_WIFI_PASSWORD\n        string \"WiFi Password\"\n        help\n            Password of the Wi-Fi network you want to connect to.\nendmenu\n```\n\n![Archivo Kconfig.projbuild con la config Wi-Fi](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/Kconfig-projbuild-Wi-Fi-Configuration-File.png)\n\nGuarda. Ahora abre el **SDK Configuration Editor** (ícono del engranaje en la barra inferior), busca \"wifi\", llena los campos **WiFi SSID** y **WiFi Password** con tus credenciales reales y presiona **Save**.\n\n![Menuconfig con los campos de SSID y password](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/SDK-Configuration-Editor-Menuconfig-Kconfig-projbuild-Wi-Fi-Configuration-SSID-Password.png)\n\nEsto crea variables `CONFIG_ESP_WIFI_SSID` y `CONFIG_ESP_WIFI_PASSWORD` que el código va a leer en tiempo de compilación.\n\n## Paso 3: El código del servidor web con autenticación\n\nCopia este código completo a `main/main.c`. Reemplaza el usuario/contraseña en los `#define` con los que quieras:\n\n```c\n/*\n  Adaptado de Random Nerd Tutorials\n  https://RandomNerdTutorials.com/esp-idf-esp32-web-server-http-authentication/\n*/\n#include <stdio.h>\n#include <string.h>\n#include \"freertos/FreeRTOS.h\"\n#include \"freertos/task.h\"\n#include <esp_log.h>\n#include <esp_system.h>\n#include <esp_wifi.h>\n#include <esp_event.h>\n#include <esp_netif.h>\n#include <esp_http_server.h>\n#include <esp_tls.h>\n#include <esp_check.h>\n#include <nvs_flash.h>\n#include \"esp_tls_crypto.h\"\n#include \"sdkconfig.h\"\n\n#define MY_ESP_WIFI_SSID   CONFIG_ESP_WIFI_SSID\n#define MY_ESP_WIFI_PASS   CONFIG_ESP_WIFI_PASSWORD\n\n#define BASIC_AUTH_USER   \"admin\"\n#define BASIC_AUTH_PASS   \"password\"\n\ntypedef struct {\n    char *username;\n    char *password;\n} basic_auth_info_t;\n\n#define HTTPD_401  \"401 UNAUTHORIZED\"\n\nstatic const char *TAG = \"web_server\";\n\n// HTML servido en la raíz \"/\"\nstatic const char *root_page =\n    \"<!DOCTYPE html><html><head>\"\n    \"<title>ESP-IDF: ESP32 Web Server</title>\"\n    \"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\"\n    \"</head><body>\"\n    \"<h1>ESP-IDF: ESP32 Web Server</h1>\"\n    \"<p>Hola desde el ESP32!</p>\"\n    \"<button onclick=\"window.location.href='/logout';\">Logout</button>\"\n    \"</body></html>\";\n\n// HTML servido en \"/logout\" (fuerza al navegador a olvidar credenciales)\nstatic const char *logout_page =\n    \"<!DOCTYPE html><html><head>\"\n    \"<title>Logout</title>\"\n    \"<script>\"\n    \"function forceLogout(){\"\n    \"  var xhr = new XMLHttpRequest();\"\n    \"  xhr.open('GET', '/', true, 'logout', 'logout');\"\n    \"  xhr.send();\"\n    \"  setTimeout(function(){ window.location.href='/'; }, 500);\"\n    \"}\"\n    \"</script></head>\"\n    \"<body onload='forceLogout()'><h2>Cerrando sesion...</h2></body></html>\";\n\n// Devuelve 401 + header WWW-Authenticate para gatillar el popup del navegador\nstatic esp_err_t send_401_response(httpd_req_t *req)\n{\n    httpd_resp_set_status(req, HTTPD_401);\n    httpd_resp_set_type(req, \"text/html\");\n    httpd_resp_set_hdr(req, \"Connection\", \"keep-alive\");\n    httpd_resp_set_hdr(req, \"WWW-Authenticate\", \"Basic realm=\"ESP32 Web Server\"\");\n    httpd_resp_send(req, NULL, 0);\n    return ESP_OK;\n}\n\n// Construye el string \"Basic base64(user:pass)\" que el cliente debe enviar\nstatic char *http_auth_basic(const char *username, const char *password)\n{\n    size_t out;\n    char *user_info = NULL;\n    char *digest = NULL;\n    size_t n = 0;\n    int rc = asprintf(&user_info, \"%s:%s\", username, password);\n    if (rc < 0 || !user_info) {\n        ESP_LOGE(TAG, \"No se pudo armar user_info\");\n        return NULL;\n    }\n    esp_crypto_base64_encode(NULL, 0, &n,\n        (const unsigned char *)user_info, strlen(user_info));\n    digest = calloc(1, 6 + n + 1);\n    if (digest) {\n        strcpy(digest, \"Basic \");\n        esp_crypto_base64_encode((unsigned char *)digest + 6, n, &out,\n            (const unsigned char *)user_info, strlen(user_info));\n    }\n    free(user_info);\n    return digest;\n}\n\n// Compara el header Authorization que llegó contra el esperado\nstatic bool check_basic_auth(httpd_req_t *req, const char *user, const char *pass)\n{\n    size_t buf_len = httpd_req_get_hdr_value_len(req, \"Authorization\") + 1;\n    if (buf_len <= 1) return false;\n\n    char *buf = calloc(1, buf_len);\n    if (!buf) return false;\n\n    if (httpd_req_get_hdr_value_str(req, \"Authorization\", buf, buf_len) != ESP_OK) {\n        free(buf);\n        return false;\n    }\n\n    char *expected = http_auth_basic(user, pass);\n    if (!expected) { free(buf); return false; }\n\n    bool ok = (strcmp(expected, buf) == 0);\n    free(expected); free(buf);\n\n    if (ok) ESP_LOGI(TAG, \"Usuario autenticado: %s\", user);\n    else    ESP_LOGE(TAG, \"Autenticacion fallida\");\n    return ok;\n}\n\nstatic esp_err_t logout_get_handler(httpd_req_t *req)\n{\n    httpd_resp_set_type(req, \"text/html\");\n    httpd_resp_send(req, logout_page, HTTPD_RESP_USE_STRLEN);\n    return ESP_OK;\n}\n\nstatic const httpd_uri_t logout_uri = {\n    .uri = \"/logout\", .method = HTTP_GET,\n    .handler = logout_get_handler, .user_ctx = NULL\n};\n\nstatic esp_err_t basic_auth_get_handler(httpd_req_t *req)\n{\n    basic_auth_info_t *info = req->user_ctx;\n    if (!check_basic_auth(req, info->username, info->password)) {\n        return send_401_response(req);\n    }\n    httpd_resp_set_type(req, \"text/html\");\n    httpd_resp_send(req, root_page, HTTPD_RESP_USE_STRLEN);\n    return ESP_OK;\n}\n\nstatic httpd_uri_t basic_auth = {\n    .uri = \"/\", .method = HTTP_GET, .handler = basic_auth_get_handler,\n};\n\nstatic void httpd_register_basic_auth(httpd_handle_t server)\n{\n    basic_auth_info_t *info = calloc(1, sizeof(basic_auth_info_t));\n    if (info) {\n        info->username = BASIC_AUTH_USER;\n        info->password = BASIC_AUTH_PASS;\n        basic_auth.user_ctx = info;\n        httpd_register_uri_handler(server, &basic_auth);\n    }\n}\n\nstatic httpd_handle_t start_web_server(void)\n{\n    httpd_config_t config = HTTPD_DEFAULT_CONFIG();\n    httpd_handle_t server = NULL;\n    if (httpd_start(&server, &config) == ESP_OK) {\n        ESP_LOGI(TAG, \"Servidor HTTP iniciado en el puerto %d\", config.server_port);\n        httpd_register_uri_handler(server, &logout_uri);\n        httpd_register_basic_auth(server);\n        return server;\n    }\n    ESP_LOGE(TAG, \"No se pudo iniciar el servidor HTTP\");\n    return NULL;\n}\n```\n\n> **Importante**: este snippet contiene los handlers y el setup del servidor.\n> Te falta el manejo de Wi-Fi (`wifi_event_handler`, `wifi_init_sta`) y el\n> `app_main()` que une todo. Toma el código completo desde el repo del autor\n> original (link al final).\n\n## Paso 4: Compila y flashea\n\nCon el código pegado y el menuconfig listo:\n\n1. En la barra inferior de VS Code, presiona el ícono del **rayo** (Flash) o usa el comando *ESP-IDF: Build, Flash and Monitor*.\n2. La primera compilación tarda varios minutos (descarga toolchains y compila todo el SDK).\n3. Cuando termine de flashear, el monitor serial abre automáticamente.\n\n## Paso 5: Probando el servidor\n\nEn el monitor serial vas a ver una línea como:\n\n```\nI (4521) wifi_station: got ip:192.168.1.42\nI (4523) web_server: Servidor HTTP iniciado en el puerto 80\n```\n\nAnota la IP. Abre tu navegador en cualquier dispositivo de la misma red\nWi-Fi y entra a `http://192.168.1.42` (la que te tocó a ti).\n\nAparece el popup pidiendo credenciales. Ingresa:\n- Usuario: `admin`\n- Contraseña: `password`\n\n(O lo que hayas puesto en los `#define BASIC_AUTH_USER/PASS`).\n\nSi todo funciona ves la página con el botón **Logout**. Al hacer clic, eres\nredirigido a `/logout`, el JS local rompe la sesión y vuelves al popup.\n\n## Cómo extenderlo\n\n- **Múltiples usuarios**: en vez de `BASIC_AUTH_USER`/`PASS` fijos, guarda una lista en NVS y compárala iterando.\n- **Páginas dinámicas**: en el `root_page` reemplaza el HTML estático por un buffer que construyas con `snprintf` incluyendo lecturas de sensores.\n- **HTTPS**: ESP-IDF soporta `esp_https_server` — la migración es directa pero necesitas certificado autofirmado.\n\nListo. Tu ESP32 ahora sirve contenido protegido en tu red local.\n",
+      "id": "e80c44751324",
+      "slug": "walkie-talkies-esp-now-esp32-audio-i2s",
+      "title_es": "Walkie talkies con ESP32 y ESP-NOW: audio por radio sin internet",
+      "subtitle_es": "Construye un par de walkie talkies con ESP32 que transmiten voz por ESP-NOW usando audio I2S, sin Wi-Fi ni servidores.",
+      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571",
+      "body_es": "## ¿Por qué armar walkie talkies con ESP-NOW?\n\nAntes de los celulares, dos amigos con walkie talkies se podían comunicar a metros (o cuadras) de distancia sin pagar plan ni depender de antenas de operadoras. Hoy puedes recrear esa experiencia con un par de ESP32, micrófono I2S, parlante y el protocolo **ESP-NOW** de Espressif — un sistema de mensajería punto a punto que funciona en 2.4 GHz, sin router de por medio y con latencia mínima.\n\nEste proyecto, inspirado en el [tutorial de Liz Clark publicado en Adafruit Learning System](https://learn.adafruit.com/esp-now-walkie-talkies), arma dos unidades portátiles que se aparean al primer encendido, graban hasta 10 segundos de audio cuando aprietas el botón y envían los paquetes I2S al otro extremo. El LED del botón cambia de color según el estado (pareando, enviando, recibiendo) y la pantalla del ESP32 muestra MAC del peer, intensidad de señal RSSI y estado del último paquete.\n\n![Walkie talkie ESP32 armado con caja impresa en 3D, botón iluminado y antena externa](https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571)\n\nLa gracia técnica está en que ESP-NOW es **mucho más rápido y eficiente** que UDP sobre Wi-Fi: no hay handshake, no hay DHCP, no hay router que medie. Conoces la MAC del otro ESP32 y le mandas paquetes directos. Para audio en tiempo casi-real es perfecto porque el overhead es mínimo.\n\n## Cómo funciona el audio por ESP-NOW (parte clave)\n\nESP-NOW tiene un límite de **250 bytes por paquete**. Un buffer de audio de 10 segundos a 16 kHz / 16 bits ocupa 320 KB — imposible mandarlo de una. La solución del firmware:\n\n1. **Grabar** desde el micrófono I2S a un buffer en RAM mientras tengas el botón apretado (máximo 10 segundos).\n2. **Trocear** el buffer en chunks de 122 muestras (244 bytes, justo bajo el límite de ESP-NOW).\n3. **Enviar** cada chunk como un mensaje *unicast* al peer, con un delay corto entre paquetes para que la red no se sature.\n4. Al final, mandar un **paquete manifiesto** con el ID del mensaje y la cantidad total de paquetes, para que el receptor sepa cuándo terminó y pueda reproducir el audio completo.\n\nEl receptor arma el buffer en el mismo orden, lo entrega al I2S DAC (o al amplificador) y reproduce por el parlante. La calidad es razonable para voz — no esperes hi-fi, pero suficiente para \"copiado, cambio\".\n\n## Materiales (por cada walkie talkie — necesitas 2 unidades)\n\nLa guía original usa una **Adafruit Feather ESP32-S3 Reverse TFT con antena w.FL**, que no está disponible en Chile. Acá hicimos la sustitución por componentes equivalentes del catálogo MechatronicStore:\n\n- **Placa ESP32-S3** (Seeed XIAO ESP32-S3 o ESP32 WROOM-32) — cualquier ESP32 con Wi-Fi 2.4 GHz soporta ESP-NOW. El S3 es ideal porque tiene más RAM para el buffer de audio.\n- **Micrófono I2S MEMS INMP441** — el original es ICS-43434, pero el INMP441 es 100% compatible eléctricamente (mismo pinout I2S, mismo voltaje 3.3V).\n- **Amplificador de audio** (PAM8403) — el original usa MAX98357A (I2S amp). Como sustituto, puedes usar un amplificador analógico tipo PAM8403 alimentado por la salida del DAC interno del ESP32-S3, o bien implementar un DAC I2S externo.\n- **Parlante 8 Ω, 1 W** — sale fuerte para el tamaño.\n- **Botón pulsador momentáneo 16-22 mm** — el botón PTT (Push To Talk). Idealmente iluminado por LED.\n- **Interruptor SPDT** — para el switch de encendido/apagado.\n- **Antena WiFi 2.4 GHz externa con cable U.FL a SMA** — extiende el alcance hasta varias decenas de metros en interior, más en exterior con línea de vista.\n- **Batería LiPo 3.7 V** (300-1000 mAh) o batería 18650 con holder — para hacerlo portable.\n- **Filamento PLA** para imprimir la caja (≈100 g por unidad).\n- **Cables dupont macho-hembra**, soldadura, cautín.\n\n## Paso 1: Diagrama del circuito\n\nLa lógica del cableado es estándar para audio I2S sobre ESP32:\n\n**Micrófono INMP441 (entrada I2S) ↔ ESP32-S3:**\n\n| INMP441 | ESP32-S3 |\n|---|---|\n| VDD | 3.3 V |\n| GND | GND |\n| L/R | GND (selecciona canal izquierdo) |\n| WS  | GPIO 15 (LRCK) |\n| SCK | GPIO 14 (BCLK) |\n| SD  | GPIO 32 (DATA IN) |\n\n**Amplificador + parlante (salida I2S) ↔ ESP32-S3:**\n\n| Amplificador | ESP32-S3 |\n|---|---|\n| VIN | 5 V (USB o batería) |\n| GND | GND |\n| LRC | GPIO 25 |\n| BCLK | GPIO 26 |\n| DIN | GPIO 22 |\n| Parlante + | OUT+ |\n| Parlante − | OUT− |\n\n**Botón PTT + LED + switch on/off:**\n\n- Botón: un pin a GPIO 33, el otro a GND (con `INPUT_PULLUP`).\n- LED interno del botón (si aplica): ánodo a GPIO 27 vía resistencia de 220 Ω, cátodo a GND.\n- Switch SPDT: en serie con el cable positivo de la batería.\n\nLos GPIO son referenciales — ajústalos a lo que tu placa tenga disponible.\n\n## Paso 2: Impresión 3D de la carcasa\n\nLa guía original publica los archivos `.STL` del case en su [GitHub](https://github.com/adafruit/Adafruit_Learning_System_Guides). Si imprimes tú, ten en cuenta:\n\n- **Filamento**: PLA blanco o cualquier color sólido. No necesitas materiales especiales (ABS, PETG) salvo que lo vayas a llevar a temperaturas extremas.\n- **Configuración recomendada**: altura de capa 0.2 mm, relleno 20-25%, sin soporte para la mayoría de las piezas.\n- **Tiempo**: ≈4 horas por unidad en una impresora estándar (Ender 3, Bambu A1, etc.).\n- **Piezas**: la caja se divide en cuerpo principal, tapa trasera (atornillada con M3) y rejilla del parlante. La antena va externa, fijada con la tuerca del conector SMA.\n\nSi prefieres saltarte la impresión 3D para el primer prototipo, una **caja de proyecto plástica** estándar (115×65×35 mm) cabe todo lo necesario con un poco de creatividad.\n\n## Paso 3: Setup del IDE Arduino\n\n1. Instala el **Arduino IDE 2.x** o usa **PlatformIO** dentro de VS Code (más cómodo si vas a trabajar con dos placas).\n2. Añade la URL del board manager de Espressif en *Preferencias → URLs adicionales del Gestor de Placas*:\n\n```\nhttps://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json\n```\n\n3. En el *Gestor de Placas* busca `esp32` e instala la última versión (≥ 3.0).\n4. Instala las siguientes librerías desde el *Library Manager*:\n   - **ESP32-audioI2S** (de schreibfaul1) — encapsula I2S input/output.\n   - **Adafruit GFX Library** y **Adafruit ST7789** — si tu placa tiene pantalla TFT.\n   - **WiFi** y **esp_now** — vienen en el core ESP32, no hay que instalarlas.\n5. Selecciona la placa correcta (ej. `XIAO_ESP32S3` o `ESP32 Dev Module`) y el puerto serial.\n\n## Paso 4: Código del walkie talkie\n\nEl firmware completo está en el repo de Adafruit, pero estos son los bloques claves para entender qué hace.\n\n### Inicialización de ESP-NOW y pareo automático\n\n```cpp\n#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};\nuint8_t peerAddress[6] = {0};\nbool paired = false;\n\nvoid OnDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  if (!paired) {\n    memcpy(peerAddress, mac, 6);\n    paired = true;\n    Serial.printf(\"Pareado con: %02X:%02X:%02X:%02X:%02X:%02X\\n\",\n                  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);\n    esp_now_peer_info_t peerInfo = {};\n    memcpy(peerInfo.peer_addr, peerAddress, 6);\n    peerInfo.channel = 0;\n    peerInfo.encrypt = false;\n    esp_now_add_peer(&peerInfo);\n  } else {\n    handleAudioPacket(data, len);\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  WiFi.mode(WIFI_STA);\n  if (esp_now_init() != ESP_OK) {\n    Serial.println(\"Error iniciando ESP-NOW\");\n    return;\n  }\n  esp_now_register_recv_cb(OnDataRecv);\n  // Anunciarse en broadcast hasta que alguien responda\n  esp_now_peer_info_t bcast = {};\n  memcpy(bcast.peer_addr, broadcastAddress, 6);\n  bcast.channel = 0;\n  bcast.encrypt = false;\n  esp_now_add_peer(&bcast);\n}\n```\n\n### Grabación I2S y troceo en chunks\n\n```cpp\n#define SAMPLE_RATE      16000\n#define CHUNK_SAMPLES    122\n#define MAX_BUFFER_SEC   10\n\nint16_t audioBuffer[SAMPLE_RATE * MAX_BUFFER_SEC];\nsize_t  samplesGrabbed = 0;\n\nvoid grabar() {\n  samplesGrabbed = 0;\n  while (digitalRead(PTT_PIN) == LOW && samplesGrabbed < SAMPLE_RATE * MAX_BUFFER_SEC) {\n    size_t bytesRead;\n    i2s_read(I2S_NUM_0,\n             &audioBuffer[samplesGrabbed],\n             CHUNK_SAMPLES * sizeof(int16_t),\n             &bytesRead,\n             portMAX_DELAY);\n    samplesGrabbed += bytesRead / sizeof(int16_t);\n  }\n  enviarAudio();\n}\n\nvoid enviarAudio() {\n  uint16_t totalChunks = (samplesGrabbed + CHUNK_SAMPLES - 1) / CHUNK_SAMPLES;\n  for (uint16_t i = 0; i < totalChunks; i++) {\n    size_t offset = i * CHUNK_SAMPLES;\n    size_t bytes  = min((size_t)CHUNK_SAMPLES, samplesGrabbed - offset) * sizeof(int16_t);\n    esp_now_send(peerAddress, (uint8_t *)&audioBuffer[offset], bytes);\n    delayMicroseconds(800);   // evita saturar la cola TX de ESP-NOW\n  }\n  // Manifest packet final\n  uint8_t manifest[4] = {0xAA, 0xAA, (uint8_t)(totalChunks >> 8), (uint8_t)(totalChunks & 0xFF)};\n  esp_now_send(peerAddress, manifest, 4);\n}\n```\n\n### Recepción y reproducción\n\nEn el lado receptor, cada chunk se escribe directamente al I2S de salida con `i2s_write()` (al amplificador MAX98357A en el original, o a un DAC + PAM8403 si usas el reemplazo del catálogo MS). Cuando llega el paquete manifiesto (con marcador `0xAA 0xAA`), el firmware sabe que terminó la transmisión y vuelve a estado *idle*.\n\n## Paso 5: Cableado físico y armado\n\n1. **Suelda los pines** del INMP441 y del módulo amplificador a los GPIO indicados arriba.\n2. **Conecta la antena externa**: si tu ESP32 ya tiene conector U.FL, enchufa el cable U.FL → SMA. Si no, vas a usar la antena integrada (alcance ≈10 m en interior).\n3. **Botón PTT con LED**: el pulsador va entre GPIO 33 y GND; el LED interno entre GPIO 27 y GND con resistencia limitadora.\n4. **Switch on/off**: en serie con el positivo de la batería, antes del regulador de la placa.\n5. **Batería LiPo**: conéctala al pin BAT/VBAT de la placa (si tiene cargador integrado) o usa un módulo TP4056 externo para cargarla.\n\n![Diagrama de cableado de los componentes dentro del case impreso](https://cdn-learn.adafruit.com/assets/assets/000/143/755/medium640/arduino_compatibles_edited_P1490595.jpg?1776183571)\n\nAcomoda todo dentro de la carcasa impresa: el parlante apunta hacia la rejilla, el micrófono cerca de un hueco discreto, la antena perpendicular al cuerpo. La batería suele ir en la parte baja con velcro de doble cara para que no se mueva.\n\n## Paso 6: Primer encendido y pareo\n\n1. Carga el mismo firmware en ambas placas (sin cambios).\n2. Enciende las dos al mismo tiempo.\n3. La primera vez, cada una transmite por broadcast su MAC. Cuando la otra recibe el mensaje, **se aparean automáticamente** y guardan la MAC del peer en NVS (memoria flash persistente).\n4. A partir de ahí, cualquier reset las re-paréa con la última MAC guardada.\n\nDesde aquí, aprieta el botón PTT, habla con voz clara cerca del micrófono y suelta el botón. En menos de un segundo deberías escuchar tu voz reproducida en el otro walkie talkie.\n\n## Solución de problemas\n\n- **Audio entrecortado**: aumenta el `delayMicroseconds()` entre paquetes a 1500-2000 µs.\n- **No paréa**: revisa que ambas placas estén en el mismo canal Wi-Fi (`WiFi.channel(1)` en setup).\n- **Volumen bajo**: el INMP441 tiene ganancia fija. Aplica un multiplicador por software (`muestra * 4`) antes de enviar.\n- **Distorsión**: probablemente está clippeando. Reduce el multiplicador o aleja el micrófono de la boca.\n- **Alcance corto**: si estás usando antena interna, el alcance es de pocos metros. La antena externa SMA con cable U.FL extiende fácilmente a 50-100 m con línea de vista.\n\n## Cómo extenderlo\n\n- **Más de 2 unidades**: con ESP-NOW puedes registrar hasta 20 peers. Cambia el pareo automático por una lista predefinida de MACs y mandá broadcast a todas (modo \"canal abierto\").\n- **Encriptación**: ESP-NOW soporta cifrado simétrico AES-128. Configura `encrypt = true` y `lmk[]` con una clave común.\n- **PTT por voz (VOX)**: en vez de un botón, transmite cuando el nivel del micrófono pase un umbral. Útil para manos libres.\n- **Compresión**: aplica μ-law antes de enviar para reducir el bitrate a la mitad y duplicar el alcance temporal del buffer.\n\nLa idea base es robusta y deja muchísimo espacio para experimentar. Comparte tus mods en los comentarios."
+,
       "materials_list": [
-        {
-          "name": "Placa de desarrollo ESP32 (WROOM-32, S3 o C3)",
-          "qty": 1,
-          "role": "microcontrolador"
-        },
-        {
-          "name": "Cable USB para programar el ESP32",
-          "qty": 1,
-          "role": "alimentación y datos"
-        },
-        {
-          "name": "Computador con VS Code + extensión ESP-IDF instalada",
-          "qty": 1,
-          "role": "herramienta de desarrollo"
-        },
-        {
-          "name": "Red Wi-Fi 2.4 GHz con SSID y contraseña conocidos",
-          "qty": 1,
-          "role": "conectividad"
-        }
+        {"name": "Placa ESP32-S3 (Seeed XIAO ESP32-S3 o equivalente)", "qty": 2, "role": "microcontrolador principal"},
+        {"name": "Módulo Micrófono I2S INMP441", "qty": 2, "role": "captura de audio"},
+        {"name": "Amplificador de audio PAM8403", "qty": 2, "role": "salida de audio al parlante"},
+        {"name": "Parlante 8 Ohm 1W", "qty": 2, "role": "reproducción de audio"},
+        {"name": "Botón Pulsador iluminado 16-22mm", "qty": 2, "role": "botón Push To Talk"},
+        {"name": "Interruptor SPDT/Toggle", "qty": 2, "role": "encendido/apagado"},
+        {"name": "Antena WiFi 2.4 GHz U.FL a SMA", "qty": 2, "role": "extender alcance de radio"},
+        {"name": "Batería LiPo 3.7V (300-1000 mAh)", "qty": 2, "role": "alimentación portátil"},
+        {"name": "Filamento PLA 1.75mm para carcasa 3D", "qty": 1, "role": "impresión de la caja"},
+        {"name": "Cables macho-hembra dupont 30cm", "qty": 1, "role": "cableado interno"},
+        {"name": "Cable USB Tipo C", "qty": 2, "role": "programación y carga"},
+        {"name": "Cautín y estaño para soldar", "qty": 1, "role": "soldadura de componentes"}
       ],
       "steps": [
         {
           "position": 1,
-          "name": "Instalar prerrequisitos",
-          "text": "Tener VS Code con la extensión ESP-IDF (v5.4.1 o superior), placa ESP32 conectada por USB y credenciales de la red Wi-Fi local."
+          "name": "Reunir materiales y revisar el circuito",
+          "text": "Verificar que tienes los dos ESP32-S3 (o equivalentes), 2 micrófonos INMP441, 2 amplificadores, 2 parlantes 8Ω, 2 botones, 2 switches, antenas y baterías. Revisar el diagrama de pinout antes de soldar."
         },
         {
           "position": 2,
-          "name": "Crear proyecto ESP-IDF desde plantilla",
-          "text": "Usar el asistente New Project Wizard de la extensión, eligiendo el chip (esp32/esp32s3/esp32c3), el puerto serie y el template 'sample project'. Guardar fuera de carpetas sincronizadas con la nube."
+          "name": "Imprimir la carcasa 3D",
+          "text": "Descargar los STL desde el repo de Adafruit Learning System o diseñar una caja propia (115×65×35 mm). Imprimir en PLA con 20% de relleno, capa 0.2 mm. Tiempo aproximado: 4 horas por unidad."
         },
         {
           "position": 3,
-          "name": "Crear Kconfig.projbuild para credenciales Wi-Fi",
-          "text": "Añadir el archivo Kconfig.projbuild dentro de main/ con dos entradas string (ESP_WIFI_SSID y ESP_WIFI_PASSWORD) y configurarlas desde el SDK Configuration Editor (menuconfig)."
+          "name": "Configurar el Arduino IDE",
+          "text": "Añadir el board manager de Espressif, instalar el core ESP32 (v3.0+) y las librerías ESP32-audioI2S, Adafruit GFX y ST7789 si tu placa tiene pantalla. Seleccionar la placa correcta."
         },
         {
           "position": 4,
-          "name": "Pegar el código del servidor web con autenticación",
-          "text": "Reemplazar el contenido de main.c por el sketch que sirve el root '/' protegido por basic auth y expone '/logout' para forzar el cierre de sesión. Ajustar BASIC_AUTH_USER y BASIC_AUTH_PASS."
+          "name": "Cargar el firmware en ambos ESP32",
+          "text": "Compilar y flashear el mismo sketch en las dos placas. Sin modificar nada: el pareo automático se hace en el primer encendido vía broadcast ESP-NOW."
         },
         {
           "position": 5,
-          "name": "Compilar y flashear",
-          "text": "Ejecutar Build, Flash and Monitor desde la barra de estado de VS Code. La primera compilación demora porque descarga toolchains."
+          "name": "Soldar y cablear los componentes",
+          "text": "Conectar el INMP441 a los pines I2S de entrada (WS, SCK, SD), el amplificador + parlante a la salida I2S, el botón PTT a GPIO con pullup y el switch en serie con el positivo de la batería. Soldar la antena U.FL al conector de la placa."
         },
         {
           "position": 6,
-          "name": "Probar desde el navegador",
-          "text": "Anotar la IP del ESP32 que aparece en el monitor serial, abrir esa dirección desde el navegador, ingresar credenciales en el popup y validar que el botón Logout redirige al login."
+          "name": "Ensamblar dentro del case impreso",
+          "text": "Acomodar el parlante apuntando a la rejilla, el micrófono cerca del hueco para sonido, la batería en la parte baja con velcro y la antena fija con la tuerca SMA. Cerrar la tapa trasera con tornillos M3."
+        },
+        {
+          "position": 7,
+          "name": "Encender, parear y probar",
+          "text": "Encender los dos walkie talkies al mismo tiempo. Esperar a que se pareen (la pantalla muestra la MAC del peer). Presionar el botón PTT, hablar y soltar — debería escucharse en el otro extremo en menos de un segundo."
         }
       ],
       "code_blocks": [
         {
-          "lang": "kconfig",
-          "caption": "Kconfig.projbuild — expone SSID y password al menuconfig",
-          "code": "menu \"Wi-Fi Configuration\"\n    config ESP_WIFI_SSID\n        string \"WiFi SSID\"\n        help\n            SSID (network name) you want to connect to.\n\n    config ESP_WIFI_PASSWORD\n        string \"WiFi Password\"\n        help\n            Password of the Wi-Fi network you want to connect to.\nendmenu"
+          "lang": "cpp",
+          "caption": "Inicialización de ESP-NOW con pareo automático por broadcast",
+          "code": "#include <esp_now.h>\n#include <WiFi.h>\n\nuint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};\nuint8_t peerAddress[6] = {0};\nbool paired = false;\n\nvoid OnDataRecv(const uint8_t *mac, const uint8_t *data, int len) {\n  if (!paired) {\n    memcpy(peerAddress, mac, 6);\n    paired = true;\n    esp_now_peer_info_t peerInfo = {};\n    memcpy(peerInfo.peer_addr, peerAddress, 6);\n    peerInfo.channel = 0;\n    peerInfo.encrypt = false;\n    esp_now_add_peer(&peerInfo);\n  } else {\n    handleAudioPacket(data, len);\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  WiFi.mode(WIFI_STA);\n  esp_now_init();\n  esp_now_register_recv_cb(OnDataRecv);\n  esp_now_peer_info_t bcast = {};\n  memcpy(bcast.peer_addr, broadcastAddress, 6);\n  bcast.channel = 0;\n  bcast.encrypt = false;\n  esp_now_add_peer(&bcast);\n}"
         },
         {
-          "lang": "c",
-          "caption": "main.c — handler con basic auth y página de logout (extracto)",
-          "code": "#define BASIC_AUTH_USER   \"admin\"\n#define BASIC_AUTH_PASS   \"password\"\n\nstatic esp_err_t send_401_response(httpd_req_t *req)\n{\n    httpd_resp_set_status(req, \"401 UNAUTHORIZED\");\n    httpd_resp_set_type(req, \"text/html\");\n    httpd_resp_set_hdr(req, \"Connection\", \"keep-alive\");\n    httpd_resp_set_hdr(req, \"WWW-Authenticate\",\n        \"Basic realm=\\\"ESP32 Web Server\\\"\");\n    httpd_resp_send(req, NULL, 0);\n    return ESP_OK;\n}\n\nstatic esp_err_t basic_auth_get_handler(httpd_req_t *req)\n{\n    basic_auth_info_t *info = req->user_ctx;\n    if (!check_basic_auth(req, info->username, info->password)) {\n        return send_401_response(req);\n    }\n    httpd_resp_set_type(req, \"text/html\");\n    httpd_resp_send(req, root_page, HTTPD_RESP_USE_STRLEN);\n    return ESP_OK;\n}"
+          "lang": "cpp",
+          "caption": "Grabación I2S y envío del audio troceado en chunks de 122 muestras",
+          "code": "#define SAMPLE_RATE      16000\n#define CHUNK_SAMPLES    122\n#define MAX_BUFFER_SEC   10\n\nint16_t audioBuffer[SAMPLE_RATE * MAX_BUFFER_SEC];\nsize_t  samplesGrabbed = 0;\n\nvoid grabar() {\n  samplesGrabbed = 0;\n  while (digitalRead(PTT_PIN) == LOW &&\n         samplesGrabbed < SAMPLE_RATE * MAX_BUFFER_SEC) {\n    size_t bytesRead;\n    i2s_read(I2S_NUM_0,\n             &audioBuffer[samplesGrabbed],\n             CHUNK_SAMPLES * sizeof(int16_t),\n             &bytesRead,\n             portMAX_DELAY);\n    samplesGrabbed += bytesRead / sizeof(int16_t);\n  }\n  enviarAudio();\n}\n\nvoid enviarAudio() {\n  uint16_t totalChunks = (samplesGrabbed + CHUNK_SAMPLES - 1) / CHUNK_SAMPLES;\n  for (uint16_t i = 0; i < totalChunks; i++) {\n    size_t offset = i * CHUNK_SAMPLES;\n    size_t bytes  = min((size_t)CHUNK_SAMPLES, samplesGrabbed - offset) * sizeof(int16_t);\n    esp_now_send(peerAddress, (uint8_t *)&audioBuffer[offset], bytes);\n    delayMicroseconds(800);\n  }\n  uint8_t manifest[4] = {0xAA, 0xAA,\n                         (uint8_t)(totalChunks >> 8),\n                         (uint8_t)(totalChunks & 0xFF)};\n  esp_now_send(peerAddress, manifest, 4);\n}"
         }
       ],
       "linked_products": [
         {
-          "name_original": "Placa ESP32 WROOM-32 USB Tipo C",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-servidor-web-autenticacion-http-esp-idf&utm_content=X2-10V2",
-          "price_clp": 7990,
+          "name_original": "Placa ESP32-S3 Seeed XIAO",
+          "product_id": "GS1-3",
+          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GS1-3",
+          "price_clp": 13670,
           "stock_available": true,
           "match_score": 0.88
         },
         {
-          "name_original": "Placa ESP32-S3 Seeed XIAO",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-servidor-web-autenticacion-http-esp-idf&utm_content=GS1-3",
-          "price_clp": 13670,
+          "name_original": "Placa ESP32 WROOM-32 USB Tipo C",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=X2-10V2",
+          "price_clp": 7990,
           "stock_available": true,
           "match_score": 0.82
         },
         {
-          "name_original": "Cable USB para ESP32",
-          "product_id": "X3-10",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-servidor-web-autenticacion-http-esp-idf&utm_content=X3-10",
-          "price_clp": 1290,
+          "name_original": "Módulo Micrófono I2S INMP441",
+          "product_id": "GL3-12",
+          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GL3-12",
+          "price_clp": 5890,
           "stock_available": true,
-          "match_score": 0.85
-        }
-      ],
-      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials",
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 90,
-      "estimated_cost_clp": 9280,
-      "tags": [
-        "esp32",
-        "esp-idf",
-        "servidor-web",
-        "http-auth",
-        "vscode",
-        "wifi"
-      ]
-    },
-    {
-      "id": "4fbf4752fcf4",
-      "slug": "tetris-led-edificio-mit-neopixel-rp2040",
-      "title_es": "Tetris LED estilo edificio MIT con NeoPixels y RP2040",
-      "subtitle_es": "Construye una réplica impresa en 3D del Green Building del MIT y juega Tetris sobre una matriz de 117 NeoPixels controlada por RP2040 y CircuitPython.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/011/medium800/led_pixels_hero-rooftop.jpg?1777385818",
-      "body_es": "## Un Tetris hecho de luces, sobre una réplica del Green Building del MIT\n\nEn 2012, un grupo de estudiantes del MIT convirtió la fachada del Green Building\nen una pantalla gigante para jugar Tetris en vivo. Este proyecto reproduce ese\nhack en formato escritorio: una réplica impresa en 3D del edificio con una\nmatriz de **9×13 = 117 LEDs direccionables** y un gamepad mini para mover las\npiezas.\n\n![Vista frontal del edificio MIT con el Tetris encendido](https://cdn-learn.adafruit.com/assets/assets/000/144/011/medium800/led_pixels_hero-rooftop.jpg?1777385818)\n\nEl cerebro es una **placa RP2040 estilo Feather** corriendo CircuitPython, y los\nLEDs son una tira de NeoPixels tipo \"pebble\" (esféricos, con pitch generoso\npara que cada uno entre limpio en una grilla impresa). Una batería LiPo de\n1200 mAh permite jugarlo en portátil.\n\n## Cómo se juega\n\n![Detalle del gamepad y el panel encendido](https://cdn-learn.adafruit.com/assets/assets/000/144/012/medium640/led_pixels_hero-front.jpg?1777385832)\n\nEl gamepad I2C tiene los botones clásicos y un joystick. El control es directo:\n\n- **Joystick**: mueve la pieza activa a izquierda y derecha (y rota con un movimiento corto).\n- **Botón A**: rota la pieza.\n- **Botón B**: drop instantáneo — la pieza cae hasta el fondo.\n- **Botón Start**: inicia partida y también pausa.\n\n## Lista de materiales\n\n| # | Componente | Qty | Para qué sirve |\n|---|---|---|---|\n| 1 | Placa RP2040 Feather (o RP2040 compatible) | 1 | Microcontrolador principal corriendo CircuitPython |\n| 2 | Tira de 117 LEDs direccionables WS2812 / NeoPixel | 1 | Grilla 9×13 de píxeles |\n| 3 | Gamepad I2C (joystick + 6 botones) | 1 | Control de las piezas |\n| 4 | Switch deslizable SPDT | 1 | Encendido/apagado del sistema |\n| 5 | Cable JST de 4 pines (I2C) | 1 | Conexión gamepad ↔ placa |\n| 6 | Lámina de acrílico negro 30×30 cm | 1 | Difusor frontal sobre los LEDs |\n| 7 | Batería LiPo 3.7 V (≥1000 mAh) | 1 | Alimentación portátil |\n| 8 | Cable ribbon 4 hilos (~50 cm) | 1 | Cableado interno entre placas |\n| 9 | Filamento PLA para imprimir el edificio | ~300 g | Estructura del edificio + grilla |\n\n## Diseño del circuito\n\nLa placa RP2040 se conecta de tres formas:\n\n1. **NeoPixels** → un pin de datos digital (cualquier GPIO libre, en CircuitPython funciona bien por DMA).\n2. **Gamepad** → bus I2C (SDA + SCL) por el conector JST 4 pines.\n3. **Batería LiPo** → entrada dedicada de la placa (la mayoría de Feathers RP2040 incluyen circuito de carga).\n\nEl switch deslizable corta la línea positiva entre la batería y la placa.\n\n## Imprimir el edificio\n\nEl proyecto incluye archivos `.stl` con:\n\n- La carcasa exterior del edificio (estructura).\n- Una **grilla interna** que sirve de matriz: 9 columnas × 13 filas. Cada celda aloja un LED tipo pebble. La grilla es lo que da el efecto \"píxel\" cuadrado, sin esto la luz se vería como una mancha continua.\n- Una **tapa trasera** para la batería y la electrónica.\n\nFilamento sugerido: PLA negro mate. El acrílico negro al frente difumina las\nfuentes puntuales — la combinación negro mate + acrílico negro semitransparente\nhace que cuando los LEDs están apagados la pantalla parezca un edificio\n\"normal\", y cuando encienden los píxeles se ven nítidos.\n\nTiempo estimado de impresión: **8–12 horas** dependiendo de tu impresora y\nconfiguración. Recomendación: imprimir a 0.2 mm de altura de capa, 15% de\nrelleno, sin soportes para la grilla.\n\n## Cableado paso a paso\n\n1. **Inserta la tira de NeoPixels** en la grilla impresa, empezando por la esquina inferior izquierda. Verifica el orden serpenteado (left-to-right en fila 1, right-to-left en fila 2, etc.) — esto importa porque el código mapea índices lineales a coordenadas (x, y).\n2. **Suelda** los tres cables (5V, GND, DATA) del primer LED a tres pads del RP2040 Feather: VBAT, GND y un GPIO libre (por ejemplo D5).\n3. **Conecta el gamepad** al puerto JST del Feather (en placas con STEMMA QT es plug-and-play; si tu gamepad usa otro tipo de conector, usa un cable adaptador a Dupont).\n4. **Cablea el switch** en serie con el cable positivo de la batería: corta el cable rojo, suelda ambos extremos a los pines exteriores del SPDT.\n5. **Carga el firmware** y prueba antes de cerrar la caja — si algún LED parpadea con color erróneo es casi siempre un cable de datos invertido o un GND flotante.\n\n## Código (CircuitPython)\n\nCarga el firmware de CircuitPython más reciente compatible con RP2040 en tu\nplaca. Copia las librerías a la carpeta `/lib`:\n\n- `adafruit_seesaw`\n- `neopixel`\n- `adafruit_ticks` (para timing del game loop)\n\nEstructura del `code.py`:\n\n```python\nimport board\nimport neopixel\nimport time\nfrom adafruit_seesaw.seesaw import Seesaw\nfrom adafruit_seesaw.digitalio import DigitalIO\nfrom adafruit_seesaw.analoginput import AnalogInput\n\nNUM_PIXELS = 117          # 9 columnas x 13 filas\nCOLS, ROWS = 9, 13\nPIN = board.D5\n\npixels = neopixel.NeoPixel(PIN, NUM_PIXELS, brightness=0.3, auto_write=False)\n\ni2c = board.I2C()\ngamepad = Seesaw(i2c, addr=0x50)\njs_x = AnalogInput(gamepad, 14)\njs_y = AnalogInput(gamepad, 15)\nbtn_a = DigitalIO(gamepad, 5)\nbtn_b = DigitalIO(gamepad, 1)\nbtn_start = DigitalIO(gamepad, 0)\n\n# Mapeo serpenteado: (x, y) -> indice lineal en la tira\ndef xy_to_index(x, y):\n    if y % 2 == 0:\n        return y * COLS + x\n    else:\n        return y * COLS + (COLS - 1 - x)\n\n# Las 7 piezas tetromino (S, Z, L, J, T, O, I) — cada una con sus rotaciones\nTETROMINOES = {\n    \"I\": [[(0,0),(1,0),(2,0),(3,0)], [(0,0),(0,1),(0,2),(0,3)]],\n    \"O\": [[(0,0),(1,0),(0,1),(1,1)]],\n    \"T\": [[(0,0),(1,0),(2,0),(1,1)],\n          [(1,0),(0,1),(1,1),(1,2)],\n          [(1,0),(0,1),(1,1),(2,1)],\n          [(0,0),(0,1),(1,1),(0,2)]],\n    # ... S, Z, L, J\n}\n\ndef draw_piece(piece, x, y, color):\n    for (dx, dy) in piece:\n        gx, gy = x + dx, y + dy\n        if 0 <= gx < COLS and 0 <= gy < ROWS:\n            pixels[xy_to_index(gx, gy)] = color\n    pixels.show()\n\ndef game_loop():\n    grid = [[0] * COLS for _ in range(ROWS)]\n    piece = TETROMINOES[\"T\"][0]\n    px, py = 4, 0\n    last_fall = time.monotonic()\n    while True:\n        # Lectura del joystick\n        if js_x.value < 200:  px = max(0, px - 1)\n        if js_x.value > 800:  px = min(COLS - 1, px + 1)\n        if not btn_a.value:   piece = rotate(piece)\n        if not btn_b.value:   py = drop_to_bottom(grid, piece, px, py)\n\n        # Caída con tick\n        if time.monotonic() - last_fall > 0.5:\n            py += 1\n            last_fall = time.monotonic()\n\n        pixels.fill(0)\n        draw_grid(grid)\n        draw_piece(piece, px, py, (255, 80, 0))\n\ngame_loop()\n```\n\n> Esto es un esqueleto. La lógica completa (rotaciones de las 7 piezas,\n> detección de líneas, scoring, niveles de velocidad) está en el repo del\n> proyecto en Adafruit Learn — son ~300 líneas de Python comentado.\n\n## Calibración del brillo\n\nLos NeoPixels consumen mucho cuando están al máximo. Con 117 píxeles en blanco\npuro al 100% puedes pedirle a la batería **>3 A**, lo que un LiPo de 1200 mAh\nno entrega de forma segura sostenida.\n\nRecomendado: `brightness=0.2` o `0.3`. Combinado con el acrílico difusor,\nlos colores se ven saturados y el consumo medio se mantiene bajo 500 mA — la\nbatería rinde 2 a 3 horas de juego continuo.\n\n## Posibles mejoras\n\n- **Modo competitivo de a dos**: agregar un segundo gamepad I2C en otra dirección.\n- **Tabla de récords**: guardar high score en la flash interna usando `microcontroller.nvm`.\n- **Música**: la placa Prop-Maker tiene amplificador I2S, agregando un parlante pequeño se puede tocar la melodía clásica de Tetris.\n- **Sensor de inclinación**: un MPU6050 puede gatillar drop al \"agitar\" el edificio.\n\nListo — ahora tienes un Tetris portable con estética de hack universitario.\n",
-      "materials_list": [
-        {
-          "name": "Placa RP2040 Feather (o RP2040 compatible)",
-          "qty": 1,
-          "role": "microcontrolador"
+          "match_score": 0.95
         },
         {
-          "name": "Tira de 117 LEDs direccionables WS2812 / NeoPixel",
-          "qty": 1,
-          "role": "matriz de píxeles 9x13"
-        },
-        {
-          "name": "Gamepad I2C con joystick y botones",
-          "qty": 1,
-          "role": "control"
-        },
-        {
-          "name": "Switch deslizable SPDT",
-          "qty": 1,
-          "role": "encendido/apagado"
-        },
-        {
-          "name": "Cable JST de 4 pines para I2C",
-          "qty": 1,
-          "role": "conexión gamepad"
-        },
-        {
-          "name": "Lámina de acrílico negro 30x30 cm",
-          "qty": 1,
-          "role": "difusor frontal"
-        },
-        {
-          "name": "Batería LiPo 3.7 V (≥1000 mAh)",
-          "qty": 1,
-          "role": "alimentación portátil"
-        },
-        {
-          "name": "Cable ribbon 4 hilos (~50 cm)",
-          "qty": 1,
-          "role": "cableado interno"
-        },
-        {
-          "name": "Filamento PLA negro para impresión 3D",
-          "qty": 1,
-          "role": "estructura del edificio"
-        }
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Imprimir las piezas 3D",
-          "text": "Imprimir en PLA negro la carcasa exterior, la grilla interna 9x13 y la tapa trasera. Configuración recomendada: 0.2 mm de altura de capa, 15% de relleno, sin soportes."
-        },
-        {
-          "position": 2,
-          "name": "Insertar los NeoPixels en la grilla",
-          "text": "Acomodar la tira de 117 LEDs en el orden serpenteado (izq→der fila 1, der→izq fila 2, etc.) dentro de la grilla impresa. Cada celda debe alojar un LED tipo pebble."
-        },
-        {
-          "position": 3,
-          "name": "Soldar la electrónica",
-          "text": "Soldar VBAT, GND y un GPIO (ej. D5) del RP2040 Feather al primer LED de la tira. Conectar el gamepad por el puerto I2C JST. Intercalar el switch SPDT en el cable positivo de la batería."
-        },
-        {
-          "position": 4,
-          "name": "Instalar CircuitPython y librerías",
-          "text": "Cargar el firmware más reciente de CircuitPython compatible con la placa RP2040. Copiar adafruit_seesaw, neopixel y adafruit_ticks a la carpeta /lib del CIRCUITPY drive."
-        },
-        {
-          "position": 5,
-          "name": "Cargar code.py",
-          "text": "Pegar el código que mapea coordenadas (x, y) a índices serpenteados, define las 7 piezas Tetromino, lee el joystick y dibuja con NeoPixel. Calibrar brightness=0.2-0.3 para no exceder los 500 mA promedio."
-        },
-        {
-          "position": 6,
-          "name": "Probar antes de cerrar la caja",
-          "text": "Encender, verificar que cada píxel responda en la posición correcta y que el gamepad mueva la pieza activa. Corregir cableado si algún color aparece desordenado (usualmente DATA invertido o GND flotante)."
-        },
-        {
-          "position": 7,
-          "name": "Ensamblar y jugar",
-          "text": "Cerrar la carcasa con la tapa trasera, colocar el acrílico negro al frente para difuminar los puntos de luz y disfrutar de Tetris portable de 2 a 3 horas con la batería LiPo."
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "python",
-          "caption": "code.py — esqueleto del game loop con NeoPixel + gamepad I2C",
-          "code": "import board, neopixel, time\nfrom adafruit_seesaw.seesaw import Seesaw\nfrom adafruit_seesaw.digitalio import DigitalIO\nfrom adafruit_seesaw.analoginput import AnalogInput\n\nNUM_PIXELS = 117\nCOLS, ROWS = 9, 13\nPIN = board.D5\n\npixels = neopixel.NeoPixel(PIN, NUM_PIXELS,\n                           brightness=0.3, auto_write=False)\n\ni2c = board.I2C()\ngamepad = Seesaw(i2c, addr=0x50)\njs_x = AnalogInput(gamepad, 14)\nbtn_a = DigitalIO(gamepad, 5)\n\ndef xy_to_index(x, y):\n    # Mapeo serpenteado (boustrophedon)\n    if y % 2 == 0:\n        return y * COLS + x\n    return y * COLS + (COLS - 1 - x)\n\ndef draw_piece(piece, x, y, color):\n    for (dx, dy) in piece:\n        gx, gy = x + dx, y + dy\n        if 0 <= gx < COLS and 0 <= gy < ROWS:\n            pixels[xy_to_index(gx, gy)] = color\n    pixels.show()"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "Placa RP2040 Seeed XIAO",
-          "product_id": "GS1-5",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-rp2040-compatible-con-arduino-micropython-y-circuitpython/?utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=GS1-5",
-          "price_clp": 7790,
+          "name_original": "Amplificador de audio PAM8403 con potenciómetro 3W",
+          "product_id": "M-117",
+          "product_url": "https://www.mechatronicstore.cl/mini-amplificador-digital-pam8403-3w/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=M-117",
+          "price_clp": 1600,
           "stock_available": true,
           "match_score": 0.75
         },
         {
-          "name_original": "Tira / matriz LED WS2812 NeoPixel direccionable",
-          "product_id": "GN3-12",
-          "product_url": "https://www.mechatronicstore.cl/matriz-led-8x8-rgb-ws2812/?utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=GN3-12",
-          "price_clp": 17800,
+          "name_original": "Parlante 8 Ohm 1W",
+          "product_id": "G-234V1",
+          "product_url": "https://www.mechatronicstore.cl/altavoz-8-ohm-1w/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=G-234V1",
+          "price_clp": 2590,
           "stock_available": true,
-          "match_score": 0.72
+          "match_score": 0.97
         },
         {
-          "name_original": "Joystick / gamepad analógico para control",
-          "product_id": "G-201",
-          "product_url": "https://www.mechatronicstore.cl/modulo-joystick-analogo-de-playstation/?utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=G-201",
+          "name_original": "Botón Pulsador iluminado 22mm momentáneo (rojo)",
+          "product_id": "GC2-12",
+          "product_url": "https://www.mechatronicstore.cl/boton-pulsador-22mm-3-pines-colores/?attribute_pa_color=rojo&utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GC2-12",
           "price_clp": 1790,
           "stock_available": true,
-          "match_score": 0.74
+          "match_score": 0.78
         },
         {
-          "name_original": "Switch deslizable SPDT 3 pines",
-          "product_id": "GF1-14",
-          "product_url": "https://www.mechatronicstore.cl/mini-switch-interruptor-proto-3-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=GF1-14",
-          "price_clp": 290,
+          "name_original": "Botón Pulsador 16mm momentáneo blanco",
+          "product_id": "GD2-1",
+          "product_url": "https://www.mechatronicstore.cl/switch-n-a-tipo-pulsador-blanco/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GD2-1",
+          "price_clp": 890,
+          "stock_available": true,
+          "match_score": 0.80
+        },
+        {
+          "name_original": "Interruptor de Palanca Conmutador SPDT ON-ON 3 Pines",
+          "product_id": "GB1-16",
+          "product_url": "https://www.mechatronicstore.cl/interruptor-de-palanca-conmutador-on-on-de-3-pines/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GB1-16",
+          "price_clp": 890,
+          "stock_available": true,
+          "match_score": 0.85
+        },
+        {
+          "name_original": "Antena WiFi 2.4 GHz con cable U.FL a SMA para ESP32",
+          "product_id": "GL1-7",
+          "product_url": "https://www.mechatronicstore.cl/antena-wifi-2-4-ghz-cable-u-fl-a-sma-para-esp32-esp8266/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=GL1-7",
+          "price_clp": 2890,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Batería Li-Ion 3.7V 300mAh",
+          "product_id": "XM5-2",
+          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=XM5-2",
+          "price_clp": 8990,
+          "stock_available": true,
+          "match_score": 0.82
+        },
+        {
+          "name_original": "Filamento PLA 1.75mm SunLu blanco 1kg",
+          "product_id": "SL-003",
+          "product_url": "https://www.mechatronicstore.cl/filamento-pla-sunlu-1kg-1-75mm-colores/?attribute_pa_color=blanco&utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=SL-003",
+          "price_clp": 13390,
+          "stock_available": true,
+          "match_score": 0.85
+        },
+        {
+          "name_original": "Cables macho-hembra dupont 30cm",
+          "product_id": "C-418",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=C-418",
+          "price_clp": 1990,
           "stock_available": true,
           "match_score": 0.88
         },
         {
-          "name_original": "Batería LiPo 3.7V para alimentación portátil",
-          "product_id": "XM5-2",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=XM5-2",
-          "price_clp": 8990,
+          "name_original": "Cable USB Tipo C a USB Tipo A 1m",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=walkie-talkies-esp-now-esp32-audio-i2s&utm_content=B-101",
+          "price_clp": 2190,
           "stock_available": true,
-          "match_score": 0.72
-        },
-        {
-          "name_original": "Cable Dupont / ribbon para cableado interno",
-          "product_id": "C-417",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=C-417",
-          "price_clp": 2990,
-          "stock_available": true,
-          "match_score": 0.7
-        },
-        {
-          "name_original": "Filamento PLA negro para impresion 3D del edificio",
-          "product_id": "SL-008",
-          "product_url": "https://www.mechatronicstore.cl/filamento-pla-sunlu-1kg-1-75mm-colores/?attribute_pa_color=negro&utm_source=blog&utm_medium=tutorial&utm_campaign=tetris-led-edificio-mit-neopixel-rp2040&utm_content=SL-008",
-          "price_clp": 13390,
-          "stock_available": true,
-          "match_score": 0.85
+          "match_score": 0.92
         }
       ],
       "github_url": "https://github.com/adafruit/Adafruit_Learning_System_Guides",
       "download_urls": [
         {
-          "label": "Guía completa en PDF (Adafruit Learn)",
-          "url": "https://cdn-learn.adafruit.com/downloads/pdf/tetris-building.pdf",
+          "label": "Tutorial original Adafruit (PDF)",
+          "url": "https://cdn-learn.adafruit.com/downloads/pdf/esp-now-walkie-talkies.pdf",
           "kind": "pdf"
         }
       ],
-      "category": "rpi",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 240,
-      "estimated_cost_clp": 53040,
-      "tags": [
-        "rp2040",
-        "neopixel",
-        "circuitpython",
-        "tetris",
-        "led-matrix",
-        "impresion-3d"
-      ]
+      "category": "esp32",
+      "difficulty": "advanced",
+      "estimated_time_minutes": 360,
+      "estimated_cost_clp": 98850,
+      "tags": ["esp32", "esp-now", "i2s", "audio", "walkie-talkie", "wireless", "iot"]
     }
   ]
 }
