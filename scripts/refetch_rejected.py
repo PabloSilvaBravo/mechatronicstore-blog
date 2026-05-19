@@ -45,10 +45,14 @@ def main() -> int:
 
     url = os.environ["TURSO_DATABASE_URL"]
     token = os.environ.get("TURSO_AUTH_TOKEN", "")
-    client = libsql.connect(
-        url.replace("libsql://", "https://"),
-        auth_token=token,
-    )
+
+    def _connect():
+        return libsql.connect(
+            url.replace("libsql://", "https://"),
+            auth_token=token,
+        )
+
+    client = _connect()
 
     sources_clause = (
         "AND source_id = ?" if args.source
@@ -68,7 +72,7 @@ def main() -> int:
 
     print(f"Re-fetching {len(rows)} rejected del repo\n")
     promoted = 0
-    for row in rows:
+    for i, row in enumerate(rows):
         tid, source_id, source_url, title = row
         page = fetch_full_page(source_url)
         if page.error or page.status_code >= 400:
@@ -81,20 +85,41 @@ def main() -> int:
             promoted += 1
             print(f"  ✅ PROMOTE {tid[:12]} {(title or '')[:55]}")
             if not args.dry_run:
-                client.execute(
-                    """
-                    UPDATE tutorials
-                    SET status='draft', rejected_reason=NULL,
-                        body_en=?, title_en=COALESCE(NULLIF(?, ''), title_en)
-                    WHERE id=?
-                    """,
-                    [page.body_html, page.title, tid],
-                )
+                # Pablo 19-may-2026: commit per-item + reconnect cada 5 items
+                # para evitar timeout libsql stream (Hrana). Antes, un commit
+                # único al final perdía toda promoción si el script crasheaba
+                # a la mitad (visto en 19-may con 2 promotes perdidos).
+                try:
+                    client.execute(
+                        """
+                        UPDATE tutorials
+                        SET status='draft', rejected_reason=NULL,
+                            body_en=?, title_en=COALESCE(NULLIF(?, ''), title_en)
+                        WHERE id=?
+                        """,
+                        [page.body_html, page.title, tid],
+                    )
+                    client.commit()
+                except Exception as e:
+                    print(f"    ⚠ retry UPDATE tras error libsql: {e}")
+                    client = _connect()
+                    client.execute(
+                        """
+                        UPDATE tutorials
+                        SET status='draft', rejected_reason=NULL,
+                            body_en=?, title_en=COALESCE(NULLIF(?, ''), title_en)
+                        WHERE id=?
+                        """,
+                        [page.body_html, page.title, tid],
+                    )
+                    client.commit()
+
+        # Reconnect cada 5 items para mantener stream fresco
+        if (i + 1) % 5 == 0 and not args.dry_run:
+            client = _connect()
 
         time.sleep(args.sleep)
 
-    if not args.dry_run:
-        client.commit()
     print(f"\n{promoted}/{len(rows)} promoted to draft")
     return 0
 

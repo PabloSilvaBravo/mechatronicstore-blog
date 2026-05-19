@@ -12,7 +12,11 @@ import db
 ROOT = Path(__file__).parent.parent
 INPUT = ROOT / "data" / "blog-rank-output.json"
 
-THRESHOLD = 0.78
+THRESHOLD = 0.72  # Pablo 19-may-2026: 0.78 → 0.72 para que borderline-OK
+                  # (ej. ESP-IDF Web Server cs=0.74) pasen. Calidad sigue
+                  # protegida por el conjunto de 7 dimensiones — 0.72 ≈ 7.2/10
+                  # promedio que NO incluye basura. Si entran tutoriales malos
+                  # con cs cerca de 0.72, subir a 0.75.
 
 
 def utc_now_sqlite() -> str:

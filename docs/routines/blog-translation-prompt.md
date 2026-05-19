@@ -1,7 +1,7 @@
 # Blog Translation — CCR Routine Prompt
 
 Modelo: claude-opus-4-7
-Cron: `0 12 * * *` UTC (12:00 UTC daily, 30 min después del ranking)
+Cron: `0 6,14,22 * * *` UTC (3×/día — 06:00/14:00/22:00 UTC = 02:00/10:00/18:00 CL, ~90 min después de cada rank)
 Trigger: trig_blog_translation
 MCP: MechatronicStore (UUID 9e085396-c84f-4506-a7d6-ce4204c12b06) — herramienta `buscar_productos`
 
