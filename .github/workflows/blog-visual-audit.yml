@@ -1,0 +1,72 @@
+name: Blog Visual Audit (Playwright)
+
+# Pablo 20-may-2026: audit visual automatizado del blog. Detecta lo que
+# scripts/monitor_pipeline.py NO puede detectar:
+#   - Imágenes que devuelven 200 en curl pero 0×0 al browser real
+#     (hotlink-protection, Cloudflare WAF, User-Agent gating)
+#   - JSON-LD ausente o mal formado en páginas dinámicas
+#   - Console errors de hidratación, CSP, etc.
+#   - Network 4xx/5xx en sub-recursos (CSS, fonts, _next chunks)
+#
+# Corre cada 3 días + on-demand. Commitea report a docs/audits/ y falla
+# (email-on-failure) si hay Critical (broken images, page load failed).
+
+on:
+  schedule:
+    - cron: "0 7 */3 * *"   # cada 3 días a las 07:00 UTC (04:00 CL)
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL a auditar (default: producción)"
+        required: false
+        default: "https://www.mechatronicstore.cl"
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install --no-save playwright@^1.49.0
+          npx playwright install --with-deps chromium
+
+      - name: Run visual audit
+        run: |
+          node scripts/blog-visual-audit.mjs \
+            --base-url "${{ github.event.inputs.base_url || 'https://www.mechatronicstore.cl' }}"
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blog-audit-report
+          path: |
+            docs/audits/blog-audit-*.md
+            data/blog-audit-latest.json
+          retention-days: 30
+
+      - name: Commit report (best-effort)
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Solo commitear el .md (el JSON cambia mucho y inflaría el repo)
+          if ls docs/audits/blog-audit-*.md >/dev/null 2>&1; then
+            git add docs/audits/blog-audit-*.md
+            if ! git diff --staged --quiet; then
+              git commit -m "chore(audit): visual audit report $(date -u +%Y-%m-%d)"
+              git push origin HEAD:main || echo "Push failed — siguiente corrida lo intenta"
+            fi
+          fi

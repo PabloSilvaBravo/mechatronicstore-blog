@@ -22,6 +22,9 @@ Output:
 import os
 import sys
 import json
+import urllib.request
+import urllib.error
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,7 +40,36 @@ ALERTS = {
     "rejected_ratio_48h_max": 0.95,   # 95%+ rejected = filtros mal
     "sources_silent_pct_max": 0.30,   # 30%+ sources sin pollear = ingest roto
     "editorial_rejected_ratio_48h_max": 0.60,  # >60% pegado por checklist = prompt mal
+    "hero_images_4xx_max": 0,          # Pablo 20-may: cero tolerancia a heros muertos
 }
+
+
+def _check_hero_image(url: str, timeout: float = 5.0) -> int:
+    """
+    HEAD request a hero_image_url. Devuelve status code o -1 si timeout/error.
+    Mandamos UA + Referer realistas para no falsear contra Cloudflare/WAF
+    que devuelve 403 a curl pero 200 a navegador real.
+    """
+    try:
+        req = urllib.request.Request(
+            url,
+            method="HEAD",
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/130.0.0.0 Safari/537.36"
+                ),
+                "Referer": "https://www.mechatronicstore.cl/",
+                "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        return e.code
+    except Exception:
+        return -1
 
 
 def main():
@@ -161,6 +193,50 @@ def main():
             "value": round(editorial_ratio, 3),
             "threshold": ALERTS["editorial_rejected_ratio_48h_max"],
             "message": f"{editorial_rej}/{editorial_total} traducciones bloqueadas por checklist editorial. Prompt Routine C puede ser muy estricto.",
+        })
+
+    # === Métrica 7: Hero images muertas (cheap daily check) ===
+    # Pablo 20-may-2026: tras encontrar 2/25 imgs broken por hotlink/WAF
+    # (studiopieters.nl devolvía 200 a curl pero 0×0 al browser), agregamos
+    # check HEAD a los heros de las últimas 30 publicaciones. No detecta
+    # hotlink-block en navegador real (eso lo hace el workflow Playwright),
+    # pero sí detecta 4xx/5xx puros + URLs eliminadas en el upstream.
+    r = db.execute("""
+        SELECT id, hero_image_url
+        FROM tutorials
+        WHERE status = 'published'
+          AND hero_image_url IS NOT NULL
+          AND hero_image_url != ''
+        ORDER BY published_at DESC
+        LIMIT 30
+    """).fetchall()
+    hero_checks = []
+    if r:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futures = {pool.submit(_check_hero_image, row[1]): row for row in r}
+            for fut in as_completed(futures):
+                tid, url = futures[fut]
+                status = fut.result()
+                hero_checks.append({"tutorial_id": tid, "url": url, "status": status})
+    heros_4xx = [h for h in hero_checks if h["status"] >= 400 or h["status"] == -1]
+    report["metrics"]["heros_checked"] = len(hero_checks)
+    report["metrics"]["heros_broken"] = len(heros_4xx)
+    if heros_4xx:
+        # Lista solo URLs (no IDs) para no inflar el JSON en logs públicos
+        report["metrics"]["heros_broken_urls"] = [
+            {"status": h["status"], "url": h["url"]} for h in heros_4xx[:10]
+        ]
+    if len(heros_4xx) > ALERTS["hero_images_4xx_max"]:
+        report["alerts"].append({
+            "severity": "warning",
+            "metric": "heros_broken",
+            "value": len(heros_4xx),
+            "threshold": ALERTS["hero_images_4xx_max"],
+            "message": (
+                f"{len(heros_4xx)}/{len(hero_checks)} hero images devuelven 4xx/5xx/timeout. "
+                f"Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. "
+                f"Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+            ),
         })
 
     # === Counts globales ===
