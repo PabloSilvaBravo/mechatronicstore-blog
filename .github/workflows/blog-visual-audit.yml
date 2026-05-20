@@ -10,6 +10,12 @@ name: Blog Visual Audit (Playwright)
 #
 # Corre cada 3 días + on-demand. Commitea report a docs/audits/ y falla
 # (email-on-failure) si hay Critical (broken images, page load failed).
+#
+# Default base_url = preview Vercel (mechatronicstore-blog.vercel.app)
+# porque el dominio prod (www.mechatronicstore.cl) tiene Cloudflare con
+# bot detection que devuelve 403 a Playwright headless. Para auditar prod
+# real, Pablo debe crear regla WAF en Cloudflare que skip bot challenge
+# si el request trae header X-Audit-Token=<secret> (TODO post-MVP).
 
 on:
   schedule:
@@ -19,7 +25,7 @@ on:
       base_url:
         description: "Base URL a auditar (default: producción)"
         required: false
-        default: "https://www.mechatronicstore.cl"
+        default: "https://mechatronicstore-blog.vercel.app"
 
 permissions:
   contents: write
@@ -45,7 +51,7 @@ jobs:
       - name: Run visual audit
         run: |
           node scripts/blog-visual-audit.mjs \
-            --base-url "${{ github.event.inputs.base_url || 'https://www.mechatronicstore.cl' }}"
+            --base-url "${{ github.event.inputs.base_url || 'https://mechatronicstore-blog.vercel.app' }}"
 
       - name: Upload report artifact
         if: always()
