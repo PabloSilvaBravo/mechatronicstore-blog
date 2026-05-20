@@ -30,6 +30,11 @@ def main():
     parser.add_argument("--limit", type=int, default=10)
     args = parser.parse_args()
 
+    # Pablo 20-may-2026: incluir source_language en el dump para que
+    # Routine C sepa qué reglas editoriales aplicar (re-angulación
+    # obligatoria si es=es vs traducción + bonus angulación si es=en).
+    # cs_image_quality/cs_novelty ahora contienen value_added/originality
+    # (schema reuse, mismo nombre de columna).
     sql = """
         SELECT t.id, t.slug, t.source_id, t.source_url, t.title_en, t.subtitle_en,
                SUBSTR(t.body_en, 1, 30000) AS body_en_excerpt,
@@ -37,6 +42,7 @@ def main():
                t.cs_pedagogy, t.cs_code_quality, t.cs_materials_clarity,
                t.cs_step_completeness, t.cs_image_quality,
                t.cs_relevance_to_store_catalog, t.cs_novelty,
+               t.source_language,
                s.name AS source_name
         FROM tutorials t
         LEFT JOIN sources s ON s.id = t.source_id
@@ -63,11 +69,16 @@ def main():
                 "code_quality": r[10],
                 "materials_clarity": r[11],
                 "step_completeness": r[12],
-                "image_quality": r[13],
+                # schema legacy: cs_image_quality almacena value_added
+                "value_added": r[13],
                 "relevance_to_store_catalog": r[14],
-                "novelty": r[15],
+                # schema legacy: cs_novelty almacena originality_potential
+                "originality_potential": r[15],
             },
-            "source_name": r[16],
+            # Pablo 20-may-2026: Routine C necesita source_language para
+            # aplicar reglas editoriales (re-angulación obligatoria si es=es).
+            "source_language": r[16] or "other",
+            "source_name": r[17],
         })
 
     output = {

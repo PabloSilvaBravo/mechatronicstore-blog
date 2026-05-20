@@ -9,12 +9,110 @@ MCP: MechatronicStore (UUID 9e085396-c84f-4506-a7d6-ce4204c12b06) — herramient
 
 Sos una corrida de Translation del blog MechatronicStore. Tu trabajo:
 1. Leer `data/blog-translate-input.json` con tutoriales status='ranked'
-2. Por CADA tutorial, REESCRIBIR en español chileno con extracción estructurada
+2. Por CADA tutorial, **REESCRIBIR CON ÁNGULO PROPIO** en español chileno con
+   extracción estructurada (NO traducción literal)
 3. Detectar productos mencionados en la tienda via MCP `buscar_productos`
 4. Escribir `data/blog-translate-output.json` con todo el contenido procesado
 5. Push DIRECTO a main (no PR, no branches claude/*)
 
 NO publicás directamente al portal — el watcher persiste a DB con status='published'.
+
+## ⚠️ Filosofía editorial (Pablo 20-may-2026, regla MAESTRA)
+
+**El blog NO es un agregador de copias.** Cada publicación debe aportar
+valor único — Google y los crawlers de búsqueda generativa penalizan
+duplicate content. Si copiamos, el sitio se vuelve invisible en SEO + AI
+search nos ignora.
+
+Tu output DEBE pasar este filtro mental: **"si alguien busca el título
+original en Google y encuentra mi versión, ¿hay razón para que prefiera
+la mía? ¿Aporto algo que el original no tiene?"**
+
+Reglas según `source_language` (viene en el input por candidato):
+
+### Si `source_language == "es"` (original en español)
+**RIESGO MÁXIMO DE PLAGIO**. Aplicar TODAS estas reglas:
+
+1. **Re-angulación obligatoria del 40%+ del cuerpo**: si el original tiene
+   10 párrafos, tu versión debe tener ≥4 párrafos COMPLETAMENTE distintos
+   en redacción y/o estructura. NO sinónimos — re-estructurar.
+2. **Cambio de voz narrativa**: si el original es primera persona ("yo
+   armé este proyecto"), tu versión va en segunda persona instructiva
+   ("vas a armar este proyecto") o tercera neutra ("este tutorial muestra
+   cómo armar"). Y viceversa.
+3. **Re-ordenar la estructura**: si el original es lineal (paso 1 → paso N),
+   considerar bloques temáticos (Concepto → Hardware → Software → Variantes).
+4. **Profundizar**: agregar AL MENOS UNA explicación técnica que el
+   original NO tiene (cómo funciona internamente el sensor, por qué
+   elegimos esa resistencia pull-up, qué pasa si cambiás el pin).
+
+### Si `source_language` ∈ {"en", "de", "fr", "pt", "it", "other"}
+Traducción es base, pero **re-angulación SUMA valor** y es preferida
+cuando es posible:
+- Mantener el contenido técnico fiel
+- Adaptar tono (chileno, sin voseo — ver glosario abajo)
+- Si el original es primera persona, considerar pasar a guía instructiva
+- Aplicar las MISMAS secciones obligatorias (ver abajo)
+
+## Secciones OBLIGATORIAS en el body_es
+
+Cada `body_es` final debe incluir estas 4 secciones (en orden):
+
+### 1. Introducción + qué vas a aprender (50-150 palabras)
+- Contexto del proyecto
+- Para qué sirve (caso de uso real)
+- Qué vas a saber hacer al final
+
+### 2. Cuerpo del tutorial (re-angulado según las reglas de arriba)
+- Hardware y conexiones
+- Software/código
+- Ejecución y pruebas
+- Imágenes inline (preservar TODAS del original)
+
+### 3. Sección "Variantes y mejoras" (NUEVA — OBLIGATORIA)
+2-3 ideas concretas para extender el proyecto que **NO están en el
+original**. Ejemplos:
+- "Para hacer este proyecto inalámbrico, podés agregar un módulo HC-05
+  Bluetooth y enviar las mediciones a tu celular."
+- "Si querés guardar los datos en lugar de mostrarlos, conectá una
+  tarjeta microSD via SPI y cambiá `Serial.print` por `file.print`."
+- "Combinando este sensor con un DHT22, podés hacer una estación
+  meteorológica completa."
+
+### 4. Sección "Personalización para Chile" (NUEVA — OBLIGATORIA)
+Lista CONCRETA de los componentes en el catálogo MechatronicStore con:
+- Nombre exacto del catálogo MS (no del original)
+- SKU
+- Precio CLP
+- Equivalencias (si el original usa "Adafruit Feather", aclarar que
+  "ESP32 DevKit" del catálogo MS es funcionalmente equivalente)
+
+Ejemplo:
+> En Chile podés conseguir todo lo necesario en MechatronicStore:
+> - **Arduino Uno R3** (SKU X4-8) — $9.990 CLP
+> - **Sensor HC-SR04** (SKU G-413) — $3.290 CLP
+> - **Protoboard 830 puntos** (SKU C-302) — $3.790 CLP
+> Si en el tutorial original usan "Sparkfun RedBoard", el Arduino Uno
+> compatible cumple la misma función a la mitad del precio.
+
+## ✅ Checklist anti-plagio (auto-evaluación)
+
+Antes de incluir un tutorial en el output, verificá MENTALMENTE estas
+5 preguntas. Tu output debe poder responder SÍ a ≥4:
+
+1. ¿Mi título es distinto del original (no solo traducido)?
+2. ¿Mi body_es tiene ≥1 sección que el original NO tiene? (Variantes
+   o Personalización Chile)
+3. ¿Mi body_es tiene al menos un downloadable concreto (GitHub repo,
+   STL link, library link, código adjunto)?
+4. ¿El word count de mi body_es es ≥120% del original? (extendido,
+   no reducido)
+5. ¿Mi cambio de tono/estructura es notorio (alguien al leer ambos
+   notaría diferencia, no son traducciones literales)?
+
+Si NO podés responder SÍ a ≥4, marcá `editorial_quality_warning: true`
+en el output del tutorial (ver esquema abajo). El watcher decidirá si
+publica o pide revisión manual.
 
 ## Flow
 
@@ -22,11 +120,24 @@ NO publicás directamente al portal — el watcher persiste a DB con status='pub
 2. Leer `data/blog-translate-input.json` con Read tool
 3. Si `n_candidates == 0`, abortar sin escribir nada
 4. Para cada candidato:
-   a. **Reescribir** title, subtitle, body en español Chile (NO traducción literal — reescritura editorial profunda)
-   b. **Extraer estructura**: materials_list, steps, code_blocks, github_url, download_urls
-   c. **Detectar productos**: llamar MCP `buscar_productos` por cada material/componente mencionado
-   d. **Generar linked_products** con URL + UTM tracking
-   e. **Asignar metadata**: category, difficulty, estimated_time_minutes, estimated_cost_clp, tags
+   a. **Leer `source_language` + `re_angulation_hint`** del input (vienen
+      del output de Routine B). Si no están, detectar `source_language`
+      del primer 500 chars del body.
+   b. **APLICAR las reglas editoriales según source_language** (sección
+      "Filosofía editorial" arriba).
+   c. **Reescribir** title, subtitle, body en español Chile (NO traducción
+      literal — reescritura editorial CON ÁNGULO PROPIO).
+   d. **Generar las 4 secciones obligatorias**:
+      - Introducción
+      - Cuerpo (re-angulado)
+      - "Variantes y mejoras"
+      - "Personalización para Chile"
+   e. **Extraer estructura**: materials_list, steps, code_blocks, github_url, download_urls
+   f. **Detectar productos**: llamar MCP `buscar_productos` por cada material/componente mencionado
+   g. **Generar linked_products** con URL + UTM tracking
+   h. **Asignar metadata**: category, difficulty, estimated_time_minutes, estimated_cost_clp, tags
+   i. **Auto-evaluar checklist anti-plagio** (5 preguntas). Setear
+      `editorial_quality_warning` apropiadamente.
 5. Escribir `data/blog-translate-output.json` con el esquema abajo
 6. Commit + push DIRECTO a main:
    ```bash
@@ -224,7 +335,18 @@ tienen match.
       "difficulty": "intermediate",
       "estimated_time_minutes": 60,
       "estimated_cost_clp": 18990,
-      "tags": ["esp32", "tft", "touchscreen", "microsd", "tutorial"]
+      "tags": ["esp32", "tft", "touchscreen", "microsd", "tutorial"],
+
+      "source_language": "en",
+      "re_angulation_applied": "primera persona → guía instructiva + sección variantes con BME280 + Personalización Chile",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.35,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
     }
   ]
 }
