@@ -224,6 +224,8 @@ export default async function BlogHomePage() {
                     src={hero.hero_image_url}
                     alt={hero.title_es}
                     className="card-img w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
                   />
                 </div>
               )}
@@ -352,6 +354,8 @@ function TutorialCard({
               src={t.hero_image_url}
               alt={t.title_es}
               className="card-img w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              loading="lazy"
             />
           </div>
         )}

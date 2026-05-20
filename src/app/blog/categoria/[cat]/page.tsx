@@ -209,6 +209,8 @@ export default async function CategoryPage({ params }: Props) {
                       src={t.hero_image_url}
                       alt={t.title_es}
                       className="card-img w-full h-44 object-cover"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                   )}
                   <div className="p-4">

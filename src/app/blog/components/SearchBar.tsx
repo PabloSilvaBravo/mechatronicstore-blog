@@ -198,6 +198,7 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
                     alt=""
                     className="w-12 h-12 object-cover rounded flex-shrink-0 border"
                     style={{ borderColor: "var(--border-subtle)" }}
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <div

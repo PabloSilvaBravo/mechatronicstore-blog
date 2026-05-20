@@ -78,6 +78,8 @@ export default async function RelatedTutorials({
                   alt={t.title_es}
                   className="card-img w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-md flex-shrink-0 border"
                   style={{ borderColor: "var(--border-subtle)" }}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
                 />
               )}
               <div className="flex-1 min-w-0">
