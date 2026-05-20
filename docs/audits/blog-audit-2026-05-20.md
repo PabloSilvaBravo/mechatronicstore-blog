@@ -1,86 +1,81 @@
-# Blog visual audit — 2026-05-20 22:19 UTC
+# Blog visual audit — 2026-05-20 22:23 UTC
 
 ## Summary
-- Pages audited: 4
-- Broken images: **0**
-- Console errors (non-acceptable): 4
-- SEO gaps: 25
-- Network 4xx/5xx: 4
+- Pages audited: 6
+- Broken images: **8**
+- Console errors (non-acceptable): 0
+- SEO gaps: 4
+- Network 4xx/5xx: 0
+
+## Critical (fix today)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog: https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog: https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog/tutoriales: https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog/tutoriales: https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog/tutoriales: https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog/tutoriales: https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog/tag/arduino: https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp (referrerPolicy=no-referrer)
+- [ ] broken image on https://mechatronicstore-blog.vercel.app/blog/tag/arduino: https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp (referrerPolicy=no-referrer)
 
 ## High (fix this week)
-- [ ] SEO https://www.mechatronicstore.cl/blog: missing description
-- [ ] SEO https://www.mechatronicstore.cl/blog: missing canonical
-- [ ] SEO https://www.mechatronicstore.cl/blog: missing og:title
-- [ ] SEO https://www.mechatronicstore.cl/blog: missing og:image
-- [ ] SEO https://www.mechatronicstore.cl/blog: missing twitter:card
-- [ ] SEO https://www.mechatronicstore.cl/blog: missing JSON-LD Blog
-- [ ] console error https://www.mechatronicstore.cl/blog: Failed to load resource: the server responded with a status of 403 ()
-- [ ] SEO https://www.mechatronicstore.cl/blog/tutoriales: missing description
-- [ ] SEO https://www.mechatronicstore.cl/blog/tutoriales: missing canonical
-- [ ] SEO https://www.mechatronicstore.cl/blog/tutoriales: missing og:title
-- [ ] SEO https://www.mechatronicstore.cl/blog/tutoriales: missing og:image
-- [ ] SEO https://www.mechatronicstore.cl/blog/tutoriales: missing twitter:card
-- [ ] console error https://www.mechatronicstore.cl/blog/tutoriales: Failed to load resource: the server responded with a status of 403 ()
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing description
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing canonical
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing og:title
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing og:image
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing twitter:card
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing JSON-LD CollectionPage
-- [ ] SEO https://www.mechatronicstore.cl/blog/categoria/esp32: missing JSON-LD BreadcrumbList
-- [ ] console error https://www.mechatronicstore.cl/blog/categoria/esp32: Failed to load resource: the server responded with a status of 403 ()
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing description
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing canonical
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing og:title
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing og:image
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing twitter:card
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing JSON-LD CollectionPage
-- [ ] SEO https://www.mechatronicstore.cl/blog/tag/arduino: missing JSON-LD BreadcrumbList
-- [ ] console error https://www.mechatronicstore.cl/blog/tag/arduino: Failed to load resource: the server responded with a status of 403 ()
-
-## Medium / backlog
-- [ ] network 403 https://www.mechatronicstore.cl/blog: https://www.mechatronicstore.cl/blog
-- [ ] network 403 https://www.mechatronicstore.cl/blog/tutoriales: https://www.mechatronicstore.cl/blog/tutoriales
-- [ ] network 403 https://www.mechatronicstore.cl/blog/categoria/esp32: https://www.mechatronicstore.cl/blog/categoria/esp32
-- [ ] network 403 https://www.mechatronicstore.cl/blog/tag/arduino: https://www.mechatronicstore.cl/blog/tag/arduino
+- [ ] SEO https://mechatronicstore-blog.vercel.app/blog/tutoriales: missing JSON-LD HowTo
+- [ ] SEO https://mechatronicstore-blog.vercel.app/blog/tutoriales: missing JSON-LD LearningResource
+- [ ] SEO https://mechatronicstore-blog.vercel.app/blog/tutoriales: missing JSON-LD BreadcrumbList
+- [ ] SEO https://mechatronicstore-blog.vercel.app/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa: title length 124 (target ≤60)
 
 ## Per-page detail
-### HOME — https://www.mechatronicstore.cl/blog
+### HOME — https://mechatronicstore-blog.vercel.app/blog
 
-- Title: `Attention Required! | Cloudflare` (32 chars)
-- Canonical: _missing_
-- og:image: _missing_
+- Title: `Inicio · Blog MechatronicStore` (30 chars)
+- Canonical: https://www.mechatronicstore.cl/blog
+- og:image: https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png
+- JSON-LD types: Blog
+- Images: 25 total, 2 broken
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp` (alt: "Comunicación inalámbrica entre dos Arduino con módulos RF de 315 MHz o 433 MHz", referrerPolicy=no-referrer)
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp` (alt: "Conecta 8 dispositivos I2C con la misma dirección al mismo Arduino usando el TCA9548A", referrerPolicy=no-referrer)
+
+### CATALOGO — https://mechatronicstore-blog.vercel.app/blog/tutoriales
+
+- Title: `Todos los tutoriales · Blog MechatronicStore` (44 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/tutoriales
+- og:image: https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png
 - JSON-LD types: _none_
-- Images: 0 total, 0 broken
-- Console errors: 1
-  - Failed to load resource: the server responded with a status of 403 ()
+- Images: 25 total, 2 broken
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp` (alt: "Comunicación inalámbrica entre dos Arduino con módulos RF de 315 MHz o 433 MHz", referrerPolicy=no-referrer)
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp` (alt: "Conecta 8 dispositivos I2C con la misma dirección al mismo Arduino usando el TCA9548A", referrerPolicy=no-referrer)
 
-### CATALOGO — https://www.mechatronicstore.cl/blog/tutoriales
+### DETAIL — https://mechatronicstore-blog.vercel.app/blog/tutoriales
 
-- Title: `Attention Required! | Cloudflare` (32 chars)
-- Canonical: _missing_
-- og:image: _missing_
+- Title: `Todos los tutoriales · Blog MechatronicStore` (44 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/tutoriales
+- og:image: https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png
 - JSON-LD types: _none_
-- Images: 0 total, 0 broken
-- Console errors: 1
-  - Failed to load resource: the server responded with a status of 403 ()
+- Images: 25 total, 2 broken
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp` (alt: "Comunicación inalámbrica entre dos Arduino con módulos RF de 315 MHz o 433 MHz", referrerPolicy=no-referrer)
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp` (alt: "Conecta 8 dispositivos I2C con la misma dirección al mismo Arduino usando el TCA9548A", referrerPolicy=no-referrer)
 
-### CATEGORIA — https://www.mechatronicstore.cl/blog/categoria/esp32
+### DETAIL — https://mechatronicstore-blog.vercel.app/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa
 
-- Title: `Attention Required! | Cloudflare` (32 chars)
-- Canonical: _missing_
-- og:image: _missing_
-- JSON-LD types: _none_
-- Images: 0 total, 0 broken
-- Console errors: 1
-  - Failed to load resource: the server responded with a status of 403 ()
+- Title: `OTA firmadas en ESP32: instala Lifecycle Manager V2 para actualizaciones seguras sin abrir el equipo · Blog MechatronicStore` (124 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa
+- og:image: https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png
+- JSON-LD types: HowTo, LearningResource, BreadcrumbList
+- Images: 7 total, 0 broken
 
-### TAG — https://www.mechatronicstore.cl/blog/tag/arduino
+### CATEGORIA — https://mechatronicstore-blog.vercel.app/blog/categoria/esp32
 
-- Title: `Attention Required! | Cloudflare` (32 chars)
-- Canonical: _missing_
-- og:image: _missing_
-- JSON-LD types: _none_
-- Images: 0 total, 0 broken
-- Console errors: 1
-  - Failed to load resource: the server responded with a status of 403 ()
+- Title: `Tutoriales de ESP32 · Blog MechatronicStore` (43 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/categoria/esp32
+- og:image: https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png
+- JSON-LD types: CollectionPage, BreadcrumbList
+- Images: 16 total, 0 broken
+
+### TAG — https://mechatronicstore-blog.vercel.app/blog/tag/arduino
+
+- Title: `#arduino · Blog MechatronicStore` (32 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/tag/arduino
+- og:image: https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp
+- JSON-LD types: CollectionPage, BreadcrumbList
+- Images: 5 total, 2 broken
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp` (alt: "Comunicación inalámbrica entre dos Arduino con módulos RF de 315 MHz o 433 MHz", referrerPolicy=no-referrer)
+  - BROKEN: `https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp` (alt: "Conecta 8 dispositivos I2C con la misma dirección al mismo Arduino usando el TCA9548A", referrerPolicy=no-referrer)
