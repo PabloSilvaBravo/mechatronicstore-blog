@@ -21,6 +21,7 @@ import db
 from scraper import fetch_full_page, fetch_adafruit_multipage, slugify, short_hash
 from sources import get as get_parser
 from hard_filters import apply_all
+from hero_picker import select_best_hero
 
 
 def gen_id(source_url: str) -> str:
@@ -107,6 +108,11 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
             )
             continue
 
+        # Hero picker: si el og:image está en blocklist de dominios con
+        # hotlink-protection severa (studiopieters.nl, tronixstuff.com),
+        # fallback a primera img del body. Ver scripts/hero_picker.py.
+        hero_url = select_best_hero(page.main_image_url, page.extra_images)
+
         db.execute(
             """INSERT INTO tutorials
                (id, slug, source_id, source_url, title_en, subtitle_en,
@@ -120,7 +126,7 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
                 page.title or cand.title_en,
                 cand.summary_en[:500],
                 body[:50000],
-                page.main_image_url,
+                hero_url,
                 utc_now_sqlite(),
             ],
         )

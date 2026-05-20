@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-05-20T22:17:37.979552+00:00",
+  "checked_at": "2026-05-20T22:42:21.421615+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 6,
@@ -12,32 +12,14 @@
     "sources_silent_pct": 0.0,
     "editorial_rejected_48h": 0,
     "editorial_rejected_ratio": 0.0,
-    "heros_checked": 23,
-    "heros_broken": 2,
-    "heros_broken_urls": [
-      {
-        "status": 403,
-        "url": "https://www.studiopieters.nl/wp-content/uploads/2026/01/for-TOTAL-beginners-scaled.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png"
-      }
-    ],
+    "heros_checked": 18,
+    "heros_broken": 0,
     "counts_by_status": {
       "published": 23,
       "ranked": 9,
       "rejected": 234
     }
   },
-  "alerts": [
-    {
-      "severity": "warning",
-      "metric": "heros_broken",
-      "value": 2,
-      "threshold": 0,
-      "message": "2/23 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
-    }
-  ],
-  "status": "warning"
+  "alerts": [],
+  "status": "ok"
 }
