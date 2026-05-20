@@ -1,0 +1,944 @@
+{
+  "scope": "europa-continental",
+  "discovered_at": "2026-05-20T04:21:37Z",
+  "sources_evaluated": 46,
+  "sources_qualified": 31,
+  "sources": [
+    {
+      "name": "elektronikpraxis",
+      "homepage": "https://www.elektronikpraxis.de/",
+      "feed_url": "https://www.elektronikpraxis.de/rss.xml",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 40,
+      "publication_frequency": "daily",
+      "content_type": "news",
+      "sample_titles_recent": [
+        "Analog Devices prüft Übernahme von Empower Semiconductor",
+        "Ionos setzt auf Photonic-Chips von Q.ANT",
+        "Samsungs Rückzug aus Chinas Haushaltsmarkt könnte nur der Anfang sein",
+        "Siemens EDA wird erster Softwarepartner für Europas Chipdesign-Plattform",
+        "Realität statt Leuchttürme: Wo KI in der Fertigung wirklich Mehrwert bringt"
+      ],
+      "quality_assessment": "high",
+      "qualifies": true,
+      "notes": "Revista de electrónica industrial DE. Alta calidad técnica. Requiere traducción Routine C. Más noticias que tutoriales, pero buenos análisis."
+    },
+    {
+      "name": "mikrocontroller-net",
+      "homepage": "https://www.mikrocontroller.net/",
+      "feed_url": "https://www.mikrocontroller.net/articles/Spezial:RecentChanges?feed=rss",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Lokale Elektroniklieferanten",
+        "Elektronikversender",
+        "Benutzer:Bome"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Wiki feed — solo cambios recientes incluye páginas de usuario y vandalismo (ej. 'Benutzer:WfxYANoW'). No es feed editorial limpio. DESCARTAR."
+    },
+    {
+      "name": "heise-make",
+      "homepage": "https://www.heise.de/make/",
+      "feed_url": "https://www.heise.de/make/feed.xml",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 20,
+      "publication_frequency": "weekly",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Mischung aus Shaper Origin und Maslov CNC: mobiler Fräsroboter Cubiio-Gordix",
+        "LaneSaber: Radfahrender Maker baut sich LED-Lichtschwert gegen zu enge Überholer",
+        "Lapdock für Maker: CrowView Note mit Arduino UNO Q",
+        "CERN öffnet seine KiCad-Bauteilbibliothek: 17.000 Komponenten für Maker",
+        "NE555: Der unsterbliche Timer-Chip feiert den 55. Geburtstag"
+      ],
+      "quality_assessment": "high",
+      "qualifies": true,
+      "notes": "Make Magazine alemán — calidad EDITORIAL TOP. Tutoriales DIY, electrónica, 3D. Requiere traducción Routine C. Marca premium."
+    },
+    {
+      "name": "ct-magazin",
+      "homepage": "https://www.heise.de/ct/",
+      "feed_url": "https://www.heise.de/ct/rss/artikel-atom.xml",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 20,
+      "publication_frequency": "daily",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Bit-Rauschen, der Prozessor-Podcast: Gefälschte Flash-Speicher und Festplatten",
+        "MacBook-Neo-Konkurrenten starten in China für unter 500 Euro",
+        "Halbleiter für Indien: Tata Electronics baut große Chip-Fab und Packaging-Werk",
+        "Google: Von der Such- zur Machmaschine",
+        "heise+ | Luxus-Kopfhörer: Sony 1000X The Collexion im Test"
+      ],
+      "quality_assessment": "high",
+      "qualifies": true,
+      "notes": "c't magazin — revista tech alemana legendaria. Mix entre electrónica, IoT, embedded. Paywall parcial (heise+) pero muchos artículos libres. Requiere traducción."
+    },
+    {
+      "name": "az-delivery",
+      "homepage": "https://www.az-delivery.de/",
+      "feed_url": "https://www.az-delivery.de/blogs/azdelivery-blog-fur-arduino-und-raspberry-pi.atom",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 30,
+      "publication_frequency": "biweekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "3D Druck für Fortgeschrittene - Teil 3",
+        "3D Druck für Fortgeschrittene - Teil 2",
+        "3D Druck für Fortgeschrittene - Teil 1",
+        "DIY CSV Datenlogger",
+        "Fernsteuerung für den omnidirektionalen Roboter"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Tienda DE de Arduino/RPi. Blog 100% tutoriales paso a paso (3D, sensores, robots). Frecuencia alta. Requiere traducción Routine C."
+    },
+    {
+      "name": "raspberry-tips-de",
+      "homepage": "https://raspberry.tips/",
+      "feed_url": "https://raspberry.tips/feed",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 25,
+      "publication_frequency": "daily",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "OctoPrint auf dem Raspberry Pi installieren – der komplette Setup-Guide",
+        "Raspberry Pi AI HAT+ 2 – Hailo-10H mit 40 TOPS und lokalen LLMs",
+        "Proxmox VE auf dem Raspberry Pi 5 installieren (2026)",
+        "Pi-hole: Kritische Sicherheitslücken entdeckt – jetzt sofort aktualisieren!",
+        "Waveshare e-Ink Display für den Raspberry Pi – welches ist das richtige?"
+      ],
+      "quality_assessment": "high",
+      "qualifies": true,
+      "notes": "Blog DE 100% RPi tutoriales (OctoPrint, Proxmox, Pi-hole, displays). Frecuencia media-alta. Requiere traducción."
+    },
+    {
+      "name": "botland-de",
+      "homepage": "https://botland.de/",
+      "feed_url": "https://botland.de/blog/feed/",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "biweekly",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Home Assistant Connect ZBT-2 – was ist das? Nachfolger von ZBT-1",
+        "Worauf warten wir beim Flipper Zero 2?",
+        "ESP32 ZigBee – Was ist das? Technische Daten, Schema, Preis und Bewertungen",
+        "Warum piept der Rauchmelder von Zeit zu Zeit?",
+        "MCP4725 – Was ist das? Technische Daten, Schema, Preis und Bewertungen"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Tienda DE (parte de grupo Botland PL). Blog con explicaciones técnicas (ESP32, ZigBee, MCP4725). Requiere traducción."
+    },
+    {
+      "name": "datenreise-de",
+      "homepage": "https://www.datenreise.de/",
+      "feed_url": "https://www.datenreise.de/feed/",
+      "language": "de",
+      "country": "DE",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Raspberry Pi 4B und 3B+ im Vergleich",
+        "MacBook Pro Retina: Mit M.2 SSD aufrüsten (Anleitung)",
+        "Mac Mini (2014-2017) aufrüsten: SSD einbauen"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Blog DE pero frecuencia BAJA — entradas viejas (RPi 4B vs 3B+). Parece abandonado, solo apto como ref."
+    },
+    {
+      "name": "semageek",
+      "homepage": "https://www.semageek.com/",
+      "feed_url": "https://www.semageek.com/feed/",
+      "language": "fr",
+      "country": "FR",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 20,
+      "publication_frequency": "weekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "STAR : Un robot modulable à base d’arduino qui se faufile partout",
+        "DIY : Fabriquer un robot mangeur de pièces avec une boite de Pringles et un arduino",
+        "Un robot imprimé en 3D qui dessine dans le sable.",
+        "DIY : Transformer un vieux réveil en horloge-station météo à base d’Arduino",
+        "DIY : Fabriquer un contrôleur pour simulateur de parapente à base d’Arduino"
+      ],
+      "quality_assessment": "high",
+      "qualifies": true,
+      "notes": "Blog FR maker/DIY clásico. 100% tutoriales Arduino/robots. Feedburner. Requiere traducción Routine C."
+    },
+    {
+      "name": "framboise314",
+      "homepage": "https://www.framboise314.fr/",
+      "feed_url": "https://www.framboise314.fr/feed/",
+      "language": "fr",
+      "country": "FR",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "biweekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Piloter un objet 3D en temps réel : Micro:bit, Python & Pi400",
+        "OpenSCAD : Pourquoi le livre de Roberto Hamm peut changer votre vision de la CAO",
+        "Dompter le CrowPanel 2.1″ Rotary ESP32-S3 : Configuration matérielle et affichage",
+        "Configuration du Heltec HTIT Wireless Tracker : Fix du GPS et déploiement Meshtastic 868 MHz",
+        "Batterie FRB20 de Caméra IMOU Cell 2 : Analyse d’une panne programmée ?"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Blog FR Raspberry Pi premier (micro:bit, ESP32, Meshtastic). Calidad técnica alta. Requiere traducción."
+    },
+    {
+      "name": "positron-libre",
+      "homepage": "https://www.positron-libre.com/",
+      "feed_url": "https://www.positron-libre.com/rss",
+      "language": "fr",
+      "country": "FR",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "sparse",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Comment apprendre la robotique",
+        "Dimensions des raccords pneumatiques utilisés en automatisme",
+        "Sommaire cours pneumatique pour l'automatisme industriel",
+        "Fichiers de fabrication, schéma, datasheet, gerber",
+        "L'orgue électromagnétique Hammond"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Cursos FR de electrónica/robótica/automatización. Estilo enciclopédico. Requiere traducción."
+    },
+    {
+      "name": "tutoduino",
+      "homepage": "https://tutoduino.fr/",
+      "feed_url": "https://tutoduino.fr/feed/",
+      "language": "fr",
+      "country": "FR",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 39,
+      "publication_frequency": "sparse",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "📡 Heltec V3 : tester l’émetteur-récepteur LoRa (SX1262)",
+        "Lilygo T-Display S3 sous IDE Arduino",
+        "Pourquoi chiffrer la mémoire Flash de vos objets connectés IoT ?",
+        "PSRAM & partitions pour les ESP32 dans l’IDE Arduino",
+        "Afficher l’heure des prochains passages de votre bus IdFM sur un LilyGo T-Display"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Blog FR Arduino+ESP32 con tutoriales largos (LoRa SX1262, LilyGo, IoT). 39 entries. Calidad EXCELENTE. Requiere traducción."
+    },
+    {
+      "name": "blog-arduino-cc",
+      "homepage": "https://blog.arduino.cc/",
+      "feed_url": "https://blog.arduino.cc/feed/",
+      "language": "en",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Old 3D printer becomes new Arduino UNO Q-controlled pen plotter",
+        "Massive 7:1 scale Arduino UNO gets matching 7:1 scale turtle robot",
+        "Arduino Core on Zephyr 0.55: Getting ready for the final mile",
+        "Nibsy makes manual project documentation obsolete",
+        "BirdFeedR is a bird-only feeder that keeps thieving squirrels away"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Blog oficial Arduino.cc (HQ Italia). Inglés — sin traducción necesaria. Tutoriales + casos de uso. Frecuencia alta. WIN."
+    },
+    {
+      "name": "locoduino",
+      "homepage": "https://www.locoduino.org/",
+      "feed_url": "https://www.locoduino.org/spip.php?page=backend",
+      "language": "fr",
+      "country": "FR",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Une croix de pharmacie avec Arduino MEGA",
+        "LaBox, Une Centrale DCC polyvalente et abordable (5)",
+        "Les spécificités de FreeRTOS"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "FR muy nicho — modelismo ferroviario con Arduino. Audiencia chilena maker no se va a interesar. DESCARTAR."
+    },
+    {
+      "name": "emc-elettronica-it",
+      "homepage": "https://it.emcelettronica.com/",
+      "feed_url": "https://it.emcelettronica.com/feed",
+      "language": "it",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Chip AI su vetro, la nuova frontiera del packaging avanzato nei data center ad alte prestazioni",
+        "CoreEnergy di Apacer: l’efficienza energetica intelligente per lo storage moderno",
+        "Salviamo un vecchio frigorifero con Arduino e la domotica",
+        "Fibrillazione atriale e Machine Learning. Il ruolo della fotopletismografia nei dispositivi edge intelligenti",
+        "Manutenzione e verifica periodica degli strumenti di misura"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Portal IT electrónica con tutoriales (Arduino+ML, fotopletismografía edge). Tono académico. Requiere traducción."
+    },
+    {
+      "name": "mauro-alfieri",
+      "homepage": "https://www.mauroalfieri.it/",
+      "feed_url": "https://www.mauroalfieri.it/feed/",
+      "language": "it",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "sparse",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Nuove wearable shield",
+        "Arduino App Lab 0.7.0",
+        "Arduino App Lab condividere progetti",
+        "Matrice LED Arduino UNO Q",
+        "Arduino UNO Q pinout"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Blog personal IT — wearable shields, Arduino UNO Q. Maker reputado. Requiere traducción."
+    },
+    {
+      "name": "futuranet-it",
+      "homepage": "https://futuranet.it/",
+      "feed_url": "https://futuranet.it/feed",
+      "language": "it",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "monthly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Arduino UNO Q la scheda dual brain che unisce real time e intelligenza artificiale",
+        "Amplificatore per ipoacusici: Angelo l’audio portatile open source ottimizzato per la voce umana",
+        "Controller per Presepe: Nano R4, 6 uscite, ciclo giorno-notte e audio",
+        "LED Racing guida completa hardware e montaggio della pista per la gara",
+        "Protezione elettronica contro scariche di batteria e cali di tensione"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Tienda IT con blog de proyectos (audio open source, Arduino Nano R4, LED Racing). 100% tutoriales DIY. Requiere traducción."
+    },
+    {
+      "name": "open-electronics",
+      "homepage": "https://www.open-electronics.org/",
+      "feed_url": "https://www.open-electronics.org/feed/",
+      "language": "en",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 12,
+      "publication_frequency": "sparse",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "TekkaSketch: Reinventing the Etch-a-Sketch with E-Ink and ESP32 Innovation",
+        "How to Build a Variable Constant Current Source with Sink Function",
+        "How to Build a 1000W ZVS Induction Heater Using a Resonant RLC Circuit",
+        "How to Control NeoPixel Installations via Wi-Fi Using Fishino and NodeMCU with Python",
+        "How to Adjust X and Y Axis Scale in Arduino Serial Plotter (No Extra Software Needed)"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Open Electronics — IT en INGLÉS. Tutoriales muy buenos (ZVS heater 1000W, ESP32 E-Ink). Sin traducción. WIN."
+    },
+    {
+      "name": "lucadentella",
+      "homepage": "https://www.lucadentella.it/",
+      "feed_url": "https://www.lucadentella.it/feed/",
+      "language": "it",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "CS4 – Sensore ad assorbimento di corrente per plastici ferroviari",
+        "EX-CSB1: La rivoluzione “All-in-One” per DCC-EX",
+        "Serial Port Monitor"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Blog IT muy nicho — DCC modelismo ferroviario. Audiencia no calza. DESCARTAR."
+    },
+    {
+      "name": "elettrouno-it",
+      "homepage": "https://www.elettrouno.it/",
+      "feed_url": "https://www.elettrouno.it/feed/",
+      "language": "it",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 5,
+      "publication_frequency": "unknown",
+      "content_type": "news",
+      "sample_titles_recent": [
+        "EIMA 2016",
+        "FIERA INTERNAZIONALE DEL BOVINO DA LATTE",
+        "VENTILATORE MODELLO R14A – R14B"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Solo 5 entries y más viejas que 2016. ABANDONADO. DESCARTAR."
+    },
+    {
+      "name": "elettronicanews",
+      "homepage": "https://www.elettronicanews.it/",
+      "feed_url": "https://www.elettronicanews.it/feed/",
+      "language": "it",
+      "country": "IT",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 30,
+      "publication_frequency": "unknown",
+      "content_type": "news",
+      "sample_titles_recent": [
+        "Le ultimissime del 19 maggio – Samsung tratta, l’Iran ufficializza, Nvidia attende",
+        "Il rubinetto cinese",
+        "ANIE: riconfermato il presidente Musca"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Solo news financieras del sector (Samsung tratta, Nvidia, ANIE). NO tutoriales. DESCARTAR."
+    },
+    {
+      "name": "tweakers-nl",
+      "homepage": "https://tweakers.net/",
+      "feed_url": "https://feeds.feedburner.com/tweakers/mixed",
+      "language": "nl",
+      "country": "NL",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 40,
+      "publication_frequency": "unknown",
+      "content_type": "news",
+      "sample_titles_recent": [
+        "Snagit 2025.1.1",
+        "Nvidia brengt hotfix uit voor bug die gpu-temperatuur verkeerd weergeeft",
+        "Bulk Rename Utility 4.0.0.7"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Tweakers cubre TODO tech (Snagit, Nvidia hotfix, Doom). 95% no relevante para electrónica/maker. DESCARTAR."
+    },
+    {
+      "name": "thepihut-tutorials",
+      "homepage": "https://thepihut.com/",
+      "feed_url": "https://thepihut.com/blogs/raspberry-pi-tutorials.atom",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 30,
+      "publication_frequency": "monthly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Assembly Guide for OneNineDesign Touch Display 2 Case",
+        "Qwiic Hub Guide",
+        "Baguette C3 User Guide",
+        "Vibe Coding the Baguette S3: Web Server GPIO and LED Control",
+        "ProtoMate/PerfMate for Pico Assembly Guide"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Tienda UK RPi. Feed específico de TUTORIALES — Touch Display, Qwiic Hub, Baguette C3 (clones Pico). 100% paso-a-paso. INGLÉS. WIN."
+    },
+    {
+      "name": "4tronix",
+      "homepage": "https://4tronix.co.uk/",
+      "feed_url": "https://4tronix.co.uk/blog/?feed=rss2",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "sparse",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "InfraRed Control",
+        "BitBot PRO",
+        "LuminAero Speed",
+        "AstroHub Range",
+        "EggBit – Wearable Microbit"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Marca UK robots educativos (BitBot, AstroHub). Blog técnico micro:bit/Pico. Inglés."
+    },
+    {
+      "name": "coolcomponents",
+      "homepage": "https://coolcomponents.co.uk/",
+      "feed_url": "https://coolcomponents.co.uk/blogs/news.atom",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 30,
+      "publication_frequency": "sparse",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Unleash the Power of Raspberry Pi 5 with Essential Accessories",
+        "Christmas 2023 Postage Dates & Opening Information",
+        "A Closer Look at the Micro:bit Smart Agriculture Kit",
+        "Micro:Bit Says V2 (Joystick Edition)",
+        "A closer look at the micro:bit Smart Health Kit."
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Tienda UK. Blog con guías de producto + accesorios RPi 5. Frecuencia media. Inglés."
+    },
+    {
+      "name": "pimoroni-blog",
+      "homepage": "https://shop.pimoroni.com/",
+      "feed_url": "https://blog.pimoroni.com/feed",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 15,
+      "publication_frequency": "sparse",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Look Mum No Computer at Eurovision",
+        "Build Your Cool Inky Impression Project and Save 25%",
+        "Grab a MicroPython Birthday Discount!",
+        "Tiny Screens, Big Ideas! Show Us Your Badgeware Projects.",
+        "Plundered!"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Pimoroni — marca UK ICÓNICA en RPi/Pico maker. Blog con proyectos comunidad (Inky Impression, badgeware). Inglés. WIN."
+    },
+    {
+      "name": "magpi",
+      "homepage": "https://magpi.raspberrypi.com/",
+      "feed_url": "https://magpi.raspberrypi.com/feed",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 12,
+      "publication_frequency": "weekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "PiPower 5",
+        "ROOT Observer: a privacy-focused security camera",
+        "8BitDo 64 Controller review",
+        "Paper console",
+        "Take Back Your Cloud in Raspberry Pi Official Magazine 165"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Revista oficial RPi (MagPi #165). Proyectos comunidad (PiPower 5, ROOT Observer). Inglés. WIN."
+    },
+    {
+      "name": "hackspace-mag",
+      "homepage": "https://hackspace.raspberrypi.com/",
+      "feed_url": "https://hackspace.raspberrypi.com/articles.rss",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 12,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "PiPower 5",
+        "ROOT Observer: a privacy-focused security camera",
+        "8BitDo 64 Controller review"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "DUPLICADO de magpi — mismo backend desde 2025 (HackSpace fusionado con MagPi). Saltarse para evitar dup."
+    },
+    {
+      "name": "raspberrypi-com",
+      "homepage": "https://www.raspberrypi.com/",
+      "feed_url": "https://www.raspberrypi.com/news/feed/",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "weekly",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "OVCS: Raspberry Pi–powered electric car",
+        "Powering coexistence: how Raspberry Pi technology is helping WWF protect wildlife and communities in Pakistan",
+        "Search our documentation by meaning, not keywords",
+        "Maker Monday: Some of the best RP2350-based boards",
+        "Raspberry Pi Connect: Device tags, required 2FA, and a mobile keyboard"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Blog oficial Raspberry Pi Foundation. Proyectos destacados (OVCS, WWF). Inglés. CORE."
+    },
+    {
+      "name": "bigmessowires",
+      "homepage": "https://www.bigmessowires.com/",
+      "feed_url": "https://www.bigmessowires.com/feed/",
+      "language": "en",
+      "country": "US",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 6,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Now Introducing the BMOW Floppy Encabulator",
+        "Bulk Lots of DB-19s for Sale!",
+        "Canada Post Strike and Shipping Changes"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "US (no EU) y muy nicho retro-Mac (Floppy Encabulator, DB-19, ADB-USB). No calza scope."
+    },
+    {
+      "name": "tindie-blog",
+      "homepage": "https://blog.tindie.com/",
+      "feed_url": "https://blog.tindie.com/feed/",
+      "language": "en",
+      "country": "US",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "news",
+      "sample_titles_recent": [
+        "May 12th Update",
+        "More on the transition",
+        "Back up and running!"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "US-based. Blog corto, sin tutoriales paso-a-paso (mayormente updates marketplace)."
+    },
+    {
+      "name": "switchdoc",
+      "homepage": "https://www.switchdoc.com/",
+      "feed_url": "https://www.switchdoc.com/feed/",
+      "language": "en",
+      "country": "US",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Discussion of RSSI, SNR and NOISE Values from WeatherRack2",
+        "Grove Mini Pro LP Schematics Posted",
+        "Grove Mini Pro Plus Schematics Posted"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "US (no EU). WeatherRack DIY pero nicho propio."
+    },
+    {
+      "name": "tronixstuff",
+      "homepage": "https://tronixstuff.com/",
+      "feed_url": "https://tronixstuff.com/feed/",
+      "language": "en",
+      "country": "AU",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "weekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Tutorial – Using Long Range 315MHz RF Wireless Transceivers with Arduino",
+        "Project – Fun with Arduino-controlled Traffic Lights",
+        "Tutorial – TCA9548A 1-to-8 I2C Multiplexer Breakout with Arduino",
+        "Hewlett-Packard 5082-7415 LED Display from 1976",
+        "Australian Electronics – David Jones interviews Colin Mitchell"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "AU pero alta calidad — TCA9548A I2C multiplexer, 315MHz wireless Arduino. INGLÉS. Aceptable como bonus (no estricto EU pero similar mindset)."
+    },
+    {
+      "name": "voltlog",
+      "homepage": "https://www.voltlog.com/",
+      "feed_url": "https://www.voltlog.com/feed/",
+      "language": "en",
+      "country": "RO",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Is the Rigol DG822 Pro the Best Function Generator for Your Money?  | Voltlog #490",
+        "The Ultimate Handheld Thermal Camera Kaiweets KTI-W02 | Voltlog #489",
+        "InTheMail | Voltlog #488",
+        "Victron BlueSolar MPPT Repair  | Voltlog #487",
+        "Where is the ADC? RIGOL DM858 Teardown | Voltlog #486"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Voltlog — youtuber RUMANO en INGLÉS. Reviews instrumentos (Rigol, MPPT, thermal cams). Calidad alta. Es EU."
+    },
+    {
+      "name": "eevblog",
+      "homepage": "https://www.eevblog.com/",
+      "feed_url": "https://www.eevblog.com/feed/",
+      "language": "en",
+      "country": "AU",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 50,
+      "publication_frequency": "biweekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "EEVblog 1748 – Dumpster iMac BONANZA!",
+        "EEVblog 1746 – Schottky vs PN Diodes & Measurement Traps",
+        "EEVblog 1746 – The 555 is 55 Years Old!",
+        "Norwest Business Park Internet is DOWN FOR 2 WEEKS!",
+        "EEVblog 1745 – How LOUD is the Continuity Tester"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "EEVblog — Dave Jones AU, en INGLÉS. Legendario en electrónica práctica. 555 timer 55 años, mediciones. Bonus AU (no EU pero referencia obligada)."
+    },
+    {
+      "name": "edn",
+      "homepage": "https://www.edn.com/",
+      "feed_url": "https://www.edn.com/feed/",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Sensors Converge 2026: Smarter and lower-power sensors",
+        "GPUs: A high-throughput architecture confronting a workload shift",
+        "4/20mA to 0/20mA loop current converter for grounded loads",
+        "Smart hygrometers: Still largely useful even without integrated visual monitors",
+        "How many attenuations can you get from 10 resistor networks?"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Electronic Design News — UK/EU coverage. Sensors Converge, ADC notes, application notes. INGLÉS. Más técnico que tutorial puro."
+    },
+    {
+      "name": "embedded-com",
+      "homepage": "https://www.embedded.com/",
+      "feed_url": "https://www.embedded.com/feed/",
+      "language": "en",
+      "country": "UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "news",
+      "sample_titles_recent": [
+        "Synaptics, Google Showcase Coralboard Edge AI Platform",
+        "Mikroe Expands Click Board Portfolio with Ethernet IoT Solution",
+        "Firmware Testing, LPWAN for IIoT, MIPI's Launch of Physical AI BoF: Embedded Week Insights",
+        "NXP, Quanta Simplify Deployment of Zonal Vehicle Architectures",
+        "SiFive Upgrades P500 RISC-V IP Cores"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Embedded.com — Synaptics+Google Coralboard, NXP, RISC-V cores. Más news que tutorial. INGLÉS."
+    },
+    {
+      "name": "play-zone-ch",
+      "homepage": "https://www.play-zone.ch/",
+      "feed_url": "https://blog.play-zone.ch/feed/",
+      "language": "de",
+      "country": "CH",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Neu in Basel – Professionelle Workshops von Prowos",
+        "It’s Pi-Day: Der Raspberry Pi 3 Model B+ ist da",
+        "Das Retroflag Nespi Case"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Tienda CH RPi. Frecuencia BAJA (últimas notas son Pi 3 model B+ era, parece semi-abandonado). Requiere traducción."
+    },
+    {
+      "name": "bastelgarage-ch",
+      "homepage": "https://www.bastelgarage.ch/",
+      "feed_url": "https://www.bastelgarage.ch/blog/feed/",
+      "language": "de",
+      "country": "CH",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "sparse",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Bastelgarage an der Fantasy Basel 2026 – 3D-Druck, Laser & Cosplay live erleben",
+        "Gesünder rauchen? Meine Vaporizer Story als Alternative zur Zigarette",
+        "Raspberry Pi 5 von SD auf M.2 SSD klonen",
+        "Ich brauche eine Rechnung? Kein Problem!",
+        "Multiboard.io – mein Platten generator"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "Tienda CH maker — RPi 5 M.2 clone, Multiboard.io, Fantasy Basel events. Mix entre evento y tutorial. Requiere traducción."
+    },
+    {
+      "name": "botland-pl",
+      "homepage": "https://botland.com.pl/",
+      "feed_url": "https://botland.com.pl/blog/feed/",
+      "language": "pl",
+      "country": "PL",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "Klawiatury bezprzewodowe – jaką wybrać?",
+        "Na jakiej wysokości zamontować czujnik czadu?",
+        "Smart Home – co to jest i jak z niego skorzystać?"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "Polaco — Routine C en Opus puede traducir pero calidad de español a partir de polaco es peor que de inglés. SOLO si Pablo necesita relleno extremo."
+    },
+    {
+      "name": "luis-llamas",
+      "homepage": "https://www.luisllamas.es/",
+      "feed_url": "https://www.luisllamas.es/feed/",
+      "language": "es",
+      "country": "ES",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Entendiendo el posicionamiento en CSS",
+        "Cómo usar colores en CSS",
+        "Cómo usar bordes en CSS"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "ES nativo (gran ventaja: NO necesita traducción) PERO últimas entries son CSS no electrónica. Blog pivotó. Mantener en watch-list por archivo histórico Arduino."
+    },
+    {
+      "name": "hwlibre",
+      "homepage": "https://www.hwlibre.com/",
+      "feed_url": "https://www.hwlibre.com/feed/",
+      "language": "es",
+      "country": "ES",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "mixed",
+      "sample_titles_recent": [
+        "La tortuga robótica con IA que detecta contaminación bajo el agua con un 96% de precisión",
+        "La tortuga robótica con IA que detecta contaminación bajo el agua",
+        "Sensores de alarma en el punto de mira: robos, mercado y nuevos modelos de seguridad",
+        "Intel 18A: características, promesas y su impacto en la IA",
+        "Impresión 3D en las escuelas: formación docente y nuevos proyectos en el aula"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "ES nativo — robot tortuga IA, Intel 18A, impresión 3D educativa. Mix electrónica+industria. SIN traducción necesaria. WIN."
+    },
+    {
+      "name": "programarfacil",
+      "homepage": "https://programarfacil.com/",
+      "feed_url": "https://programarfacil.com/feed/",
+      "language": "es",
+      "country": "ES",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 80,
+      "publication_frequency": "biweekly",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Toldos inteligentes (Sin Nube, Sin Home Assistant y por Menos de 50€)",
+        "Interruptor Zigbee: El Guardaespaldas que tu Red de Malla Necesita",
+        "Home Assistant 2026.4: para humanos (free IA)",
+        "UniFi en casa: adiós al router barato crea una red profesional",
+        "Home Assistant 2026.3"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "ES nativo, 80 entries. Toldos inteligentes ZigBee, Home Assistant, UniFi casa. Domótica DIY ALTA calidad. SIN traducción. WIN."
+    },
+    {
+      "name": "aprendiendo-arduino",
+      "homepage": "https://aprendiendoarduino.wordpress.com/",
+      "feed_url": "https://aprendiendoarduino.wordpress.com/feed/",
+      "language": "es",
+      "country": "ES",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 5,
+      "publication_frequency": "unknown",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Proyectos IoT",
+        "Más allá del kit: MQTT",
+        "Thingspeak , KidsIoT y IFTTT con Micro:bit"
+      ],
+      "quality_assessment": "low",
+      "qualifies": false,
+      "notes": "ES nativo Wordpress, solo 5 entries, baja frecuencia. Útil archivo (MQTT, IoT, micro:bit) pero parece pausado."
+    },
+    {
+      "name": "hackster-io",
+      "homepage": "https://www.hackster.io/",
+      "feed_url": "https://www.hackster.io/news.rss",
+      "language": "en",
+      "country": "US/UK",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 25,
+      "publication_frequency": "daily",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "This DIY Portable System Cleans Water Efficiently",
+        "Why Did They Make a Web Browser for AI Agents?",
+        "The AkiraConsole, Powered by AkiraOS, Aims to Be Everything From a Security Tool to a Games Machine",
+        "A Sweat Sensor Built to Last",
+        "AI Rings Are Breaking Down Communication Barriers"
+      ],
+      "quality_assessment": "high",
+      "qualifies": true,
+      "notes": "Hackster.io community — US-based pero MUCHOS makers EU/UK publican. DIY portable water cleaner, AI rings, sweat sensor. INGLÉS. WIN."
+    },
+    {
+      "name": "lcsc-blog",
+      "homepage": "https://www.lcsc.com/",
+      "feed_url": "https://www.lcsc.com/blog/feed",
+      "language": "en",
+      "country": "CN/EU",
+      "verified_rss_status": 200,
+      "verified_rss_entries": 10,
+      "publication_frequency": "daily",
+      "content_type": "tutorials",
+      "sample_titles_recent": [
+        "Hall Effect vs Reed Switch: Technical Selection Guide for Engineers",
+        "Circuit Calculator Basics: Voltage, Current & Resistance",
+        "How to Select the Right Temperature Sensor for Embedded and Industrial Designs",
+        "How to Select a MOSFET for Motor Control",
+        "Front Panel Connectors Setup Explained Step by Step"
+      ],
+      "quality_assessment": "medium",
+      "qualifies": true,
+      "notes": "LCSC (CN pero distribuye EU). Blog técnico INGLÉS — Hall vs Reed, MOSFET para motor, sensores temp. Calidad ingeniería alta."
+    }
+  ]
+}
