@@ -149,6 +149,51 @@ Ejemplo:
 > Si en el tutorial original usan "Sparkfun RedBoard", el Arduino Uno
 > compatible cumple la misma función a la mitad del precio.
 
+### 5. Sección "Recursos y atribución" (NUEVA — OBLIGATORIA)
+Pablo 20-may-2026 audit: cada tutorial debe terminar con una sección
+explícita de atribución al original + recursos descargables. Esto:
+- **Reconoce legalmente** al autor original (fair use editorial)
+- **Genera confianza** en el lector (transparencia)
+- **Da downloadables concretos** en un solo lugar
+- **Cierra el tutorial** de forma profesional
+
+Formato mínimo (un header `## Recursos` + bullets):
+
+```markdown
+## Recursos
+
+- **Tutorial original** (inglés/alemán/etc.): [Título del original](URL del source_url)
+- **Repositorio GitHub**: <link si hay>
+- **Archivos descargables**: <STL/Gerber/library/etc si hay>
+- **Documentación adicional**: <datasheet, library docs, etc.>
+```
+
+Reglas:
+- La sección va SIEMPRE AL FINAL del body, después de "Personalización para Chile"
+- Si NO hay GitHub/STL/etc, omitir esa línea (no inventar)
+- El link al **tutorial original es OBLIGATORIO** (usar `source_url` del input)
+- Usar el verbo "inspirado en" o "basado en" — NO "traducción de" ni "copia de"
+  porque NO es traducción literal (ya re-angulamos)
+- Frase de cierre opcional pero recomendada: "Versión chilena con
+  componentes en stock local."
+
+Ejemplo concreto:
+
+```markdown
+## Recursos
+
+- **Tutorial original**: [ESP32 Lifecycle Manager for TOTAL beginners](https://www.studiopieters.nl/esp32-lifecycle-manager-for-total-beginners)
+- **Repositorio GitHub**: [esp32-lifecycle-manager](https://github.com/AchimPieters/esp32-lifecycle-manager)
+- **Framework HomeKit ESP32**: [esp32-homekit](https://github.com/AchimPieters/esp32-homekit)
+
+Versión chilena con componentes en stock local en MechatronicStore.
+```
+
+**Por qué importa**: sin esta sección, el lector no sabe de dónde vino
+el contenido. Google + AI search detectan duplicate content y nos
+penalizan si no atribuimos. Con atribución explícita, Google entiende
+que es derivative work transformado (no copy-paste).
+
 ## ✅ Checklist anti-plagio (auto-evaluación)
 
 Antes de incluir un tutorial en el output, verificá MENTALMENTE estas

@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-05-20T19:58:25.947978+00:00",
+  "metrics": {
+    "drafts_pending": 26,
+    "published_24h": 6,
+    "ranked_stuck": 3,
+    "rejected_ratio_48h": 0.9,
+    "published_48h": 19,
+    "rejected_48h": 171,
+    "sources_active": 42,
+    "sources_silent_48h": 0,
+    "sources_silent_pct": 0.0,
+    "editorial_rejected_48h": 0,
+    "editorial_rejected_ratio": 0.0,
+    "counts_by_status": {
+      "draft": 26,
+      "published": 23,
+      "ranked": 3,
+      "rejected": 214
+    }
+  },
+  "alerts": [],
+  "status": "ok"
+}

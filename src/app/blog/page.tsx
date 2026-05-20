@@ -4,12 +4,47 @@ import { getPublishedTutorials } from "@/lib/db/queries";
 import HeroDecor from "./components/HeroDecor";
 import RevealOnScroll from "./components/RevealOnScroll";
 
-export const metadata: Metadata = {
-  title: "Inicio",
-  description:
-    "Tutoriales paso a paso de Arduino, ESP32, Raspberry Pi, robótica e impresión 3D. Código probado, esquemas claros y proyectos completos para makers.",
-  alternates: { canonical: "https://www.mechatronicstore.cl/blog" },
-};
+// Pablo 20-may-2026 audit SEO: home tenía 0 OG, 0 Twitter, 0 JSON-LD →
+// share en redes salía sin preview. Fix con generateMetadata async que
+// usa el hero del último tutorial como og:image (siempre actual y
+// representativo) + JSON-LD WebSite schema.
+const SITE_BASE = "https://www.mechatronicstore.cl";
+const FALLBACK_OG_IMAGE = `${SITE_BASE}/blog/logo-mechastore-blog.svg`;
+const DESCRIPTION =
+  "Tutoriales paso a paso de Arduino, ESP32, Raspberry Pi, robótica e impresión 3D. Código probado, esquemas claros y proyectos completos para makers.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  // Intentar usar hero del último tutorial como OG image dinámico
+  let ogImage = FALLBACK_OG_IMAGE;
+  try {
+    const recent = await getPublishedTutorials(1);
+    if (recent[0]?.hero_image_url) {
+      ogImage = recent[0].hero_image_url;
+    }
+  } catch {
+    // si DB falla, fallback
+  }
+  return {
+    title: "Inicio",
+    description: DESCRIPTION,
+    alternates: { canonical: `${SITE_BASE}/blog` },
+    openGraph: {
+      title: "Blog MechatronicStore — Tutoriales de electrónica y mecatrónica",
+      description: DESCRIPTION,
+      url: `${SITE_BASE}/blog`,
+      type: "website",
+      siteName: "MechatronicStore Blog",
+      locale: "es_CL",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "Blog MechatronicStore" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Blog MechatronicStore",
+      description: DESCRIPTION,
+      images: [ogImage],
+    },
+  };
+}
 
 export const revalidate = 600;
 
@@ -46,6 +81,31 @@ function formatPublishedDate(iso: string): string {
 
 export default async function BlogHomePage() {
   const tutorials = await getPublishedTutorials(24);
+
+  // JSON-LD WebSite + Blog schema (Pablo 20-may-2026 audit SEO)
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${SITE_BASE}/blog#blog`,
+    name: "Blog MechatronicStore",
+    description: DESCRIPTION,
+    url: `${SITE_BASE}/blog`,
+    inLanguage: "es-CL",
+    publisher: {
+      "@type": "Organization",
+      name: "MechatronicStore",
+      url: SITE_BASE,
+      logo: { "@type": "ImageObject", url: `${SITE_BASE}/blog/logo-mechastore-blog.svg` },
+    },
+    blogPost: tutorials.slice(0, 12).map((t) => ({
+      "@type": "BlogPosting",
+      headline: t.title_es,
+      url: `${SITE_BASE}/blog/${t.slug}`,
+      image: t.hero_image_url || undefined,
+      datePublished: t.published_at || undefined,
+      inLanguage: "es-CL",
+    })),
+  };
 
   if (tutorials.length === 0) {
     return (
@@ -101,6 +161,10 @@ export default async function BlogHomePage() {
 
   return (
     <div className="fade-in-up">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
       {/* Masthead con decoración SVG de fondo.
           Pablo 18-may-2026 v4: copy reenfocado al PROPÓSITO REAL del blog
           (educar/compartir conocimiento técnico) y no a la logística de

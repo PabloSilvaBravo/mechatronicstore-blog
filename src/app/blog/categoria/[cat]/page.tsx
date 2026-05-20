@@ -48,21 +48,41 @@ const CATEGORIES: Record<
   otros: { label: "Otros", description: "Otros tutoriales", icon: "⚙️" },
 };
 
+// Pablo 20-may-2026 audit SEO: categoría tenía OG básico sin og_image y
+// sin JSON-LD. Fix: usar hero del primer tutorial de la categoría como
+// og:image dinámico + agregar CollectionPage + ItemList schema.
+const FALLBACK_OG_IMAGE = `${BASE_URL}/blog/logo-mechastore-blog.svg`;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { cat } = await params;
   const meta = CATEGORIES[cat];
   if (!meta) return { title: "Categoría no encontrada" };
   const url = `${BASE_URL}/blog/categoria/${cat}`;
+  // og:image dinámico — hero del primer tutorial publicado en la categoría
+  let ogImage = FALLBACK_OG_IMAGE;
+  try {
+    const recent = await getPublishedTutorials(1, cat);
+    if (recent[0]?.hero_image_url) ogImage = recent[0].hero_image_url;
+  } catch {}
+  const desc = `${meta.description}. Tutoriales paso a paso, código probado y materiales en stock en Chile.`;
   return {
     title: `Tutoriales de ${meta.label}`,
-    description: meta.description,
+    description: desc,
     alternates: { canonical: url },
     openGraph: {
-      title: `Tutoriales de ${meta.label}`,
+      title: `Tutoriales de ${meta.label} · Blog MechatronicStore`,
+      description: desc,
       url,
       type: "website",
       siteName: "MechatronicStore Blog",
       locale: "es_CL",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `Tutoriales ${meta.label}` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Tutoriales de ${meta.label}`,
+      description: desc,
+      images: [ogImage],
     },
   };
 }
@@ -76,8 +96,52 @@ export default async function CategoryPage({ params }: Props) {
 
   const tutorials = await getPublishedTutorials(50, cat);
 
+  // JSON-LD CollectionPage + Breadcrumb (Pablo 20-may-2026 audit SEO)
+  const url = `${BASE_URL}/blog/categoria/${cat}`;
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${url}#collection`,
+    name: `Tutoriales de ${meta.label}`,
+    description: meta.description,
+    url,
+    inLanguage: "es-CL",
+    isPartOf: {
+      "@type": "Blog",
+      "@id": `${BASE_URL}/blog#blog`,
+      name: "Blog MechatronicStore",
+    },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: tutorials.length,
+      itemListElement: tutorials.slice(0, 20).map((t, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${BASE_URL}/blog/${t.slug}`,
+        name: t.title_es,
+      })),
+    },
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: `${BASE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: meta.label, item: url },
+    ],
+  };
+
   return (
     <div className="fade-in-up">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"

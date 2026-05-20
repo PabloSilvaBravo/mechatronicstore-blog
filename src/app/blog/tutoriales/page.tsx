@@ -42,12 +42,41 @@ function formatPublishedDate(iso: string): string {
   return `${d} ${months[m - 1]} ${y}`;
 }
 
-export const metadata: Metadata = {
-  title: "Todos los tutoriales",
-  description:
-    "Catálogo completo de tutoriales del Blog MechatronicStore. Búsqueda y filtrado por categoría.",
-  alternates: { canonical: "https://www.mechatronicstore.cl/blog/tutoriales" },
-};
+// Pablo 20-may-2026 audit SEO: agregar OG + Twitter con hero del primer
+// tutorial publicado.
+const SITE_BASE = "https://www.mechatronicstore.cl";
+const FALLBACK_OG_IMAGE = `${SITE_BASE}/blog/logo-mechastore-blog.svg`;
+const PAGE_DESCRIPTION =
+  "Catálogo completo de tutoriales del Blog MechatronicStore. Búsqueda y filtrado por categoría.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  let ogImage = FALLBACK_OG_IMAGE;
+  try {
+    const recent = await getPublishedTutorials(1);
+    if (recent[0]?.hero_image_url) ogImage = recent[0].hero_image_url;
+  } catch {}
+  const url = `${SITE_BASE}/blog/tutoriales`;
+  return {
+    title: "Todos los tutoriales",
+    description: PAGE_DESCRIPTION,
+    alternates: { canonical: url },
+    openGraph: {
+      title: "Todos los tutoriales · Blog MechatronicStore",
+      description: PAGE_DESCRIPTION,
+      url,
+      type: "website",
+      siteName: "MechatronicStore Blog",
+      locale: "es_CL",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "Catálogo de tutoriales" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Todos los tutoriales · Blog MechatronicStore",
+      description: PAGE_DESCRIPTION,
+      images: [ogImage],
+    },
+  };
+}
 
 export const revalidate = 600;
 

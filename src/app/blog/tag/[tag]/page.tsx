@@ -54,6 +54,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url,
       siteName: "MechatronicStore Blog",
       locale: "es_CL",
+      // Pablo 20-may-2026 audit SEO: og:image dinámico — hero del primer
+      // tutorial del tag.
+      images: items[0]?.hero_image_url
+        ? [{ url: items[0].hero_image_url, width: 1200, height: 630, alt: `#${decoded}` }]
+        : [{ url: `${BASE_URL}/blog/logo-mechastore-blog.svg`, width: 1200, height: 630, alt: "Blog MechatronicStore" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `#${decoded}`,
+      description: `Tutoriales sobre ${label}`,
+      images: items[0]?.hero_image_url
+        ? [items[0].hero_image_url]
+        : [`${BASE_URL}/blog/logo-mechastore-blog.svg`],
     },
   };
 }
