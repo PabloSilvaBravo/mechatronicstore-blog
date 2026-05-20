@@ -118,6 +118,107 @@ def has_materials_list(body: str) -> bool:
     return bool(_RE_MATERIALS_KEYWORDS.search(body))
 
 
+# Pablo 20-may-2026 editorial overhaul: detectar downloadables concretos
+# para premiar valor añadido. Tutoriales con GitHub repo + STL + library
+# generan confianza editorial y son MENOS plagiables (downloads son
+# trazables al original, lo que nos protege legal y técnicamente).
+
+_RE_GITHUB = re.compile(r"github\.com/[\w-]+/[\w-]+", re.IGNORECASE)
+_RE_STL = re.compile(r"\.stl\b|thingiverse\.com|printables\.com|prusaprinters\.org",
+                     re.IGNORECASE)
+_RE_CODE_DL = re.compile(r"\.ino\b|\.cpp\b|\.py\b|/sketch\b|\.h\b\s+download",
+                          re.IGNORECASE)
+_RE_PCB = re.compile(r"\.kicad|gerber|\.zip[^\"<]*pcb|easyeda\.com|jlcpcb\.com",
+                      re.IGNORECASE)
+_RE_LIBRARY = re.compile(
+    r"arduino-libraries/|adafruit-circuitpython|platformio\.org/lib|"
+    r"pip\s+install\s+\w|library\.json|library\.properties",
+    re.IGNORECASE,
+)
+_RE_PDF_SCHEMA = re.compile(
+    r"\.pdf[\"\s]*[^>]*(schema|schematic|datasheet|wiring|circuit)",
+    re.IGNORECASE,
+)
+
+
+def detect_downloadables(body: str) -> dict:
+    """Detecta links a archivos descargables que dan valor concreto al
+    lector. Devuelve dict con contadores. Total >= 1 = tutorial decente,
+    >= 3 = excelente.
+
+    Pablo 20-may-2026: criterio editorial — un tutorial sin nada que
+    descargar es solo texto. Con GitHub + STL + library, el lector se
+    va con algo tangible.
+    """
+    if not body:
+        return {
+            "github_repos": 0, "stl_files": 0, "code_files": 0,
+            "pcb_files": 0, "libraries": 0, "pdf_schemas": 0,
+            "total_distinct": 0,
+        }
+    return {
+        "github_repos": len(set(_RE_GITHUB.findall(body))),
+        "stl_files": 1 if _RE_STL.search(body) else 0,
+        "code_files": 1 if _RE_CODE_DL.search(body) else 0,
+        "pcb_files": 1 if _RE_PCB.search(body) else 0,
+        "libraries": 1 if _RE_LIBRARY.search(body) else 0,
+        "pdf_schemas": 1 if _RE_PDF_SCHEMA.search(body) else 0,
+        "total_distinct": sum([
+            min(len(set(_RE_GITHUB.findall(body))), 3),  # cap GitHub a 3
+            1 if _RE_STL.search(body) else 0,
+            1 if _RE_CODE_DL.search(body) else 0,
+            1 if _RE_PCB.search(body) else 0,
+            1 if _RE_LIBRARY.search(body) else 0,
+            1 if _RE_PDF_SCHEMA.search(body) else 0,
+        ]),
+    }
+
+
+def detect_language(body: str, sample_chars: int = 500) -> str:
+    """Heurística simple para detectar idioma del body. Devuelve uno de:
+    'es', 'en', 'de', 'fr', 'pt', 'it', 'other'.
+
+    Pablo 20-may-2026: necesitamos saber el idioma para aplicar threshold
+    diferenciado (es=0.75 estricto, otros=0.68 estándar) y editorial rules.
+    """
+    if not body:
+        return "other"
+    sample = body[:sample_chars].lower()
+    # Quitar HTML tags básico para no confundir palabras técnicas
+    sample = re.sub(r"<[^>]+>", " ", sample)
+    sample = re.sub(r"[^\w\sáéíóúñç\-]", " ", sample)
+    words = set(sample.split())
+
+    # Keywords markers por idioma (palabras comunes que NO suelen ser código)
+    markers = {
+        "es": {"el", "la", "que", "para", "con", "este", "como", "una",
+               "los", "las", "más", "pero", "tutorial", "código", "puedes",
+               "tienes", "vamos", "necesitas", "después"},
+        "en": {"the", "and", "you", "for", "with", "this", "how", "code",
+               "tutorial", "step", "will", "need", "use", "from", "your",
+               "have", "make", "into", "what"},
+        "de": {"der", "die", "und", "ist", "den", "mit", "für", "ein",
+               "auf", "wir", "sie", "wird", "auch", "ihre", "nicht",
+               "wenn", "dann", "kann", "schritt"},
+        "fr": {"le", "la", "les", "des", "pour", "avec", "vous", "cette",
+               "comment", "code", "tutoriel", "étape", "votre", "est",
+               "dans", "sur", "que", "pas"},
+        "pt": {"para", "com", "este", "como", "uma", "que", "você", "não",
+               "mas", "pelo", "isso", "tutorial", "código", "passo"},
+        "it": {"per", "con", "questo", "come", "una", "che", "tu", "non",
+               "ma", "del", "tutorial", "codice", "passo", "primo"},
+    }
+    counts = {lang: len(words & kw) for lang, kw in markers.items()}
+    # Bonus español si hay vocales acentuadas
+    if any(c in sample for c in "áéíóúñ"):
+        counts["es"] += 3
+
+    best_lang = max(counts, key=counts.get)
+    if counts[best_lang] < 3:
+        return "other"
+    return best_lang
+
+
 def matches_excluded_keyword(body: str, excluded: list[str]) -> str | None:
     """Si alguna keyword del body matchea, devuelve la keyword. None si no."""
     if not body or not excluded:

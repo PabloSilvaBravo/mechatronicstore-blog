@@ -50,7 +50,46 @@ def main():
         if "T" in translated_at else translated_at
     )
 
-    stats = {"persisted_published": 0, "missing_tutorial": 0, "errors": 0}
+    stats = {
+        "persisted_published": 0,
+        "missing_tutorial": 0,
+        "errors": 0,
+        "editorial_warning": 0,
+        "editorial_blocked": 0,
+    }
+
+    # Pablo 20-may-2026: checklist editorial pre-publish.
+    # Cada tutorial debe pasar ≥3 de 5 checks para ser publicado. Si pasa
+    # 2 o menos, queda en status='editorial_review' para revisión manual.
+    def editorial_score(tr):
+        body = tr.get("body_es") or ""
+        checks = {
+            # 1. ¿Body tiene link a downloadable concreto?
+            "has_downloadable": any(p in body.lower() for p in [
+                "github.com/", ".stl", "thingiverse", "printables.com",
+                ".ino)", ".cpp)", ".py)", "library", "biblioteca",
+                ".kicad", "gerber",
+            ]),
+            # 2. ¿Body tiene sección "Personalización para Chile"?
+            "has_chile_section": any(p in body.lower() for p in [
+                "personalización para chile", "personalizacion para chile",
+                "en chile podés", "en chile podes", "en chile puedes",
+                "mechatronicstore", "catálogo mechatronic", "catalogo mechatronic",
+            ]),
+            # 3. ¿Body tiene sección "Variantes y mejoras"?
+            "has_variants_section": any(p in body.lower() for p in [
+                "variantes y mejoras", "variantes y mejora",
+                "extender el proyecto", "para ir más allá",
+                "ideas para ampliar", "próximos pasos",
+                "## variantes", "## mejoras",
+            ]),
+            # 4. ¿Tiene linked_products ≥2?
+            "has_linked_products": len(tr.get("linked_products") or []) >= 2,
+            # 5. ¿Auto-checklist editorial sin warning?
+            "editorial_self_ok": not tr.get("editorial_quality_warning", False),
+        }
+        passed = sum(checks.values())
+        return passed, checks
 
     for tr in translations:
         tid = tr.get("id")
@@ -75,10 +114,29 @@ def main():
             if hero_url:
                 print(f"    ✓ recovered: {hero_url[:80]}")
 
+        # Pablo 20-may-2026: aplicar checklist editorial. Si pasa < 3 de 5,
+        # rejected con razón editorial (revisar manualmente).
+        passed, checks = editorial_score(tr)
+        if passed >= 3:
+            target_status = "published"
+            editorial_reason = None
+            if passed == 3:
+                stats["editorial_warning"] += 1
+                print(f"  ⚠️ editorial ok-marginal ({passed}/5): {tr.get('title_es','')[:50]}")
+                print(f"      checks: {checks}")
+        else:
+            target_status = "rejected"
+            failed = [k for k, v in checks.items() if not v]
+            editorial_reason = f"editorial:passed_{passed}/5;failed:{','.join(failed)[:100]}"
+            stats["editorial_blocked"] += 1
+            print(f"  ✗ editorial BLOCKED ({passed}/5): {tr.get('title_es','')[:50]}")
+            print(f"      checks failed: {failed}")
+
         try:
             db.execute(
-                """UPDATE tutorials
-                   SET status = 'published',
+                f"""UPDATE tutorials
+                   SET status = '{target_status}',
+                       rejected_reason = COALESCE(?, rejected_reason),
                        slug = COALESCE(?, slug),
                        title_es = ?,
                        subtitle_es = ?,
@@ -100,6 +158,7 @@ def main():
                        updated_at = datetime('now')
                    WHERE id = ?""",
                 [
+                    editorial_reason,
                     tr.get("slug"),
                     tr.get("title_es"),
                     tr.get("subtitle_es"),
@@ -121,8 +180,9 @@ def main():
                     tid,
                 ],
             )
-            stats["persisted_published"] += 1
-            print(f"  ✓ {tr.get('title_es', '')[:60]}")
+            if target_status == "published":
+                stats["persisted_published"] += 1
+                print(f"  ✓ {tr.get('title_es', '')[:60]}")
         except Exception as e:
             stats["errors"] += 1
             print(f"  ✗ {tid}: {e}")
