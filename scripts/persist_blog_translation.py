@@ -87,6 +87,16 @@ def main():
             "has_linked_products": len(tr.get("linked_products") or []) >= 2,
             # 5. ¿Auto-checklist editorial sin warning?
             "editorial_self_ok": not tr.get("editorial_quality_warning", False),
+            # 6. ¿Tiene sección "Recursos" + link al original?
+            # Pablo 20-may-2026 fix: forzar atribución obligatoria
+            "has_attribution": (
+                ("## recursos" in body.lower()
+                 or "## fuente" in body.lower()
+                 or "tutorial original" in body.lower()
+                 or "basado en" in body.lower()
+                 or "inspirado en" in body.lower())
+                and "http" in body.lower()
+            ),
         }
         passed = sum(checks.values())
         return passed, checks
@@ -97,14 +107,30 @@ def main():
             continue
 
         existing = db.execute(
-            "SELECT id, status, source_url, hero_image_url FROM tutorials WHERE id = ?",
+            "SELECT id, status, source_url, hero_image_url, slug FROM tutorials WHERE id = ?",
             [tid],
         ).fetchone()
         if not existing:
             stats["missing_tutorial"] += 1
             continue
+        existing_status = existing[1]
         existing_source_url = existing[2]
         existing_hero = existing[3]
+        existing_slug = existing[4]
+
+        # Pablo 20-may-2026 audit: SLUGS ESTABLES.
+        # Bug detectado: Routine C re-procesa tutoriales ya publicados (caso
+        # edge: reset score → re-rank → re-translate) y reescribe el slug
+        # con uno distinto. Eso rompe links externos y desindexa en Google.
+        # Fix: si el tutorial YA tiene status='published' Y ya tiene slug,
+        # PRESERVAR el slug existente. Routine C puede reescribir el body
+        # pero NO el slug.
+        # Caso primera publicación (status='ranked' o 'translating'): usar
+        # slug nuevo del output.
+        if existing_status == "published" and existing_slug:
+            slug_to_use = existing_slug
+        else:
+            slug_to_use = tr.get("slug") or existing_slug
 
         # Hero image: prioridad output > existente > fallback fetch og:image
         hero_url = tr.get("hero_image_url") or existing_hero
@@ -117,19 +143,23 @@ def main():
         # Pablo 20-may-2026: aplicar checklist editorial. Si pasa < 3 de 5,
         # rejected con razón editorial (revisar manualmente).
         passed, checks = editorial_score(tr)
-        if passed >= 3:
+        # Pablo 20-may-2026: ahora son 6 checks. Threshold ≥4 para publicar
+        # (era ≥3 de 5). Margen un poco más estricto pero alineado con la
+        # filosofía editorial "sitio de referencia, no copia".
+        total_checks = len(checks)
+        if passed >= 4:
             target_status = "published"
             editorial_reason = None
-            if passed == 3:
+            if passed == 4:
                 stats["editorial_warning"] += 1
-                print(f"  ⚠️ editorial ok-marginal ({passed}/5): {tr.get('title_es','')[:50]}")
+                print(f"  ⚠️ editorial ok-marginal ({passed}/{total_checks}): {tr.get('title_es','')[:50]}")
                 print(f"      checks: {checks}")
         else:
             target_status = "rejected"
             failed = [k for k, v in checks.items() if not v]
-            editorial_reason = f"editorial:passed_{passed}/5;failed:{','.join(failed)[:100]}"
+            editorial_reason = f"editorial:passed_{passed}/{total_checks};failed:{','.join(failed)[:120]}"
             stats["editorial_blocked"] += 1
-            print(f"  ✗ editorial BLOCKED ({passed}/5): {tr.get('title_es','')[:50]}")
+            print(f"  ✗ editorial BLOCKED ({passed}/{total_checks}): {tr.get('title_es','')[:50]}")
             print(f"      checks failed: {failed}")
 
         try:
@@ -159,7 +189,7 @@ def main():
                    WHERE id = ?""",
                 [
                     editorial_reason,
-                    tr.get("slug"),
+                    slug_to_use,
                     tr.get("title_es"),
                     tr.get("subtitle_es"),
                     tr.get("body_es"),
