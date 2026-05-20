@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-19T20:39:07Z",
+  "ranked_at": "2026-05-20T05:18:39Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,296 +25,924 @@
   },
   "rankings": [
     {
-      "id": "bc190cad2340",
-      "scores": {
-        "pedagogy": 2,
-        "code_quality": 0,
-        "materials_clarity": 0,
-        "step_completeness": 0,
-        "image_quality": 4,
-        "relevance_to_store_catalog": 1,
-        "novelty": 5
+      "id": "4688fa74b34c",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
       },
-      "combined_score": 0.145,
-      "verdict": "Cobertura periodística de Maker Faire Trieste 2026 sin tutorial, sin código, sin lista de materiales ni pasos reproducibles; baja utilidad para un blog técnico.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": []
-    },
-    {
-      "id": "dedf2d0376cf",
       "scores": {
-        "pedagogy": 2,
-        "code_quality": 0,
-        "materials_clarity": 0,
-        "step_completeness": 0,
-        "image_quality": 4,
-        "relevance_to_store_catalog": 1,
-        "novelty": 5
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 6,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 8,
+        "value_added": 4,
+        "originality_potential": 5
       },
-      "combined_score": 0.145,
-      "verdict": "Nota de evento sobre Maker Faire Delft sin contenido pedagógico, sin código ni pasos; no aporta valor tutorial al blog.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": []
-    },
-    {
-      "id": "2e4ec1db3b3e",
-      "scores": {
-        "pedagogy": 4,
-        "code_quality": 0,
-        "materials_clarity": 3,
-        "step_completeness": 2,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 4,
-        "novelty": 6
-      },
-      "combined_score": 0.335,
-      "verdict": "Artículo editorial curado sobre cyberdecks reciclados, sin tutorial paso a paso ni código; útil como inspiración pero no como guía construible.",
+      "combined_score": 0.62,
+      "verdict": "Tutorial sólido sobre el pin AREF con ejemplo en LCD, pero sin GitHub ni archivos descargables; tema concreto pero poco diferenciable.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "Raspberry Pi",
-        "pantalla LCD",
-        "teclado"
-      ]
+        "Arduino Uno",
+        "LCD 16x2",
+        "TMP36"
+      ],
+      "re_angulation_hint": "Extender con ejemplo práctico de termómetro de precisión usando AREF interno + TMP36"
     },
     {
-      "id": "f03de1b4e15f",
-      "scores": {
-        "pedagogy": 3,
-        "code_quality": 0,
-        "materials_clarity": 2,
-        "step_completeness": 1,
-        "image_quality": 5,
-        "relevance_to_store_catalog": 2,
-        "novelty": 5
+      "id": "b0650d488fae",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 6,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 7
       },
-      "combined_score": 0.235,
-      "verdict": "Reseña de un grabador láser xTool F2 de US$1.499; producto fuera del catálogo de MechatronicStore y sin tutorial replicable.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": []
-    },
-    {
-      "id": "66c5dc463984",
-      "scores": {
-        "pedagogy": 6,
-        "code_quality": 4,
-        "materials_clarity": 7,
-        "step_completeness": 6,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 3,
-        "novelty": 5
-      },
-      "combined_score": 0.54,
-      "verdict": "Guía-producto del Terminal Block BFF para QT Py; accesorio exclusivo Adafruit con bajo encaje en el catálogo local; documentación buena pero limitada como tutorial.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "QT Py",
-        "Xiao",
-        "borneras 2.54mm"
-      ]
-    },
-    {
-      "id": "2a3ef6e75e08",
       "scores": {
         "pedagogy": 8,
         "code_quality": 8,
         "materials_clarity": 8,
         "step_completeness": 8,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 6,
-        "novelty": 7
+        "relevance_to_store_catalog": 9,
+        "value_added": 6,
+        "originality_potential": 7
       },
-      "combined_score": 0.76,
-      "verdict": "Proyecto completo Adafruit Learn con CircuitPython, sensores CO2/temperatura/humedad, impresión 3D y montaje; temática Star Trek atractiva, partes Feather específicas de Adafruit.",
+      "combined_score": 0.765,
+      "verdict": "Tutorial muy completo de RF 315/433MHz con seis sketches y librería VirtualWire; pedagogía progresiva test→remoto→datos.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "ESP32-S3",
-        "SHT41",
-        "SCD4x CO2",
-        "batería LiPo 3.7V",
-        "motor vibrador"
-      ]
+        "Arduino Uno",
+        "Módulo RF 433MHz",
+        "Protoboard",
+        "LED",
+        "Resistencias"
+      ],
+      "re_angulation_hint": "Re-angular como sistema de telemetría agrícola con sensor DHT22 y comparativa vs ESP-NOW"
     },
     {
-      "id": "866a587ce24a",
+      "id": "0aa1dbab8846",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 8,
+        "value_added": 4,
+        "originality_potential": 6
+      },
+      "combined_score": 0.645,
+      "verdict": "Proyecto entretenido pero básico de semáforos con módulos comerciales; sin STL para carcasa ni repo GitHub que aporte valor real.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Arduino Uno",
+        "LED rojo",
+        "LED amarillo",
+        "LED verde",
+        "Botón táctil"
+      ],
+      "re_angulation_hint": "Extender con STL para carcasa imprimible y sensores PIR en lugar de botones físicos"
+    },
+    {
+      "id": "39033b956256",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 3,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 4
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 9,
+        "value_added": 6,
+        "originality_potential": 7
+      },
+      "combined_score": 0.755,
+      "verdict": "Tutorial muy aplicable sobre multiplexor I2C con OLED y BMP180; tres sketches y explicación clara del registro de bus.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Arduino Uno",
+        "TCA9548A",
+        "OLED 0.49\"",
+        "BMP180"
+      ],
+      "re_angulation_hint": "Re-angular como hub para granja de 8 sensores BME280 con dashboard en ESP32"
+    },
+    {
+      "id": "01d2a31538ca",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 4,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 4,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.295,
+      "verdict": "Guía de compra de mini PCs sin proyecto técnico ni código; review comercial de hardware ajeno al catálogo.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial sin proyecto técnico (guía de compra de mini PCs)",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: contenido es comparativa comercial sin valor DIY"
+    },
+    {
+      "id": "fece3e9f0234",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 4,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 4,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "combined_score": 0.365,
+      "verdict": "Comparativa de servicios cloud sin proyecto reproducible; útil para usuarios HA pero sin valor técnico añadido para nuestro blog.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial sin proyecto técnico (comparativa de servicios cloud)",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: contenido es review de servicios cloud"
+    },
+    {
+      "id": "713a3829a2d7",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 5,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.33,
+      "verdict": "Resumen editorial sobre las novedades de Home Assistant 2025; contenido tipo noticia sin proyecto reproducible.",
+      "is_blocked": true,
+      "blocked_reason": "Noticias/recap anual sin tutorial reproducible",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: es un recap anual sin proyecto"
+    },
+    {
+      "id": "31582437683f",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 3,
+        "materials_clarity": 4,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 5,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "combined_score": 0.43,
+      "verdict": "Trucos de recuperación 2FA y red para HA; útil pero sin código descargable ni proyecto físico, fuente en español dificulta re-angulación.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Home Assistant"
+      ],
+      "re_angulation_hint": "Convertir en guía de hardening con backup automatizado a NAS y restauración"
+    },
+    {
+      "id": "b3dc349b1161",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 2,
+        "materials_clarity": 5,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 7,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "combined_score": 0.485,
+      "verdict": "Sensor lluvia Zigbee con HA, narrativa potente pero contenido genérico sin código ni STL; fuente española exige ángulo distinto fuerte.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Sensor lluvia Zigbee",
+        "Coordinador Zigbee",
+        "Home Assistant"
+      ],
+      "re_angulation_hint": "Re-angular como estación meteo DIY con BME280 + pluviómetro propio en ESP32"
+    },
+    {
+      "id": "8d6ca2238a46",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 4,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 6,
+        "value_added": 4,
+        "originality_potential": 6
+      },
+      "combined_score": 0.555,
+      "verdict": "Proyecto watchdog router con enchufe inteligente; ángulo útil pero sin código real ni hardware específico de catálogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Enchufe inteligente WiFi",
+        "Tasmota"
+      ],
+      "re_angulation_hint": "Convertir en watchdog autónomo con ESP32 + relé y firmware Tasmota propio"
+    },
+    {
+      "id": "df1178157825",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 5,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.33,
+      "verdict": "Anuncio de release Home Assistant 2026.2 con tono opinión; sin proyecto reproducible ni código descargable.",
+      "is_blocked": true,
+      "blocked_reason": "Noticias sobre release versión de software",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: es noticia de release"
+    },
+    {
+      "id": "848dd114fd1f",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 2,
+        "materials_clarity": 5,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 8,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "combined_score": 0.475,
+      "verdict": "Comparativa de placas ESP32 para domótica; aunque cita hardware del catálogo, es review comercial sin proyecto técnico construible.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial comparativo sin proyecto técnico construible",
+      "matched_products_hint": [
+        "ESP32",
+        "LilyGo T-Display"
+      ],
+      "re_angulation_hint": "No re-angulable como tutorial: es comparativa de compra"
+    },
+    {
+      "id": "b2baeb901d53",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
       "scores": {
         "pedagogy": 7,
         "code_quality": 6,
         "materials_clarity": 7,
         "step_completeness": 7,
-        "image_quality": 5,
         "relevance_to_store_catalog": 8,
-        "novelty": 7
+        "value_added": 5,
+        "originality_potential": 6
       },
-      "combined_score": 0.68,
-      "verdict": "Guía oportuna para convertir una Raspberry Pi en router WiFi/Ethernet; componentes 100% disponibles en MechatronicStore y tema relevante por regulación reciente.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Raspberry Pi 3",
-        "Raspberry Pi 4",
-        "Raspberry Pi 5",
-        "cable Ethernet",
-        "fuente USB-C 5V"
-      ]
-    },
-    {
-      "id": "07cbf6c824eb",
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 6,
-        "novelty": 6
-      },
-      "combined_score": 0.68,
-      "verdict": "Guía de sensor de luz MAX44009 con ejemplos en CircuitPython, Arduino y WipperSnapper; chip específico, pero el patrón I2C aplica a sensores equivalentes vendidos localmente.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "MAX44009",
-        "sensor lux",
-        "I2C",
-        "STEMMA QT"
-      ]
-    },
-    {
-      "id": "bda956a198aa",
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 8,
-        "step_completeness": 8,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 5,
-        "novelty": 7
-      },
-      "combined_score": 0.745,
-      "verdict": "Build completo de teclado Bluetooth de una tecla con QT Py ESP32 Pico, switch mecánico y caja impresa; NeoKey BFF es accesorio Adafruit, limita relevancia para el catálogo local.",
+      "combined_score": 0.655,
+      "verdict": "Termostato DIY con CrowPanel ESP32 + ESPHome LVGL; proyecto real con catálogo, pero fuente española requiere ángulo distinto para evitar plagio.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
         "ESP32",
-        "switch Kailh",
-        "keycap MX",
-        "batería LiPo"
-      ]
+        "CrowPanel 2.1",
+        "ESPHome",
+        "Relé"
+      ],
+      "re_angulation_hint": "Re-angular como termostato multi-zona con sensores BME280 vía MQTT"
     },
     {
-      "id": "4e1610cba496",
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 8,
-        "step_completeness": 8,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 5,
-        "novelty": 8
+      "id": "90e1cbcc3614",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
       },
-      "combined_score": 0.755,
-      "verdict": "Marcador FIFA con cuatro matrices LED 64x32 y Matrix Portal S3 en CircuitPython consumiendo API ESPN; tema oportuno por el Mundial pero Matrix Portal es Adafruit-exclusivo.",
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 4,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 3,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "combined_score": 0.345,
+      "verdict": "Artículo opinión sobre UniFi vs router operador; hardware ajeno al catálogo MechatronicStore y sin proyecto técnico DIY.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: hardware UniFi fuera de catálogo"
+    },
+    {
+      "id": "b92e4218ce1a",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 5,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.33,
+      "verdict": "Anuncio sobre release HA 2026.4 en fase beta; noticia editorial sin código ni proyecto reproducible.",
+      "is_blocked": true,
+      "blocked_reason": "Noticias sobre release versión de software en beta",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: noticia de release"
+    },
+    {
+      "id": "b7f0a9758a8f",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 4,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 7,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "combined_score": 0.525,
+      "verdict": "Concepto interruptor Zigbee como repetidor de malla; explica problema real pero código YAML detrás de paywall y sin tutorial completo.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "ESP32-S3",
-        "matriz LED RGB 64x32 P4",
-        "fuente 5V 4A",
-        "acrílico difusor"
-      ]
+        "Interruptor Zigbee",
+        "Bombilla Zigbee",
+        "Coordinador Zigbee"
+      ],
+      "re_angulation_hint": "Re-angular con análisis de red Zigbee usando ZHA + diagrama de routers"
     },
     {
-      "id": "bb21433e6838",
+      "id": "26659870e9f5",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 4,
+        "materials_clarity": 6,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 5,
+        "value_added": 4,
+        "originality_potential": 6
+      },
+      "combined_score": 0.545,
+      "verdict": "Proyecto Shelly Plus 2PM para toldos con script sin cloud ni HA; tutorial útil pero hardware comercial cerrado, fuente española.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Shelly Plus 2PM",
+        "Motor toldo"
+      ],
+      "re_angulation_hint": "Re-angular con ESP32 + relé propio y sensor de luz BH1750 sin Shelly"
+    },
+    {
+      "id": "2e4e11ea5ec8",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 4,
+        "code_quality": 1,
+        "materials_clarity": 4,
+        "step_completeness": 3,
+        "relevance_to_store_catalog": 6,
+        "value_added": 2,
+        "originality_potential": 6
+      },
+      "combined_score": 0.39,
+      "verdict": "Perfil de revista sobre proyecto AI duck con Raspberry Pi 4 y PCB custom; no es tutorial reproducible, sin código ni STL descargables.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Raspberry Pi 4",
+        "Servo SG90"
+      ],
+      "re_angulation_hint": "No re-angulable como tutorial directo: es showcase editorial"
+    },
+    {
+      "id": "bd55b6941480",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 3,
+        "materials_clarity": 4,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 4,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "combined_score": 0.435,
+      "verdict": "Walkthrough de plataforma Thinger.io centrado en la consola web; poco contenido de hardware y sin código descargable.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "ESP8266"
+      ],
+      "re_angulation_hint": "Re-angular con tutorial práctico ESP32 + DHT22 enviando datos a Thinger.io"
+    },
+    {
+      "id": "434abc292775",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 4,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 5,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.315,
+      "verdict": "Listado comparativo de kits Arduino comerciales con enlaces de afiliado; review comercial puro sin proyecto técnico.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial puro de productos sin proyecto técnico",
+      "matched_products_hint": [
+        "Arduino Uno",
+        "Kit Arduino"
+      ],
+      "re_angulation_hint": "No re-angulable como tutorial técnico"
+    },
+    {
+      "id": "f9b1185d56e5",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 4,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 3,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.275,
+      "verdict": "Explicación de qué es una luminaria batten LED smart con conexión a Alexa/Google Home; contenido comercial sin DIY.",
+      "is_blocked": true,
+      "blocked_reason": "Review/how-to sobre producto comercial cerrado sin proyecto técnico DIY",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: producto comercial cerrado"
+    },
+    {
+      "id": "30ec79b07719",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 4,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 3,
+        "value_added": 2,
+        "originality_potential": 3
+      },
+      "combined_score": 0.275,
+      "verdict": "Explicación genérica de cómo funcionan los detectores de humo wireless; informativo sin proyecto técnico ni código.",
+      "is_blocked": true,
+      "blocked_reason": "Artículo informativo genérico sin proyecto técnico reproducible",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: artículo divulgativo sin DIY"
+    },
+    {
+      "id": "1a6559cb5b5a",
+      "source_language": "de",
+      "downloadables_detected": {
+        "github_repos": 1,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 6,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 8,
+        "value_added": 6,
+        "originality_potential": 6
+      },
+      "combined_score": 0.685,
+      "verdict": "Comparativa con tabla y guía de inicio para e-Paper Waveshare en Raspberry Pi; incluye repo GitHub y código de ejemplo SPI.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Raspberry Pi 4",
+        "Waveshare e-Paper 2.13",
+        "Waveshare e-Paper 7.5"
+      ],
+      "re_angulation_hint": "Re-angular como dashboard meteorológico con e-Paper 7.5 y datos OpenWeather"
+    },
+    {
+      "id": "e0af7ba13aa2",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 5,
+        "materials_clarity": 6,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 5,
+        "value_added": 4,
+        "originality_potential": 7
+      },
+      "combined_score": 0.57,
+      "verdict": "Guía técnica profunda del IC BL0942 vs BL0937 con bloques internos y registros; ángulo único pero falta código de ejemplo descargable.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "BL0942",
+        "ESP32"
+      ],
+      "re_angulation_hint": "Convertir en tutorial práctico con ESP32 leyendo registros BL0942 vía UART"
+    },
+    {
+      "id": "09364e5c76dc",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 1,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 9,
+        "code_quality": 8,
+        "materials_clarity": 8,
+        "step_completeness": 9,
+        "relevance_to_store_catalog": 9,
+        "value_added": 7,
+        "originality_potential": 7
+      },
+      "combined_score": 0.81,
+      "verdict": "Guía paso a paso desde cero a accesorio HomeKit funcional; pedagogía excepcional, repo GitHub propio y ESP32 del catálogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32-WROOM-32D",
+        "Docker",
+        "LED"
+      ],
+      "re_angulation_hint": "Re-angular como tutorial HomeKit con sensor DHT22 expuesto como termómetro nativo"
+    },
+    {
+      "id": "949030887617",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 4,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 6
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 9,
+        "materials_clarity": 8,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 9,
+        "value_added": 9,
+        "originality_potential": 8
+      },
+      "combined_score": 0.85,
+      "verdict": "Conversión Aubess a switch open-source con ESP8685 y firmware propio HomeKit; cuatro repos GitHub y ángulo único de soberanía hardware.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "ESP8685-WROOM-03",
+        "Aubess Power Monitor"
+      ],
+      "re_angulation_hint": "Re-angular con módulo Sonoff S31 + ESP32 propio y monitorización en HA por MQTT"
+    },
+    {
+      "id": "2416f25ef82c",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 2,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 4,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "combined_score": 0.46,
+      "verdict": "Ficha técnica del módulo AC-DC JL-AD3W-HT-V3 con seguridad y especificaciones; informativo sin proyecto integrado.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Módulo AC-DC 5V"
+      ],
+      "re_angulation_hint": "Integrar como fuente compacta en proyecto enchufe inteligente ESP32 con relé"
+    },
+    {
+      "id": "19720bb50959",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 2,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 9,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 8,
+        "value_added": 8,
+        "originality_potential": 8
+      },
+      "combined_score": 0.805,
+      "verdict": "Guía OTA con firma de firmware sobre ESP32 LCM v2; tema poco cubierto, dos repos GitHub y pedagogía excelente para principiantes.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "ESP32-WROOM-32D"
+      ],
+      "re_angulation_hint": "Re-angular como tutorial OTA con servidor local Nginx y rollback automático"
+    },
+    {
+      "id": "15892d3bd2c4",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 4,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 9,
+        "value_added": 4,
+        "originality_potential": 7
+      },
+      "combined_score": 0.665,
+      "verdict": "Guía de pinout ESP32-C6 Super Mini con WiFi6 y Thread/Zigbee; placa muy demandada del catálogo pero sin código ni esquemas descargables.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32-C6 Super Mini"
+      ],
+      "re_angulation_hint": "Convertir en proyecto Thread border router con ESP32-C6 y diagrama de pines"
+    },
+    {
+      "id": "ec222f39e606",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 2
+      },
       "scores": {
         "pedagogy": 8,
         "code_quality": 7,
         "materials_clarity": 8,
         "step_completeness": 8,
-        "image_quality": 8,
-        "relevance_to_store_catalog": 6,
-        "novelty": 7
+        "relevance_to_store_catalog": 5,
+        "value_added": 5,
+        "originality_potential": 7
       },
-      "combined_score": 0.745,
-      "verdict": "Wearable lúdico con pantuflas que se iluminan por presión usando FSR y NeoPixel; Prop-Maker Feather es Adafruit-específico, pero FSR, tira NeoPixel y batería son insumos comunes.",
+      "combined_score": 0.655,
+      "verdict": "Proyecto sensor garaje con TCT40 Qwiic y librería SparkFun; pedagogía clara pero ecosistema Qwiic propietario reduce encaje de catálogo.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "FSR",
-        "tira NeoPixel WS2812B",
-        "batería LiPo 2000mAh",
-        "RP2040"
-      ]
-    },
-    {
-      "id": "a30ba3ea3667",
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 6,
-        "materials_clarity": 7,
-        "step_completeness": 6,
-        "image_quality": 5,
-        "relevance_to_store_catalog": 8,
-        "novelty": 8
-      },
-      "combined_score": 0.675,
-      "verdict": "Instalación de iNTERCEPT en Raspberry Pi con dongle RTL-SDR para escanear BLE, ADS-B, AIS y radio HAM; partes muy disponibles localmente y temática novedosa.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Raspberry Pi 5",
-        "Raspberry Pi 4",
-        "RTL-SDR RTL2832",
-        "antena SDR"
-      ]
-    },
-    {
-      "id": "bf1478a5dc5c",
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 5,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "image_quality": 6,
-        "relevance_to_store_catalog": 4,
-        "novelty": 6
-      },
-      "combined_score": 0.605,
-      "verdict": "Alerta de heladas no-code con QT Py ESP32-S3 y Adafruit IO Plus; requiere suscripción paga Adafruit IO+ (US$99/año), barrera dura para el público chileno.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32-S3",
-        "NeoPixel",
-        "Terminal Block BFF"
-      ]
-    },
-    {
-      "id": "b3b6286d1c33",
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "image_quality": 7,
-        "relevance_to_store_catalog": 4,
-        "novelty": 6
-      },
-      "combined_score": 0.695,
-      "verdict": "Detector de beacons BLE de parques Disney con CLUE y QT Py + NeoPixel Jewel; CLUE es placa Adafruit poco común localmente y el caso de uso es muy nicho.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32-S3 QT Py",
-        "NeoPixel Jewel 7 LED",
-        "batería LiPo",
-        "BLE"
-      ]
+        "Arduino RedBoard",
+        "TCT40 sensor ultrasónico",
+        "Cable Qwiic"
+      ],
+      "re_angulation_hint": "Re-angular con HC-SR04 genérico + ESP32 y display OLED para garaje DIY"
     }
   ]
 }
