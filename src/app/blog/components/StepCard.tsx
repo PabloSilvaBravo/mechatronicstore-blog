@@ -69,6 +69,7 @@ export default function StepCard({ position, name, text, imageUrl }: Props) {
             className="rounded-lg max-w-full h-auto border mt-3"
             style={{ borderColor: "var(--border-subtle)" }}
             loading="lazy"
+            referrerPolicy="no-referrer"
           />
         )}
       </div>

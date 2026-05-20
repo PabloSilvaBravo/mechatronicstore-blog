@@ -26,6 +26,22 @@ export default function MarkdownEnhancer({ children }: Props) {
     if (!ref.current) return;
     const root = ref.current;
 
+    // Pablo 20-may-2026: imágenes inline del body markdown que vienen de
+    // sources externas (studiopieters.nl, adafruit, etc.) pueden tener
+    // hotlink protection que bloquea cuando el referer es mechatronicstore.cl.
+    // Fix: setear referrerPolicy="no-referrer" + loading="lazy" + onerror
+    // que oculta la img broken (mejor que mostrar icono de imagen rota).
+    const imgs = root.querySelectorAll<HTMLImageElement>("img");
+    imgs.forEach((img) => {
+      img.referrerPolicy = "no-referrer";
+      if (!img.loading) img.loading = "lazy";
+      img.addEventListener("error", function onErr() {
+        // Si la imagen falla, ocultarla en lugar de mostrar el ícono roto
+        img.style.display = "none";
+        img.removeEventListener("error", onErr);
+      });
+    });
+
     // Cada code block está envuelto en .mbc-codeblock con un button.mbc-copy
     // y un sibling <pre data-code="...">.
     const blocks = root.querySelectorAll<HTMLElement>(".mbc-codeblock");

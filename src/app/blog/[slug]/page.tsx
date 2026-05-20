@@ -352,6 +352,7 @@ export default async function TutorialPage({ params }: Props) {
             src={tutorial.hero_image_url}
             alt={tutorial.title_es}
             className="w-full h-auto"
+            referrerPolicy="no-referrer"
           />
         </div>
       )}
