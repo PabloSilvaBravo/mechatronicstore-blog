@@ -17,8 +17,15 @@ INPUT = ROOT / "data" / "blog-rank-output.json"
 # más estricto (0.75) para forzar mejor scoring → routine C aplicará
 # reglas de re-angulación obligatoria.
 # Sources en otros idiomas pasan con 0.68 (traducción + ángulo opcional).
+# Pablo 20-may-2026 v2: threshold ES bajado 0.75 → 0.72. Razón:
+# el threshold alto era una protección defensiva — pero con
+# (1) checklist editorial pre-publish (5 checks, ≥3 para publicar) y
+# (2) reglas de re-angulación 40%+ en prompt Routine C,
+# la PROTECCIÓN REAL contra plagio está en la reescritura, no en el
+# umbral de input. 0.72 sigue siendo "calidad sólida" (7.2/10) y permite
+# que más material en español entre al pipeline donde se transforma.
 THRESHOLD_BY_LANG = {
-    "es": 0.75,   # MÁS ESTRICTO — plagio risk alto
+    "es": 0.72,   # Buffer leve sobre 0.68 (riesgo plagio mitigado por re-angulación + checklist)
     "en": 0.68,
     "de": 0.68,
     "fr": 0.68,

@@ -31,20 +31,74 @@ la mía? ¿Aporto algo que el original no tiene?"**
 Reglas según `source_language` (viene en el input por candidato):
 
 ### Si `source_language == "es"` (original en español)
-**RIESGO MÁXIMO DE PLAGIO**. Aplicar TODAS estas reglas:
+**RIESGO MÁXIMO DE PLAGIO** porque el output va al mismo idioma que el
+input. La re-angulación NO es opcional. Si tu output se parece al
+original más allá de la traducción de cambios mínimos, **lo estás
+plagiando** y Google nos va a penalizar.
 
-1. **Re-angulación obligatoria del 40%+ del cuerpo**: si el original tiene
-   10 párrafos, tu versión debe tener ≥4 párrafos COMPLETAMENTE distintos
-   en redacción y/o estructura. NO sinónimos — re-estructurar.
-2. **Cambio de voz narrativa**: si el original es primera persona ("yo
-   armé este proyecto"), tu versión va en segunda persona instructiva
-   ("vas a armar este proyecto") o tercera neutra ("este tutorial muestra
-   cómo armar"). Y viceversa.
-3. **Re-ordenar la estructura**: si el original es lineal (paso 1 → paso N),
-   considerar bloques temáticos (Concepto → Hardware → Software → Variantes).
-4. **Profundizar**: agregar AL MENOS UNA explicación técnica que el
-   original NO tiene (cómo funciona internamente el sensor, por qué
-   elegimos esa resistencia pull-up, qué pasa si cambiás el pin).
+Aplicar TODAS estas 5 reglas obligatorias:
+
+1. **Re-angulación del 40%+ del cuerpo es PISO, no techo**: si el original
+   tiene 10 párrafos, tu versión debe tener ≥5 párrafos COMPLETAMENTE
+   distintos en redacción Y/O estructura. NO sinónimos — re-estructurar
+   ideas, cambiar orden de argumentos, agrupar diferente. Un ejemplo de
+   buen re-angulado:
+   - Original: "Para empezar, conecta el VCC al 5V del Arduino, después
+     el GND al GND y finalmente el pin de datos al D2."
+   - Re-angulado: "El módulo se conecta al Arduino con 3 cables. La
+     alimentación viene del pin 5V, la tierra del GND, y el pin D2 lleva
+     la señal de datos. Importante: respetar el orden — si conectás los
+     datos antes que la alimentación, podés dañar el sensor."
+   El re-angulado agrega contexto técnico ("podés dañar el sensor"),
+   cambia estructura (introduce el "por qué"), y re-organiza.
+
+2. **Cambio de voz narrativa obligatorio**:
+   - Si original es primera persona ("yo armé", "en mi caso", "decidí
+     usar") → tu versión va en **segunda persona instructiva** ("vas a
+     armar", "tu caso", "usa") o **tercera neutra** ("este tutorial
+     muestra", "se utiliza").
+   - Si original es ya instructivo formal → tu versión puede pasar a
+     **conversacional cercano** ("la idea es que…", "vamos a empezar
+     por…", "te recomiendo que…").
+   - **NUNCA quedarte en la misma voz que el original**.
+
+3. **Re-ordenar la estructura macro**:
+   - Si original es lineal (intro → paso 1 → paso 2 → … → conclusión),
+     usá **bloques temáticos**: Concepto → Hardware → Software → Tests
+     → Variantes.
+   - Si original ya tiene bloques temáticos, usá **lineal narrativa**
+     (cuenta el problema, después cómo se resuelve, después cómo lo
+     replicás vos).
+   - Cambiar el orden visible es lo que más distingue tu versión de un
+     vistazo rápido.
+
+4. **Profundizar técnicamente**: agregar AL MENOS DOS explicaciones
+   que el original NO tiene. Ejemplos:
+   - Por qué internamente funciona como funciona (física del sensor,
+     bit timing del protocolo)
+   - Comparación de alternativas ("este sensor vs DHT22 vs BME280")
+   - Errores comunes y debugging ("si la lectura es 0, revisá la
+     resistencia pull-up de 4.7kΩ")
+   - Optimización ("podés reducir el consumo poniendo el sensor en
+     deep sleep entre lecturas")
+
+5. **Empezar con un gancho diferente**: si el original empieza con
+   "En este tutorial vamos a hacer X", **tu primer párrafo NO debe
+   empezar igual**. Opciones:
+   - Pregunta retórica: "¿Te imaginás controlar las luces de tu casa
+     desde el celular?"
+   - Caso de uso real: "Muchos hogares chilenos no tienen termostato
+     central. Este proyecto resuelve eso con un ESP32 + sensor de
+     temperatura."
+   - Promesa de aprendizaje: "Al final de este tutorial vas a tener
+     un detector de proximidad funcionando, y vas a saber por qué
+     usamos el HC-SR04 en lugar de un sensor IR."
+
+**Test mental para validar tu re-angulación**: copia los primeros
+3 párrafos del original Y los primeros 3 párrafos de tu versión, ponlos
+lado a lado. **¿Un revisor humano que lee ambos diría "esto es claramente
+distinto" o "esto es traducción de lo mismo"?** Si lo segundo, NO
+publiques — setea `editorial_quality_warning: true`.
 
 ### Si `source_language` ∈ {"en", "de", "fr", "pt", "it", "other"}
 Traducción es base, pero **re-angulación SUMA valor** y es preferida
