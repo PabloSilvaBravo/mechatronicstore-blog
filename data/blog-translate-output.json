@@ -1,595 +1,1216 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-19T15:54:00Z",
+  "translated_at": "2026-05-20T05:45:03Z",
   "translations": [
     {
-      "id": "bb21433e6838",
-      "slug": "pantuflas-led-reactivas-presion-neopixel-rp2040",
-      "title_es": "Pantuflas LED reactivas a la presión con NeoPixel y RP2040",
-      "subtitle_es": "Construye pantuflas peludas que se iluminan al pisar usando un sensor FSR y tiras NeoPixel programadas en CircuitPython.",
-      "hero_image_url": null,
-      "body_es": "## Pantuflas que se prenden al pisar\n\nUna idea simple, pero muy entretenida: pantuflas que detectan tu pisada y disparan animaciones de colores en una tira LED. El truco está en un **sensor de fuerza resistivo (FSR)** que mide cuánta presión aplicas al apoyar el pie. Esa lectura analógica se traduce en patrones de luz con tiras **NeoPixel** controladas desde una placa con RP2040.\n\nEs un proyecto wearable ideal para iniciarse en electrónica vestible: poco soldar, sin cajas complicadas, y un resultado que llama la atención al tiro.\n\n## ¿Qué hace este proyecto?\n\n- Detecta cuándo apoyas el pie usando un FSR pegado bajo la plantilla.\n- Lee la presión en tiempo real con el conversor ADC del microcontrolador.\n- Reproduce animaciones de color (arcoíris, ondas, destellos) en una tira NeoPixel cosida al borde de la pantufla.\n- Funciona con batería LiPo de 3.7V, así que es 100% portátil.\n\n## Lista de materiales\n\nUn par de pantuflas (idealmente con suela gruesa para esconder la electrónica) más los siguientes componentes electrónicos:\n\n- Placa con microcontrolador RP2040 (1 por pantufla)\n- Sensor de fuerza resistivo (FSR) circular, ~0.3 a 10 N (1 por pantufla)\n- Tira NeoPixel WS2812B de 1 metro (1 por pantufla)\n- Batería LiPo 3.7V (300–1200 mAh)\n- Cable de extensión JST con switch on/off\n- Cable flexible 24–26 AWG para soldaduras\n- Hilo y aguja, pistola de silicona\n\n## Conexiones\n\nLa lógica es simple:\n\n- **FSR**: un terminal a 3.3V, el otro al pin ADC + resistencia pull-down de 10kΩ a GND. Eso te da un divisor de voltaje cuya salida sube cuando aprietas el sensor.\n- **NeoPixel**: VCC al pin de 3.3V o 5V (depende de la placa), GND a tierra, y DATA al pin GPIO con soporte PIO/RMT (en RP2040 funciona en casi cualquier GPIO).\n- **Batería**: conector JST en el puerto BAT de la placa. Si tu placa no trae circuito de carga, agrega un módulo TP4056.\n\n## Código en CircuitPython\n\n```python\nimport time\nimport board\nimport analogio\nimport neopixel\n\nfsr = analogio.AnalogIn(board.A0)\npixels = neopixel.NeoPixel(board.D5, 30, brightness=0.4, auto_write=False)\n\nUMBRAL = 25000\n\ndef arcoiris(offset):\n    for i in range(len(pixels)):\n        idx = (i * 256 // len(pixels) + offset) & 255\n        if idx < 85:\n            pixels[i] = (idx * 3, 255 - idx * 3, 0)\n        elif idx < 170:\n            idx -= 85\n            pixels[i] = (255 - idx * 3, 0, idx * 3)\n        else:\n            idx -= 170\n            pixels[i] = (0, idx * 3, 255 - idx * 3)\n    pixels.show()\n\noffset = 0\nwhile True:\n    if fsr.value > UMBRAL:\n        arcoiris(offset)\n        offset = (offset + 8) % 256\n    else:\n        pixels.fill((0, 0, 0))\n        pixels.show()\n    time.sleep(0.02)\n```\n\nGuarda el archivo como `code.py` en la unidad CIRCUITPY de la placa y se recargará solo.\n\n## Montaje en la pantufla\n\n1. **Pega el FSR** bajo la plantilla, en la zona del talón o el metatarso. Asegúralo con cinta doble faz para que no se mueva al caminar.\n2. **Cose o pega la tira NeoPixel** al borde superior de la pantufla, cuidando que los puntos de soldadura queden hacia adentro.\n3. **Esconde la placa y la batería** en una bolsita cosida en la parte trasera o lateral. Deja accesible el switch on/off.\n4. **Sella las uniones soldadas** con silicona caliente para que aguanten el movimiento.\n\n## Personalización\n\nUna vez que funciona el patrón básico, puedes jugar con:\n\n- Diferentes animaciones según el umbral de presión (caminar suave vs. saltar).\n- Detección de pasos consecutivos para activar un \"modo fiesta\".\n- Coordinar las dos pantuflas vía Bluetooth para que se sincronicen.\n\n## Consideraciones de seguridad\n\nLa batería LiPo va dentro del calzado, así que asegúrate de:\n\n- Usar batería con protección incorporada (BMS).\n- Que ningún cable quede pellizcado al doblar el pie.\n- Apagar el switch antes de guardarlas.\n\nUn proyecto wearable rápido, vistoso y perfecto para introducir a alguien al mundo de los makers.",
+      "id": "949030887617",
+      "slug": "enchufe-smart-esp32-c3-homekit-medidor-consumo",
+      "title_es": "Convierte un enchufe smart de 220V en domótica 100% local con ESP32-C3 y HomeKit",
+      "subtitle_es": "Reemplaza el módulo cloud de un enchufe Aubess por un ESP32-C3, instala firmware abierto vía LCM y obtén medición real de consumo en Apple Home.",
+      "hero_image_url": "https://www.studiopieters.nl/wp-content/uploads/2026/01/Power-Monitor-Switch.png",
+      "body_es": "## Tu enchufe smart, pero sin la nube ajena\n\n¿Compraste un enchufe Wi-Fi para monitorear el consumo eléctrico y descubriste que necesita una cuenta en China, una app llena de permisos raros y servidores externos para encender una ampolleta? Este tutorial te muestra cómo convertir un enchufe smart genérico estilo Aubess Power Monitor en un dispositivo 100% local, abierto, integrado a Apple HomeKit y con medición real de voltaje, corriente y kWh — sin nube, sin telemetría y sin caducidad.\n\nLa estrategia: desoldar el módulo Wi-Fi cerrado original (típicamente un ESP-02S o BK7231) y reemplazarlo por un ESP8685-WROOM-03 (variante ESP32-C3) flasheado con firmware abierto. Al final, controlas el switch desde la app Home de tu iPhone, ves el consumo en vivo, y nadie afuera de tu LAN sabe que existe.\n\n## Lo que vas a aprender\n\n- Abrir un enchufe smart sin romper los clips plásticos.\n- Desoldar un módulo Wi-Fi SMD con malla, flux y aire caliente.\n- Soldar un módulo ESP32-C3 nuevo en el footprint original.\n- Flashear Lifecycle Manager (LCM) como bootloader OTA permanente.\n- Instalar el firmware ESP32 Power Monitor Switch que lee el chip BL0942 vía UART.\n- Generar el QR de HomeKit y emparejar el accesorio con la app Home.\n\n## ⚠️ Advertencia obligatoria: trabajas con 220 V\n\nEste proyecto manipula un dispositivo que se conecta directo a la red eléctrica chilena (220 V AC, 50 Hz). Antes de tocar cualquier componente:\n\n- **Desenchufa siempre.** Nunca trabajes con el enchufe conectado a la pared.\n- Usa herramientas con mango aislado.\n- No toques pistas expuestas ni el relé, aunque parezca apagado: los capacitores pueden retener carga.\n- Si nunca has soldado SMD ni manipulado tensiones de red, busca ayuda de un técnico eléctrico autorizado.\n\nEl autor original (Studio Pieters) y MechatronicStore no se hacen responsables de daños eléctricos, personales o materiales.\n\n## Concepto: por qué reemplazar el módulo original\n\nEl hardware de estos enchufes es excelente: relé certificado, chip de medición BL0942 (preciso, calibrado en fábrica), carcasa compacta y un footprint estandarizado para el módulo Wi-Fi. El problema es el firmware:\n\n- Depende de servidores cloud del fabricante (si quiebra, tu enchufe se vuelve un ladrillo).\n- Requiere una app móvil propietaria.\n- Recolecta telemetría que no controlas.\n- No tiene OTA abierto ni recuperación tras un update fallido.\n\nCambiar el módulo Wi-Fi por un ESP32-C3 con firmware open-source rompe esa cadena: el dispositivo pasa a ser tuyo de verdad, sin depender de nadie.\n\n## Hardware necesario\n\n| Componente | Función |\n|---|---|\n| Enchufe smart genérico tipo Aubess (220 V, 16 A, con BL0942) | Carcasa, relé y medición |\n| Módulo ESP32-C3 (ESP8685-WROOM-03 o equivalente) | Reemplazo del módulo Wi-Fi |\n| Estación de soldar con control de temperatura | Soldar/desoldar SMD |\n| Malla desoldadora 2 mm | Quitar estaño de los pads |\n| Flux pasta NC-559 | Mejorar el flujo del estaño |\n| Alcohol isopropílico | Limpieza post-soldadura |\n| Espátula plástica + pry tool metálico fino | Abrir la carcasa sin marcas |\n| Programador USB-Serial (CH340/CP2102) | Flashear el ESP32-C3 |\n\n## Paso 1: abrir la carcasa\n\nLos enchufes smart genéricos vienen ensamblados con clips internos (sin tornillos visibles). El truco:\n\n1. Inserta una espátula plástica delgada entre las dos mitades de la carcasa.\n2. Genera un espacio mínimo y mete el pry tool metálico solo en ese hueco.\n3. Avanza lentamente hacia una esquina; vas a escuchar los clips liberarse uno a uno.\n4. Nunca apliques fuerza torcida: si un clip se rompe, queda visible al cerrar.\n\n## Paso 2: desoldar el módulo Wi-Fi original\n\nAntes de tocar el soldador, toma fotos en alta resolución de la PCB desde varios ángulos. Vas a necesitarlas si algo sale mal.\n\n```text\nProcedimiento:\n1. Aplica flux generoso a todos los pads del módulo Wi-Fi.\n2. Configura la estación de soldar a 350–380 °C.\n3. Pasa la malla desoldadora sobre cada pad hasta que el estaño se transfiera.\n4. Verifica que TODOS los pads están limpios antes de levantar el módulo.\n5. Levanta el módulo con pinzas; nunca lo arranques a la fuerza.\n6. Limpia los pads con alcohol isopropílico y un cepillo blando.\n```\n\nSi un pad se daña durante el desoldado, el proyecto se complica mucho: el cobre fino del PCB se levanta y hay que soldar con cable puente. Tómate tu tiempo.\n\n## Paso 3: preparar el ESP32-C3 y flashear LCM\n\nEl módulo ESP8685-WROOM-03 viene en blanco. Antes de soldarlo a la PCB, lo flasheamos por separado con Lifecycle Manager (LCM), un bootloader liviano que vive antes que tu firmware principal y permite actualizaciones OTA seguras.\n\n```bash\n# Limpia la flash del módulo nuevo\nesptool.py erase_flash\n\n# Guarda la MAC que aparece en la salida (la usarás para el QR HomeKit)\n# Ejemplo: MAC: cc:8d:a2:dd:af:e0\n\n# Flashea Lifecycle Manager (precompilado desde el repo de AchimPieters)\npython -m esptool --chip esp32c3 -b 460800 \\\n  --before default_reset --after hard_reset write_flash \\\n  --flash_mode dio --flash_size 4MB --flash_freq 80m \\\n  0x0 build/bootloader/bootloader.bin \\\n  0x8000 build/partition_table/partition-table.bin \\\n  0xe000 build/ota_data_initial.bin \\\n  0x20000 build/esp32-lifecycle-manager.bin\n```\n\n### Por qué LCM y no flashear el firmware final directamente\n\nLCM es un seguro contra \"bricks\": si un OTA futuro sale mal, el ESP32-C3 vuelve solo a LCM y puedes recuperarlo sin abrir el enchufe de nuevo. Para un dispositivo que vive empotrado en una pared, eso es invaluable.\n\n## Paso 4: generar el QR-Code de HomeKit\n\nHomeKit no acepta accesorios sin un código de emparejamiento firmado. Lo generas localmente con el script `gen_qrcode` del repo `esp32-homekit-qrcode`:\n\n```bash\n./gen_qrcode 7 693-41-208 M4T8 cc8da2ddafe0 qrcode.png\n\n# 7         → categoría \"Outlet\"\n# 693-41-208 → setup code (8 dígitos, formato XXX-XX-XXX)\n# M4T8       → setup ID alfanumérico\n# cc8da2ddafe0 → MAC sin dos puntos\n```\n\nImprime el QR en una etiqueta autoadhesiva y pégalo a la carcasa antes de cerrar: vas a necesitarlo cuando emparejes con la app Home.\n\n## Paso 5: soldar el ESP32-C3 al footprint original\n\nCon el módulo ya programado:\n\n1. Alinea el ESP32-C3 sobre el footprint del módulo Wi-Fi anterior (los pads coinciden si elegiste un módulo compatible en pinout).\n2. Aplica flux y fija una esquina primero.\n3. Verifica alineación con lupa.\n4. Suelda la esquina opuesta y luego el resto con técnica de arrastre (drag soldering).\n5. Pasa malla desoldadora para limpiar puentes accidentales.\n6. Limpia con isopropílico e inspecciona cada pad con lupa.\n\n## Paso 6: pinout y mediciones\n\nEl firmware ESP32 Power Monitor Switch usa Kconfig, así que los GPIO se configuran con `idf.py menuconfig`. Valores por defecto para el ESP32-C3:\n\n| Función | GPIO |\n|---|---|\n| Input del interruptor de pared | GPIO5 |\n| Control del relé | GPIO4 |\n| Botón frontal (Aubess) | GPIO1 |\n| LED de estado azul | GPIO6 |\n| UART → BL0942 RX | TX del ESP |\n| UART ← BL0942 TX | RX del ESP |\n\nEl BL0942 transmite tramas seriales cada ~750 ms con voltaje, corriente, potencia activa y energía acumulada. No usamos los pines CF/CF1 (modo pulsos), porque el modo UART entrega lecturas más estables.\n\n## Paso 7: instalar el firmware vía LCM y emparejar con Apple Home\n\n1. Cierra la carcasa, conecta el enchufe a 220 V.\n2. En tu iPhone, busca la red Wi-Fi `LCM-XXXXXX` (la genera el bootloader).\n3. Conéctate; se abre un portal cautivo donde ingresas tu Wi-Fi de casa y la URL del firmware: `AchimPieters/ESP32-power-monitor-switch`.\n4. LCM descarga el firmware, lo instala vía OTA y reinicia.\n5. Abre la app Home → \"+\" → \"Agregar accesorio\" → escanea el QR.\n6. Acepta el aviso \"accesorio no certificado\" (es DIY, es normal).\n7. Asigna habitación y nombre. Listo.\n\nAhora el switch responde a Siri, Shortcuts y automatizaciones, y la app Eve te muestra consumo en tiempo real.\n\n## Variantes y mejoras\n\n- **Backup local de consumo histórico**: el firmware solo expone consumo en HomeKit. Si quieres almacenar histórico, agrega un broker MQTT (por ejemplo `mosquitto` en una Raspberry Pi) y modifica el firmware para publicar mediciones cada 5 segundos. Home Assistant + InfluxDB + Grafana te dan dashboards completos sin nube.\n- **Trigger por consumo anómalo**: programa una automatización en Home que apague el enchufe si el consumo supera X watts por más de N minutos — útil para detectar lavadoras \"trabadas\" o calefactores encendidos por error.\n- **Multi-enchufe en una sola carcasa**: el ESP32-C3 tiene GPIO de sobra. Conectando varios módulos relé + sensores BL0942 podrías hacer una regleta inteligente con medición independiente por toma (cuidado con el aislamiento eléctrico entre canales).\n\n## Personalización para Chile\n\nEl enchufe Aubess base no se vende en MechatronicStore (es un producto OEM importado), pero **todo lo demás lo encuentras en Chile**:\n\n- **Placa de Desarrollo ESP32-C3 Super Mini** (SKU GS3-10) — $9.900 CLP. Es el reemplazo nativo del módulo cerrado original, mismo chip ESP32-C3, footprint USB-C para programar.\n- **Alcohol Isopropílico 1L** (SKU A-122) — $6.990 CLP. Indispensable para limpiar flux después de soldar.\n- **Flux Pasta NC-559 10cc** (SKU E-006) — $3.490 CLP. Marca la diferencia entre soldar SMD frustrante y soldar SMD cómodo.\n- **Cinta de Malla Desoldadora 2mm 1.5m** (SKU E-205) — $2.190 CLP. La herramienta crítica para sacar el módulo viejo sin levantar pads.\n- **Estación de Soldar Certificada ZD-99** (SKU K-301) — $32.000 CLP. Control de temperatura preciso entre 350–380 °C, fundamental para SMD.\n- **Smart Switch Sonoff Básico Wi-Fi** (SKU F-340) — $8.900 CLP. **Alternativa más simple** si no quieres soldar: viene con relé + ESP8266 reemplazable, sin medición de consumo pero con firmware Tasmota/ESPHome listo para flash. Para empezar en domótica local es ideal.\n\nSi tu prioridad es medición real de energía y no te asusta el soldador SMD, sigue la guía completa con el módulo ESP32-C3 Super Mini. Si solo quieres switch local sin medición, el Sonoff es plug-and-play en una tarde.\n\n## Recursos\n\n- ESP32 Lifecycle Manager: https://github.com/AchimPieters/esp32-lifecycle-manager\n- ESP32 Power Monitor Switch firmware: https://github.com/AchimPieters/ESP32-power-monitor-switch\n- Generador de QR HomeKit: https://github.com/AchimPieters/esp32-homekit-qrcode\n- Studio Pieters (tutorial original en inglés): https://www.studiopieters.nl/esp32-mini-smart-switch-with-monitor\n",
       "materials_list": [
-        {"name": "Placa RP2040 (Raspberry Pi Pico o similar)", "qty": 2, "role": "microcontrolador"},
-        {"name": "Sensor de fuerza resistivo FSR", "qty": 2, "role": "sensor de presión"},
-        {"name": "Tira NeoPixel WS2812B 1m", "qty": 2, "role": "iluminación"},
-        {"name": "Batería LiPo 3.7V 300-1200mAh", "qty": 2, "role": "alimentación"},
-        {"name": "Cable de extensión JST con switch on/off", "qty": 2, "role": "encendido"},
-        {"name": "Cable flexible 24-26 AWG", "qty": 1, "role": "cableado"},
-        {"name": "Pantuflas peludas", "qty": 1, "role": "base mecánica"}
+        {
+          "name": "Enchufe smart 220V tipo Aubess con BL0942",
+          "qty": 1,
+          "role": "carcasa + relé + medición"
+        },
+        {
+          "name": "Placa ESP32-C3 (ESP8685-WROOM-03 o ESP32-C3 Super Mini)",
+          "qty": 1,
+          "role": "microcontrolador Wi-Fi"
+        },
+        {
+          "name": "Estación de soldadura con control de temperatura",
+          "qty": 1,
+          "role": "soldadura SMD"
+        },
+        {
+          "name": "Cinta de malla desoldadora 2mm",
+          "qty": 1,
+          "role": "desoldar módulo original"
+        },
+        {
+          "name": "Flux pasta NC-559 10cc",
+          "qty": 1,
+          "role": "facilitar soldadura"
+        },
+        {
+          "name": "Alcohol isopropílico 1L",
+          "qty": 1,
+          "role": "limpieza post-soldadura"
+        },
+        {
+          "name": "Espátula plástica + pry tool",
+          "qty": 1,
+          "role": "abrir carcasa"
+        },
+        {
+          "name": "Cable USB a Micro USB (programador)",
+          "qty": 1,
+          "role": "flashear ESP32-C3"
+        }
       ],
       "steps": [
-        {"position": 1, "name": "Preparar componentes", "text": "Verifica el funcionamiento del FSR y la tira NeoPixel por separado con un código de prueba antes de coser nada."},
-        {"position": 2, "name": "Conexiones eléctricas", "text": "Conecta el FSR a un pin analógico con resistencia pull-down de 10kΩ. La tira NeoPixel a un pin GPIO con soporte de señal a 800kHz."},
-        {"position": 3, "name": "Cargar firmware CircuitPython", "text": "Instala CircuitPython en la placa, copia el archivo code.py y la librería neopixel.mpy. Ajusta el umbral del FSR según tu peso."},
-        {"position": 4, "name": "Montaje en la pantufla", "text": "Pega el FSR bajo la plantilla, cose la tira NeoPixel al borde superior y esconde la placa y batería en una bolsita cosida en la parte trasera."},
-        {"position": 5, "name": "Pruebas finales", "text": "Camina, salta y verifica que las animaciones se disparen correctamente. Sella las soldaduras con silicona caliente."}
+        {
+          "position": 1,
+          "name": "Abrir la carcasa del enchufe smart",
+          "text": "Inserta espátula plástica entre las dos mitades, genera espacio, mete el pry tool metálico y libera los clips uno a uno avanzando hacia una esquina."
+        },
+        {
+          "position": 2,
+          "name": "Desoldar el módulo Wi-Fi original",
+          "text": "Aplica flux a todos los pads, configura el cautín a 350-380°C, pasa malla desoldadora sobre cada pad y levanta el módulo solo cuando todos los pads estén limpios."
+        },
+        {
+          "position": 3,
+          "name": "Flashear LCM en el ESP32-C3 nuevo",
+          "text": "Conecta el módulo al programador USB-Serial, ejecuta esptool.py erase_flash y luego flashea bootloader.bin, partition-table.bin, ota_data_initial.bin y esp32-lifecycle-manager.bin en sus offsets correctos."
+        },
+        {
+          "position": 4,
+          "name": "Generar QR-Code HomeKit",
+          "text": "Con el script gen_qrcode del repo esp32-homekit-qrcode, genera el QR usando categoría 7, un setup code de 8 dígitos, un setup ID alfanumérico y la MAC del módulo sin dos puntos."
+        },
+        {
+          "position": 5,
+          "name": "Soldar el ESP32-C3 al footprint original",
+          "text": "Alinea el módulo sobre los pads del módulo original, suelda una esquina primero, verifica alineación, suelda la esquina opuesta y completa con drag soldering. Limpia puentes con malla."
+        },
+        {
+          "position": 6,
+          "name": "Configurar GPIO con menuconfig",
+          "text": "Ejecuta idf.py menuconfig y verifica los GPIO: GPIO5 input de switch, GPIO4 relé, GPIO1 botón frontal, GPIO6 LED, UART para BL0942."
+        },
+        {
+          "position": 7,
+          "name": "Instalar firmware via LCM y emparejar HomeKit",
+          "text": "Conecta el enchufe a 220V, únete a la red Wi-Fi LCM-XXXXXX, ingresa credenciales Wi-Fi y el repo del firmware, espera el OTA. Luego en la app Home escanea el QR y acepta el aviso de accesorio no certificado."
+        }
       ],
       "code_blocks": [
-        {"lang": "python", "caption": "Código principal para detectar pisada y animar la tira NeoPixel", "code": "import time\nimport board\nimport analogio\nimport neopixel\n\nfsr = analogio.AnalogIn(board.A0)\npixels = neopixel.NeoPixel(board.D5, 30, brightness=0.4, auto_write=False)\n\nUMBRAL = 25000\n\ndef arcoiris(offset):\n    for i in range(len(pixels)):\n        idx = (i * 256 // len(pixels) + offset) & 255\n        if idx < 85:\n            pixels[i] = (idx * 3, 255 - idx * 3, 0)\n        elif idx < 170:\n            idx -= 85\n            pixels[i] = (255 - idx * 3, 0, idx * 3)\n        else:\n            idx -= 170\n            pixels[i] = (0, idx * 3, 255 - idx * 3)\n    pixels.show()\n\noffset = 0\nwhile True:\n    if fsr.value > UMBRAL:\n        arcoiris(offset)\n        offset = (offset + 8) % 256\n    else:\n        pixels.fill((0, 0, 0))\n        pixels.show()\n    time.sleep(0.02)"}
+        {
+          "lang": "bash",
+          "caption": "Borrar flash y flashear Lifecycle Manager",
+          "code": "esptool.py erase_flash\n\n# Guarda la MAC para el QR HomeKit\npython -m esptool --chip esp32c3 -b 460800 \\\n  --before default_reset --after hard_reset write_flash \\\n  --flash_mode dio --flash_size 4MB --flash_freq 80m \\\n  0x0 build/bootloader/bootloader.bin \\\n  0x8000 build/partition_table/partition-table.bin \\\n  0xe000 build/ota_data_initial.bin \\\n  0x20000 build/esp32-lifecycle-manager.bin"
+        },
+        {
+          "lang": "bash",
+          "caption": "Generar QR HomeKit",
+          "code": "./gen_qrcode 7 693-41-208 M4T8 cc8da2ddafe0 qrcode.png\n# 7         categoría Outlet\n# 693-41-208 setup code\n# M4T8       setup ID\n# cc8da2ddafe0 MAC sin dos puntos"
+        }
       ],
       "linked_products": [
         {
-          "name_original": "Placa RP2040 (Raspberry Pi Pico)",
-          "product_id": "N-340",
-          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico-2/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=N-340",
-          "price_clp": 9990,
+          "name_original": "Placa ESP32-C3 (ESP8685-WROOM-03 o ESP32-C3 Super Mini)",
+          "product_id": "GS3-10",
+          "product_url": "https://www.mechatronicstore.cl/placa-de-desarrollo-esp32-c3-super-mini/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=GS3-10",
+          "price_clp": 9900,
           "stock_available": true,
-          "match_score": 0.82
-        },
-        {
-          "name_original": "Sensor de fuerza resistivo FSR",
-          "product_id": "GB6-14",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-fuerza-resistivo/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=GB6-14",
-          "price_clp": 10100,
-          "stock_available": false,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Tira NeoPixel WS2812B 1m",
-          "product_id": "G-599",
-          "product_url": "https://www.mechatronicstore.cl/ws2812b-5-v-5050-rgb-162-tira-de-luz-led-60-pcb-negro-5m-ip65/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=G-599",
-          "price_clp": 16990,
-          "stock_available": false,
           "match_score": 0.88
         },
         {
-          "name_original": "Batería LiPo 3.7V 300mAh",
-          "product_id": "XM5-2",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=XM5-2",
-          "price_clp": 8990,
+          "name_original": "Alcohol Isopropílico 1L",
+          "product_id": "A-122",
+          "product_url": "https://www.mechatronicstore.cl/alcohol-isopropilico-1l/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=A-122",
+          "price_clp": 6990,
           "stock_available": true,
-          "match_score": 0.78
+          "match_score": 0.97
         },
         {
-          "name_original": "Cable flexible 24 AWG",
-          "product_id": "V-109_5",
-          "product_url": "https://www.mechatronicstore.cl/cable-paralelo-variedad-calibres/?attribute_medidas=24+awg&utm_source=blog&utm_medium=tutorial&utm_campaign=pantuflas-led-reactivas-presion-neopixel-rp2040&utm_content=V-109_5",
-          "price_clp": 200,
-          "stock_available": true,
-          "match_score": 0.72
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "otros",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 180,
-      "estimated_cost_clp": 56260,
-      "tags": ["wearable", "neopixel", "rp2040", "circuitpython", "fsr", "led"]
-    },
-    {
-      "id": "4e1610cba496",
-      "slug": "marcador-mundial-fifa-matriz-led-rgb-esp32-s3",
-      "title_es": "Marcador del Mundial FIFA con matrices LED RGB y ESP32-S3",
-      "subtitle_es": "Arma un display gigante con cuatro matrices RGB 64x32 que muestra partidos del Mundial en tiempo real usando la API de ESPN.",
-      "hero_image_url": null,
-      "body_es": "## Un marcador del Mundial gigante hecho por ti\n\nSi quieres seguir el Mundial FIFA con un display que llame la atención, este proyecto te muestra cómo combinar **cuatro matrices LED RGB de 64x32 pixeles** controladas por un ESP32-S3 para crear un panel de 128x64 pixeles que consulta la API de ESPN y dibuja los resultados, banderas y minuto del partido en vivo.\n\nLa parte interesante: la cantidad de datos JSON que devuelve ESPN es grande, y procesar cuatro paneles RGB simultáneos requiere harto poder de cómputo. Por eso necesitas un ESP32-S3, no un ESP32 clásico.\n\n## ¿Por qué ESP32-S3?\n\nEl ESP32-S3 tiene:\n\n- 8 MB de flash y 2 MB de PSRAM, suficiente para guardar banderas pre-procesadas y procesar JSONs grandes.\n- Doble núcleo a 240 MHz para repartir la tarea de refrescar matrices y consultar la API.\n- WiFi nativo para conectarse a la red doméstica.\n\nPlacas más simples (ESP8266, ESP32 clásico, SAMD51) no logran refrescar cuatro paneles sin parpadeos.\n\n## Lista de materiales\n\n- Placa de desarrollo ESP32-S3 con WiFi (Matrix Portal S3 o equivalente)\n- 4 matrices LED RGB de 64x32 pixeles, paso 4mm (P4)\n- 4 paneles acrílicos negros difusores (10.2\" x 5.1\")\n- 2 fuentes switching 5V 4A (una por cada par de paneles)\n- Cable USB-C para alimentar y programar la placa\n- Cables HUB75 (vienen incluidos con las matrices)\n- Tornillos M3 para fijar los paneles\n\n## Esquema de alimentación (¡crítico!)\n\nCuatro matrices encendidas a brillo completo pueden consumir más de 15 A en el peor caso. **No alimentes las matrices desde la placa**. La distribución recomendada:\n\n- **Fuente 1 (5V 4A)**: las dos matrices superiores\n- **Fuente 2 (5V 4A)**: las dos matrices inferiores\n- **USB-C**: solo la placa controladora\n\nUne las tierras (GND) de todas las fuentes y la placa para tener una referencia común.\n\n## Cableado HUB75\n\nCada matriz usa un conector HUB75 de 16 pines. La cadena va:\n\n```\nESP32-S3 → Matriz 1 (IN) → Matriz 1 (OUT) → Matriz 2 (IN) → Matriz 2 (OUT) → ...\n```\n\nConfigura la librería para tratar las cuatro matrices como una sola pantalla de 128x64 con `chain_length=4` y el modo de tiling adecuado (horizontal o serpentina, según tu armado físico).\n\n## Código CircuitPython base\n\n```python\nimport time\nimport board\nimport displayio\nimport rgbmatrix\nimport framebufferio\nimport adafruit_requests\nimport wifi\nimport socketpool\nimport ssl\n\ndisplayio.release_displays()\n\nmatrix = rgbmatrix.RGBMatrix(\n    width=128, height=64, bit_depth=4,\n    rgb_pins=[board.MTX_R1, board.MTX_G1, board.MTX_B1,\n              board.MTX_R2, board.MTX_G2, board.MTX_B2],\n    addr_pins=[board.MTX_ADDRA, board.MTX_ADDRB,\n               board.MTX_ADDRC, board.MTX_ADDRD,\n               board.MTX_ADDRE],\n    clock_pin=board.MTX_CLK,\n    latch_pin=board.MTX_LAT,\n    output_enable_pin=board.MTX_OE,\n    tile=2, serpentine=True)\n\ndisplay = framebufferio.FramebufferDisplay(matrix)\n\nwifi.radio.connect(\"TU_SSID\", \"TU_CLAVE\")\npool = socketpool.SocketPool(wifi.radio)\nrequests = adafruit_requests.Session(pool, ssl.create_default_context())\n\nURL = \"https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard\"\n\nwhile True:\n    resp = requests.get(URL)\n    data = resp.json()\n    # ... procesar y dibujar partidos\n    time.sleep(60)\n```\n\n## Banderas pre-procesadas\n\nLas banderas vienen del CDN de ESPN como PNG grandes. Necesitas:\n\n1. Descargarlas una vez.\n2. Reescalarlas a 16x12 pixeles.\n3. Aplicar corrección gamma (las matrices RGB tienen respuesta no lineal).\n4. Guardarlas como `bitmap` en flash para acceso rápido.\n\n## Carcasa y montaje\n\nLos paneles acrílicos negros van delante de cada matriz, separados ~5mm para difuminar el grano. Una caja de MDF de 6mm con corte láser deja todo prolijo. Pon ventilación pasiva: 4 matrices a brillo medio generan calor.\n\n## Personalización\n\nCambia la URL de la API para seguir otra liga (Premier League, Champions, NBA). El JSON cambia, pero la estructura general (eventos, equipos, score) es similar entre deportes de ESPN.\n\nProyecto entretenido para fanáticos del fútbol y el hardware al mismo tiempo.",
-      "materials_list": [
-        {"name": "Placa ESP32-S3 con WiFi", "qty": 1, "role": "controlador"},
-        {"name": "Matriz LED RGB 64x32 P4", "qty": 4, "role": "display"},
-        {"name": "Fuente switching 5V 4A", "qty": 2, "role": "alimentación matrices"},
-        {"name": "Cable USB Tipo C", "qty": 1, "role": "programación/alimentación placa"},
-        {"name": "Panel acrílico negro difusor", "qty": 4, "role": "difusión visual"},
-        {"name": "Cables HUB75 16 pines", "qty": 4, "role": "datos matriz"}
-      ],
-      "steps": [
-        {"position": 1, "name": "Verificar una matriz sola", "text": "Antes de montar las cuatro, conecta una matriz al ESP32-S3 con su fuente dedicada y prueba ejemplos de la librería rgbmatrix."},
-        {"position": 2, "name": "Encadenar las matrices", "text": "Une las matrices en cadena con los cables HUB75. Configura chain_length=4 y verifica el tiling (horizontal o serpentina) según tu disposición física."},
-        {"position": 3, "name": "Alimentación dual", "text": "Conecta dos fuentes 5V 4A: una para los dos paneles superiores y otra para los inferiores. Une todos los GND. Alimenta la placa solo por USB-C."},
-        {"position": 4, "name": "Conexión WiFi y API ESPN", "text": "Configura las credenciales WiFi en secrets.py. Prueba la petición HTTPS al endpoint scoreboard de ESPN. Verifica que el JSON parsea sin quedarse sin memoria."},
-        {"position": 5, "name": "Banderas y corrección gamma", "text": "Descarga las banderas de los equipos, reescálalas a 16x12 px y aplica corrección gamma. Guárdalas como bitmaps en flash."},
-        {"position": 6, "name": "Montaje físico", "text": "Atornilla las matrices a una base rígida (MDF 6mm), instala los acrílicos difusores 5mm por delante y deja ventilación pasiva."}
-      ],
-      "code_blocks": [
-        {"lang": "python", "caption": "Inicialización de las 4 matrices encadenadas + conexión WiFi", "code": "import time\nimport board\nimport displayio\nimport rgbmatrix\nimport framebufferio\nimport adafruit_requests\nimport wifi\nimport socketpool\nimport ssl\n\ndisplayio.release_displays()\n\nmatrix = rgbmatrix.RGBMatrix(\n    width=128, height=64, bit_depth=4,\n    rgb_pins=[board.MTX_R1, board.MTX_G1, board.MTX_B1,\n              board.MTX_R2, board.MTX_G2, board.MTX_B2],\n    addr_pins=[board.MTX_ADDRA, board.MTX_ADDRB,\n               board.MTX_ADDRC, board.MTX_ADDRD,\n               board.MTX_ADDRE],\n    clock_pin=board.MTX_CLK,\n    latch_pin=board.MTX_LAT,\n    output_enable_pin=board.MTX_OE,\n    tile=2, serpentine=True)\n\ndisplay = framebufferio.FramebufferDisplay(matrix)\n\nwifi.radio.connect(\"TU_SSID\", \"TU_CLAVE\")\npool = socketpool.SocketPool(wifi.radio)\nrequests = adafruit_requests.Session(pool, ssl.create_default_context())\n\nURL = \"https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard\"\n\nwhile True:\n    resp = requests.get(URL)\n    data = resp.json()\n    time.sleep(60)"}
-      ],
-      "linked_products": [
-        {
-          "name_original": "Placa ESP32-S3",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=GS1-3",
-          "price_clp": 13670,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Matriz LED RGB",
-          "product_id": "GN3-12",
-          "product_url": "https://www.mechatronicstore.cl/matriz-led-8x8-rgb-ws2812/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=GN3-12",
-          "price_clp": 17800,
-          "stock_available": true,
-          "match_score": 0.72
-        },
-        {
-          "name_original": "Fuente switching 5V",
-          "product_id": "K-444",
-          "product_url": "https://www.mechatronicstore.cl/fuente-de-poder-switching-5v-10a-dc/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=K-444",
-          "price_clp": 10900,
-          "stock_available": true,
-          "match_score": 0.82
-        },
-        {
-          "name_original": "Cable USB Tipo C a USB A 1m",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=marcador-mundial-fifa-matriz-led-rgb-esp32-s3&utm_content=B-101",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.95
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "advanced",
-      "estimated_time_minutes": 360,
-      "estimated_cost_clp": 119860,
-      "tags": ["esp32-s3", "matriz-led", "rgb", "wifi", "api", "mundial"]
-    },
-    {
-      "id": "866a587ce24a",
-      "slug": "raspberry-pi-como-router-wifi-bridge-linux",
-      "title_es": "Convierte tu Raspberry Pi en un router WiFi con bridge",
-      "subtitle_es": "Configura un Raspberry Pi 3, 4 o 5 como router WiFi que comparte internet desde ethernet o WiFi upstream con bridging entre redes.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/451/medium800/hacks_hero_photo.png?1775489680",
-      "body_es": "## Un router casero con Raspberry Pi\n\nCualquier computador que corre Linux y tiene interfaces de red puede funcionar como router. El **Raspberry Pi** es ideal: barato, eficiente energéticamente y con WiFi + Ethernet integrado en los modelos modernos.\n\nNo va a ganar carreras de ancho de banda contra un router comercial, pero es perfectamente capaz de:\n\n- Enrutar tráfico de dispositivos IoT.\n- Capturar paquetes para analizarlos (con `tcpdump` o Wireshark).\n- Compartir internet de WiFi a Ethernet (o al revés).\n- Crear redes aisladas para experimentos sin afectar la red principal.\n\nIncluso un viejo Raspberry Pi 3 B+ tirado en el cajón sirve para esto.\n\n![Raspberry Pi configurado como router ethernet compartiendo internet](https://cdn-learn.adafruit.com/assets/assets/000/143/451/medium800/hacks_hero_photo.png?1775489680)\n\n## Materiales\n\n- Raspberry Pi 3 B+, 4 o 5 (cualquiera con WiFi integrado)\n- Tarjeta microSD 16 GB o más con Raspberry Pi OS Lite\n- Fuente de poder USB-C (5V 3A para Pi 4/5, microUSB 5V 2.5A para Pi 3)\n- Cable Ethernet CAT5e o CAT6\n- Cable HDMI y monitor (solo para configuración inicial)\n- Opcionalmente: hub USB con Ethernet adicional si quieres más puertos\n\n## Preparación del sistema\n\n1. **Instala Raspberry Pi OS Lite (64-bit)** con Raspberry Pi Imager. Habilita SSH y configura la red WiFi de tu casa antes de grabar la tarjeta.\n\n2. **Actualiza el sistema** apenas arranque:\n\n```bash\nsudo apt update && sudo apt upgrade -y\nsudo apt install -y hostapd dnsmasq iptables-persistent bridge-utils\n```\n\n3. **Asigna IP estática** a la interfaz que será LAN. Editas `/etc/dhcpcd.conf`:\n\n```\ninterface eth0\n    static ip_address=192.168.4.1/24\n    nohook wpa_supplicant\n```\n\n## Configurar el access point WiFi\n\nCrea `/etc/hostapd/hostapd.conf`:\n\n```\ninterface=wlan0\ndriver=nl80211\nssid=PiRouter\nhw_mode=g\nchannel=7\nwmm_enabled=0\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=ClaveSuperSegura\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP\n```\n\nApunta hostapd a este archivo en `/etc/default/hostapd`:\n\n```\nDAEMON_CONF=\"/etc/hostapd/hostapd.conf\"\n```\n\n## DHCP con dnsmasq\n\nReemplaza `/etc/dnsmasq.conf` por algo mínimo:\n\n```\ninterface=wlan0\ndhcp-range=192.168.4.10,192.168.4.100,255.255.255.0,24h\n```\n\n## NAT con iptables\n\nHabilita el forwarding en `/etc/sysctl.conf`:\n\n```\nnet.ipv4.ip_forward=1\n```\n\nAgrega las reglas iptables:\n\n```bash\nsudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\nsudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT\nsudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT\nsudo netfilter-persistent save\n```\n\n## Modo bridge (mismo dominio de broadcast)\n\nSi quieres que los clientes WiFi vean los dispositivos en la red Ethernet (como si todo fuera la misma LAN), reemplaza el NAT por un bridge:\n\n```bash\nsudo brctl addbr br0\nsudo brctl addif br0 eth0\n```\n\nY configura hostapd para usar `bridge=br0`. En este modo el Pi no enruta: solo une dos interfaces como un switch.\n\n## Habilitar e iniciar todo\n\n```bash\nsudo systemctl unmask hostapd\nsudo systemctl enable hostapd\nsudo systemctl enable dnsmasq\nsudo systemctl restart hostapd dnsmasq dhcpcd\n```\n\nReinicia el Pi y deberías ver la red \"PiRouter\" desde tu teléfono.\n\n## Verificación\n\n- Conecta el celular a `PiRouter` con la clave que configuraste.\n- Verifica con `ip addr` en el Pi que `wlan0` tiene 192.168.4.1.\n- Mira los leases en `/var/lib/misc/dnsmasq.leases`.\n- Prueba navegar: el tráfico sale por `eth0` con tu IP de internet.\n\n## Casos de uso reales\n\n- **Lab de IoT aislado**: conecta ESP32, cámaras IP, etc. a la red `PiRouter` para inspeccionar su tráfico sin contaminar la red familiar.\n- **Hotspot portátil**: un Pi 4 con LTE USB stick puede ser router 4G en cualquier lugar.\n- **VPN gateway**: instala WireGuard en el Pi y todos los dispositivos conectados salen por VPN automáticamente.\n\nUn proyecto Linux clásico que enseña networking, systemd, iptables y bridging en un solo paquete.",
-      "materials_list": [
-        {"name": "Raspberry Pi 3 B+ / 4 / 5", "qty": 1, "role": "computador principal"},
-        {"name": "Tarjeta microSD 16GB+", "qty": 1, "role": "almacenamiento sistema operativo"},
-        {"name": "Fuente USB-C 5V 3A", "qty": 1, "role": "alimentación"},
-        {"name": "Cable Ethernet CAT6", "qty": 1, "role": "conexión upstream"},
-        {"name": "Cable HDMI", "qty": 1, "role": "configuración inicial"}
-      ],
-      "steps": [
-        {"position": 1, "name": "Flash de Raspberry Pi OS Lite", "text": "Usa Raspberry Pi Imager para grabar OS Lite 64-bit en la microSD. Habilita SSH y configura WiFi inicial en las opciones avanzadas."},
-        {"position": 2, "name": "Instalar paquetes base", "text": "Instala hostapd, dnsmasq, iptables-persistent y bridge-utils. Actualiza el sistema con apt update && apt upgrade."},
-        {"position": 3, "name": "Configurar IP estática en wlan0", "text": "Edita /etc/dhcpcd.conf para asignar 192.168.4.1/24 a la interfaz que servirá como LAN."},
-        {"position": 4, "name": "Configurar access point", "text": "Crea /etc/hostapd/hostapd.conf con SSID, clave WPA2 y canal. Apunta hostapd al archivo en /etc/default/hostapd."},
-        {"position": 5, "name": "Configurar DHCP con dnsmasq", "text": "Define un rango DHCP (ej. 192.168.4.10 a 192.168.4.100) en /etc/dnsmasq.conf con lease de 24 horas."},
-        {"position": 6, "name": "Habilitar NAT con iptables", "text": "Activa ip_forward en sysctl y agrega reglas de MASQUERADE y FORWARD. Guarda con netfilter-persistent save."},
-        {"position": 7, "name": "Habilitar servicios y reiniciar", "text": "systemctl enable hostapd dnsmasq, reinicia el Pi y conecta un cliente a la nueva red WiFi para validar."}
-      ],
-      "code_blocks": [
-        {"lang": "bash", "caption": "Instalación de paquetes necesarios", "code": "sudo apt update && sudo apt upgrade -y\nsudo apt install -y hostapd dnsmasq iptables-persistent bridge-utils"},
-        {"lang": "ini", "caption": "Configuración del access point en /etc/hostapd/hostapd.conf", "code": "interface=wlan0\ndriver=nl80211\nssid=PiRouter\nhw_mode=g\nchannel=7\nwmm_enabled=0\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=ClaveSuperSegura\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP"},
-        {"lang": "bash", "caption": "Reglas iptables para NAT outbound", "code": "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\nsudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT\nsudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT\nsudo netfilter-persistent save"}
-      ],
-      "linked_products": [
-        {
-          "name_original": "Raspberry Pi 5 4GB",
-          "product_id": "X5-14",
-          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-5-4gb-ram/?attribute_ram=4gb+Ram&utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=X5-14",
-          "price_clp": 107990,
-          "stock_available": false,
-          "match_score": 0.93
-        },
-        {
-          "name_original": "Tarjeta microSD 32GB",
-          "product_id": "B-450",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=32gb&utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=B-450",
-          "price_clp": 9990,
-          "stock_available": false,
-          "match_score": 0.90
-        },
-        {
-          "name_original": "Cable Ethernet CAT6 5m",
-          "product_id": "F-504",
-          "product_url": "https://www.mechatronicstore.cl/cable-ethernet-cat6e-30-metros/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=F-504",
-          "price_clp": 3190,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Fuente 5V 3A USB-C",
-          "product_id": "B-006",
-          "product_url": "https://www.mechatronicstore.cl/transformador-cargador-fuente-de-alimentacion-5v-3a/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=B-006",
-          "price_clp": 3990,
-          "stock_available": false,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Cable HDMI 1.8m",
-          "product_id": "F-512",
-          "product_url": "https://www.mechatronicstore.cl/cable-hdmi-dorado-macho-macho1-8-3-5-m/?attribute_largo-cable=1.8+metros&utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-como-router-wifi-bridge-linux&utm_content=F-512",
-          "price_clp": 3990,
-          "stock_available": true,
-          "match_score": 0.88
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "rpi",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 120,
-      "estimated_cost_clp": 129150,
-      "tags": ["raspberry-pi", "router", "linux", "hostapd", "iptables", "networking"]
-    },
-    {
-      "id": "bda956a198aa",
-      "slug": "teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython",
-      "title_es": "Teclado Bluetooth de una sola tecla mecánica con ESP32",
-      "subtitle_es": "Construye un teclado BLE inalámbrico con un solo switch mecánico para usar como mute, atajo macro o disparador remoto.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/828/medium800/3d_printing_onekey_actionb.jpg?1776209888",
-      "body_es": "## Un teclado de una sola tecla. ¿Para qué?\n\nUn teclado de una sola tecla suena ridículo, pero piensa en todos los gestos repetitivos del día a día:\n\n- **Mute / unmute** en Zoom o Meet.\n- **Disparar el obturador** de la cámara del celular sin tocarla.\n- **Avanzar slide** en una presentación.\n- **Lanzar un macro** que escribe un texto largo.\n- **Botón pánico** que abre la pestaña del email.\n\nUn dispositivo BLE alimentado por LiPo que aparece como teclado HID en tu PC o celular es la solución elegante. Sin software adicional, sin drivers, sin cables.\n\n![Teclado de una tecla en acción con switch mecánico](https://cdn-learn.adafruit.com/assets/assets/000/143/828/medium800/3d_printing_onekey_actionb.jpg?1776209888)\n\n## Materiales\n\n- Placa ESP32 con Bluetooth Low Energy y soporte CircuitPython (QT Py ESP32-S3 o equivalente)\n- 1 switch mecánico tipo Cherry MX / Kailh (Blue para click, Brown para soft, Red para gamer)\n- 1 keycap MX (cualquier color)\n- Batería LiPo 3.7V 150-300 mAh con conector JST\n- Cargador LiPo (TP4056 o similar) si la placa no trae integrado\n- Headers macho/hembra 2.54mm\n- Carcasa impresa 3D (opcional)\n\n## Diseño del circuito\n\nUn solo switch entre GND y un pin GPIO con `INPUT_PULLUP`. Eso es todo el hardware activo. El truco está en el firmware:\n\n```\nSwitch --- GPIO9 --- (pull-up interno)\n           |\n           +--- GND (cuando se presiona)\n```\n\nPara ahorrar batería, configura el ESP32 para entrar en `deep sleep` con wake-up por GPIO. Cuando aprietas, el chip despierta, envía la tecla por BLE y se vuelve a dormir.\n\n## Código CircuitPython\n\n```python\nimport time\nimport board\nimport digitalio\nimport alarm\nfrom adafruit_hid.keyboard import Keyboard\nfrom adafruit_hid.keycode import Keycode\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\nfrom adafruit_ble.advertising.standard import ProvideServicesAdvertisement\nfrom adafruit_ble.services.standard.hid import HIDService\n\nhid = HIDService()\nadvertisement = ProvideServicesAdvertisement(hid)\nadvertisement.appearance = 961\nble = BLERadio()\nble.name = \"OneKey\"\n\nif not ble.connected:\n    ble.start_advertising(advertisement)\n    while not ble.connected:\n        pass\nble.stop_advertising()\n\nk = Keyboard(hid.devices)\n\nboton = digitalio.DigitalInOut(board.D9)\nboton.direction = digitalio.Direction.INPUT\nboton.pull = digitalio.Pull.UP\n\nwhile True:\n    if not boton.value:\n        k.send(Keycode.F13)  # Tecla custom (no se usa en sistemas normales)\n        time.sleep(0.2)\n```\n\n## Personalización vía WebSerial\n\nUna mejora simple: en lugar de hardcodear la tecla, expón una página WebSerial donde puedas elegir la combinación. La placa guarda la config en `settings.toml` y se relee al arrancar.\n\nLista de teclas útiles:\n\n- `Keycode.F13` a `F24`: teclas que no existen en teclados normales, perfectas para mapear macros en el sistema operativo.\n- `Keycode.GUI + Keycode.D`: mostrar escritorio (Windows).\n- `Keycode.CONTROL + Keycode.SHIFT + Keycode.A`: mute en Zoom.\n- `ConsumerControlCode.PLAY_PAUSE`: control multimedia.\n\n## Montaje en carcasa 3D\n\nImprime una carcasa de dos piezas:\n\n- **Base**: aloja la placa y la batería, con clip para el switch on/off.\n- **Tapa**: con un orificio cuadrado de 14x14 mm para el switch MX.\n\nUsa tornillos M2 para unir las piezas. El keycap encaja a presión sobre el switch.\n\n## Pairing\n\n1. Carga el código.\n2. En tu PC/celular ve a Bluetooth y busca dispositivos.\n3. Aparece como \"OneKey\". Empareja.\n4. Listo: cada vez que presiones, envía la tecla configurada.\n\n## Autonomía\n\nCon deep sleep entre pulsaciones, una batería de 150 mAh dura semanas. Si usas la placa siempre activa, dura horas.\n\nUn proyecto mínimo en hardware, máximo en utilidad diaria.",
-      "materials_list": [
-        {"name": "Placa ESP32 con BLE", "qty": 1, "role": "controlador BLE"},
-        {"name": "Switch mecánico tipo Cherry MX / Kailh", "qty": 1, "role": "botón principal"},
-        {"name": "Keycap MX", "qty": 1, "role": "tapa visual"},
-        {"name": "Batería LiPo 3.7V 150-300mAh", "qty": 1, "role": "alimentación"},
-        {"name": "Headers 2.54mm", "qty": 1, "role": "conexiones"},
-        {"name": "Carcasa 3D impresa", "qty": 1, "role": "estética"}
-      ],
-      "steps": [
-        {"position": 1, "name": "Cableado del switch", "text": "Suelda dos cables entre los pines del switch mecánico. Uno va a GND y otro a un GPIO (ej. D9) de la placa ESP32."},
-        {"position": 2, "name": "Instalar CircuitPython y librerías", "text": "Flashea CircuitPython 9.x. Copia adafruit_ble, adafruit_hid y adafruit_bus_device a la carpeta lib/."},
-        {"position": 3, "name": "Cargar código BLE HID", "text": "Sube code.py con el ejemplo. Verifica en la consola serial que el ESP32 anuncia el servicio HID por BLE."},
-        {"position": 4, "name": "Emparejar con dispositivo", "text": "Desde tu PC o celular, busca dispositivos Bluetooth. Aparece como 'OneKey'. Acepta el pairing."},
-        {"position": 5, "name": "Imprimir carcasa 3D", "text": "Imprime base y tapa con la placa y batería adentro. Atornilla con M2 y monta el keycap a presión sobre el switch."},
-        {"position": 6, "name": "Optimizar autonomía", "text": "Implementa deep sleep con wake-up por GPIO para que la batería dure semanas en lugar de horas."}
-      ],
-      "code_blocks": [
-        {"lang": "python", "caption": "Teclado HID BLE de una sola tecla", "code": "import time\nimport board\nimport digitalio\nimport alarm\nfrom adafruit_hid.keyboard import Keyboard\nfrom adafruit_hid.keycode import Keycode\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\nfrom adafruit_ble.advertising.standard import ProvideServicesAdvertisement\nfrom adafruit_ble.services.standard.hid import HIDService\n\nhid = HIDService()\nadvertisement = ProvideServicesAdvertisement(hid)\nadvertisement.appearance = 961\nble = BLERadio()\nble.name = \"OneKey\"\n\nif not ble.connected:\n    ble.start_advertising(advertisement)\n    while not ble.connected:\n        pass\nble.stop_advertising()\n\nk = Keyboard(hid.devices)\n\nboton = digitalio.DigitalInOut(board.D9)\nboton.direction = digitalio.Direction.INPUT\nboton.pull = digitalio.Pull.UP\n\nwhile True:\n    if not boton.value:\n        k.send(Keycode.F13)\n        time.sleep(0.2)"}
-      ],
-      "linked_products": [
-        {
-          "name_original": "Placa ESP32-S3 BLE",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=GS1-3",
-          "price_clp": 13670,
-          "stock_available": true,
-          "match_score": 0.82
-        },
-        {
-          "name_original": "Switch pulsador 4 pines kit (alternativa al Kailh)",
-          "product_id": "D-504",
-          "product_url": "https://www.mechatronicstore.cl/kit-25-botones-pulsadores-switch-4-pines-con-tapas-de-colores-12x12mm-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=D-504",
-          "price_clp": 2090,
-          "stock_available": true,
-          "match_score": 0.72
-        },
-        {
-          "name_original": "Batería LiPo 3.7V 300mAh",
-          "product_id": "XM5-2",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=XM5-2",
-          "price_clp": 8990,
-          "stock_available": true,
-          "match_score": 0.80
-        },
-        {
-          "name_original": "Headers macho 2.54mm",
-          "product_id": "GI5-3",
-          "product_url": "https://www.mechatronicstore.cl/fila-pin-header-macho-2x40-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=teclado-bluetooth-una-tecla-mecanico-esp32-circuitpython&utm_content=GI5-3",
-          "price_clp": 490,
-          "stock_available": true,
-          "match_score": 0.85
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 90,
-      "estimated_cost_clp": 25240,
-      "tags": ["esp32", "bluetooth", "ble", "hid", "teclado", "circuitpython"]
-    },
-    {
-      "id": "2a3ef6e75e08",
-      "slug": "dispensador-datos-ambientales-star-trek-lcars-esp32-s3",
-      "title_es": "Dispensador de datos ambientales estilo Star Trek LCARS",
-      "subtitle_es": "Arma un prop estilo Star Trek con pantalla LCARS que muestra CO2, temperatura y humedad en gráficos en tiempo real.",
-      "hero_image_url": null,
-      "body_es": "## Un prop de Star Trek que sí hace cosas\n\nLos paneles **LCARS** (Library Computer Access/Retrieval System) son los displays icónicos de las series modernas de Star Trek (TNG en adelante): grandes botones de colores planos, esquinas redondeadas, tipografía geométrica. Quedan muy bien en una vitrina, pero quedan aún mejor cuando muestran datos reales del ambiente.\n\nEste tutorial te guía para armar un prop alimentado por **ESP32-S3 con pantalla TFT reverse-mounted** que lee CO2, temperatura y humedad de un sensor I2C y los grafica con la estética LCARS clásica.\n\n## ¿Qué hace?\n\n- Lee CO2 (ppm), temperatura (°C) y humedad relativa (%) cada 5 segundos.\n- Dibuja tres gráficos rolling con los últimos 60 datos.\n- Pulsa un motor vibrador háptico cuando un valor cruza el umbral (CO2 > 1000 ppm = mala ventilación).\n- Imprime los datos sobre la estética LCARS con paleta naranjo/púrpura/cian.\n- Se monta en el pecho con un pin magnético, como un comunicador de la Federación.\n\n## Lista de materiales\n\n- Placa ESP32-S3 con pantalla TFT integrada (\"reverse TFT\" o similar)\n- Sensor I2C de CO2 + temperatura + humedad (STC31, SCD41, o BME280 + sensor CO2 aparte)\n- Driver háptico DRV2605L (I2C)\n- Motor de vibración tipo disco (3V)\n- Batería LiPo 3.7V 420-500 mAh con JST\n- Cable USB-C para programar y cargar\n- Cable STEMMA QT / JST-SH 4 pines (o Dupont si tu sensor no es STEMMA)\n- Pin magnético tipo solapa para sujeción\n\n## Conexiones I2C\n\nTodo el periférico va por I2C, lo que simplifica el cableado a 4 hilos compartidos:\n\n```\nESP32-S3       Sensor + DRV2605L\n  SDA  ──────────  SDA\n  SCL  ──────────  SCL\n  3V3  ──────────  VCC\n  GND  ──────────  GND\n```\n\nEl DRV2605L tiene dos pines extra para conectar el motor háptico (LRA o ERM).\n\n## Estilo LCARS\n\nLCARS se reconoce por:\n\n- Paleta: **naranjo (#FF9900)**, púrpura (#CC99CC), cian (#99CCFF), beige.\n- Esquinas redondeadas grandes con \"asas\" rectangulares.\n- Tipografía geométrica condensada.\n- Bloques de color sólido como botones.\n\nEn CircuitPython usa `displayio` con `RoundRect` y `Rect` para los bloques. Para la fuente, usa una BDF/PCF estilo Swiss911 o Helvetica Condensed (libre uso).\n\n## Código (lectura sensor + dibujo gráfico)\n\n```python\nimport time\nimport board\nimport busio\nimport displayio\nimport terminalio\nfrom adafruit_display_text import label\nfrom adafruit_display_shapes.roundrect import RoundRect\nfrom adafruit_display_shapes.rect import Rect\n\ni2c = busio.I2C(board.SCL, board.SDA)\n\n# Inicializar tu sensor: BME280, SCD41, etc.\n# from adafruit_bme280 import basic as adafruit_bme280\n# bme = adafruit_bme280.Adafruit_BME280_I2C(i2c)\n\ndisplay = board.DISPLAY\nsplash = displayio.Group()\ndisplay.root_group = splash\n\nNARANJO = 0xFF9900\nPURPURA = 0xCC99CC\nCIAN = 0x99CCFF\n\nsplash.append(RoundRect(0, 0, 80, 30, 12, fill=NARANJO))\nsplash.append(RoundRect(0, 100, 80, 30, 12, fill=PURPURA))\n\netiqueta_co2 = label.Label(terminalio.FONT, text=\"CO2\", color=NARANJO, x=85, y=15)\nsplash.append(etiqueta_co2)\nvalor_co2 = label.Label(terminalio.FONT, text=\"---\", color=0xFFFFFF, x=85, y=35)\nsplash.append(valor_co2)\n\nhistorial = []\n\nwhile True:\n    # co2 = sensor.CO2\n    co2 = 420  # placeholder; reemplaza con tu sensor real\n    valor_co2.text = f\"{co2} ppm\"\n    historial.append(co2)\n    if len(historial) > 60:\n        historial.pop(0)\n    time.sleep(5)\n```\n\n## Disparar el motor háptico\n\n```python\nimport adafruit_drv2605\nhaptico = adafruit_drv2605.DRV2605(i2c)\nhaptico.sequence[0] = adafruit_drv2605.Effect(47)  # buzz corto\n\nif co2 > 1000:\n    haptico.play()\n```\n\n## Montaje físico\n\n1. **Imprime una carcasa** con frontal estilo combadge: rectangular con esquinas redondeadas.\n2. Pega el sensor cerca de **una rejilla** lateral para que respire aire ambiente, no aire interno.\n3. La batería va por detrás, el motor háptico **pegado a la carcasa** (no flotando: necesita masa para transmitir vibración).\n4. Imán y pin solapa fijan el dispositivo a la ropa.\n\n## Casos de uso\n\n- **Monitor de ventilación de oficina**: te avisa silenciosamente cuando el CO2 sube.\n- **Demo en convenciones cosplay**: \"sí, mi combadge mide CO2 y vibra cuando hay que ventilar\".\n- **Logger ambiental portátil** con SD opcional (agregando un módulo SD por SPI).\n\nDiversión nerd con utilidad real.",
-      "materials_list": [
-        {"name": "Placa ESP32-S3 con pantalla TFT integrada", "qty": 1, "role": "controlador + display"},
-        {"name": "Sensor I2C CO2 + temperatura + humedad", "qty": 1, "role": "sensor ambiental"},
-        {"name": "Driver háptico DRV2605L", "qty": 1, "role": "control motor vibrador"},
-        {"name": "Motor vibrador disco 3V", "qty": 1, "role": "retroalimentación táctil"},
-        {"name": "Batería LiPo 3.7V 420mAh", "qty": 1, "role": "alimentación"},
-        {"name": "Cable USB Tipo C", "qty": 1, "role": "programación/carga"},
-        {"name": "Cable STEMMA QT/JST-SH 4 pines", "qty": 1, "role": "conexión I2C"},
-        {"name": "Pin solapa magnético", "qty": 1, "role": "sujeción"}
-      ],
-      "steps": [
-        {"position": 1, "name": "Probar sensores por separado", "text": "Conecta el sensor I2C y verifica con un script básico que entrega CO2, temperatura y humedad. Confirma la dirección I2C con i2c.scan()."},
-        {"position": 2, "name": "Probar driver háptico", "text": "Conecta el DRV2605L al motor disco. Carga ejemplo de la librería adafruit_drv2605 y dispara distintos efectos para elegir el patrón."},
-        {"position": 3, "name": "Diseñar UI LCARS", "text": "Crea grupos displayio con RoundRect en naranjo/púrpura, etiquetas de texto y áreas para los tres gráficos rolling."},
-        {"position": 4, "name": "Integrar lectura periódica", "text": "Bucle que cada 5 segundos lee el sensor, actualiza valores en pantalla y agrega al historial circular."},
-        {"position": 5, "name": "Alertas hápticas", "text": "Cuando CO2 > 1000 ppm dispara el motor háptico con un patrón corto. Repite cada minuto si la condición persiste."},
-        {"position": 6, "name": "Montaje en carcasa", "text": "Imprime la carcasa estilo combadge, monta sensor cerca de rejilla, batería atrás y motor pegado a la pared interna para transmitir vibración."}
-      ],
-      "code_blocks": [
-        {"lang": "python", "caption": "Lectura del sensor + UI LCARS básica", "code": "import time\nimport board\nimport busio\nimport displayio\nimport terminalio\nfrom adafruit_display_text import label\nfrom adafruit_display_shapes.roundrect import RoundRect\nfrom adafruit_display_shapes.rect import Rect\n\ni2c = busio.I2C(board.SCL, board.SDA)\n\ndisplay = board.DISPLAY\nsplash = displayio.Group()\ndisplay.root_group = splash\n\nNARANJO = 0xFF9900\nPURPURA = 0xCC99CC\nCIAN = 0x99CCFF\n\nsplash.append(RoundRect(0, 0, 80, 30, 12, fill=NARANJO))\nsplash.append(RoundRect(0, 100, 80, 30, 12, fill=PURPURA))\n\netiqueta_co2 = label.Label(terminalio.FONT, text=\"CO2\", color=NARANJO, x=85, y=15)\nsplash.append(etiqueta_co2)\nvalor_co2 = label.Label(terminalio.FONT, text=\"---\", color=0xFFFFFF, x=85, y=35)\nsplash.append(valor_co2)\n\nhistorial = []\n\nwhile True:\n    co2 = 420\n    valor_co2.text = f\"{co2} ppm\"\n    historial.append(co2)\n    if len(historial) > 60:\n        historial.pop(0)\n    time.sleep(5)"},
-        {"lang": "python", "caption": "Disparar el motor háptico cuando CO2 sube", "code": "import adafruit_drv2605\nhaptico = adafruit_drv2605.DRV2605(i2c)\nhaptico.sequence[0] = adafruit_drv2605.Effect(47)\n\nif co2 > 1000:\n    haptico.play()"}
-      ],
-      "linked_products": [
-        {
-          "name_original": "Placa ESP32 con pantalla TFT",
-          "product_id": "D-512",
-          "product_url": "https://www.mechatronicstore.cl/esp32-con-pantalla-tactil-tft-1-28-pulgadas/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=D-512",
-          "price_clp": 34990,
-          "stock_available": false,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Sensor temperatura humedad BME280 I2C",
-          "product_id": "GR1-10",
-          "product_url": "https://www.mechatronicstore.cl/sensor-barometrico-bme280-spi-i2c-3-3v/?attribute_comunicacion=I2C&utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=GR1-10",
-          "price_clp": 8690,
-          "stock_available": false,
-          "match_score": 0.75
-        },
-        {
-          "name_original": "Driver háptico DRV2605L",
-          "product_id": "GL2-6",
-          "product_url": "https://www.mechatronicstore.cl/gravity-haptic-motor-driver/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=GL2-6",
-          "price_clp": 10650,
+          "name_original": "Flux Pasta NC-559 10cc",
+          "product_id": "E-006",
+          "product_url": "https://www.mechatronicstore.cl/flux-pasta-de-soldadura-de-nc-559-10cc/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=E-006",
+          "price_clp": 3490,
           "stock_available": true,
           "match_score": 0.96
         },
         {
-          "name_original": "Motor vibrador disco 3V",
-          "product_id": "GB3-6",
-          "product_url": "https://www.mechatronicstore.cl/motor-de-vibracion-3v-60ma-plano/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=GB3-6",
-          "price_clp": 1200,
-          "stock_available": true,
-          "match_score": 0.90
-        },
-        {
-          "name_original": "Batería LiPo 3.7V 300mAh",
-          "product_id": "XM5-2",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-702030-3-7v-300mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=XM5-2",
-          "price_clp": 8990,
-          "stock_available": true,
-          "match_score": 0.76
-        },
-        {
-          "name_original": "Cable USB Tipo C a USB A",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=dispensador-datos-ambientales-star-trek-lcars-esp32-s3&utm_content=B-101",
+          "name_original": "Cinta de Malla Desoldadora 2mm",
+          "product_id": "E-205",
+          "product_url": "https://www.mechatronicstore.cl/malla-desoldadora-zhen-dong-1-5m/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=E-205",
           "price_clp": 2190,
           "stock_available": true,
-          "match_score": 0.92
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Estación de Soldar Certificada ZD-99",
+          "product_id": "K-301",
+          "product_url": "https://www.mechatronicstore.cl/estacion-de-soldar-certificada-zd-99/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=K-301",
+          "price_clp": 32000,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Smart Switch Sonoff Básico Wi-Fi (alternativa)",
+          "product_id": "F-340",
+          "product_url": "https://www.mechatronicstore.cl/sonoff-basico-controlador-wi-fi-smartswitch-domotica/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=F-340",
+          "price_clp": 8900,
+          "stock_available": true,
+          "match_score": 0.75
+        },
+        {
+          "name_original": "Cable USB a Micro USB programador",
+          "product_id": "X3-10",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=enchufe-smart-esp32-c3-homekit-medidor-consumo&utm_content=X3-10",
+          "price_clp": 1290,
+          "stock_available": true,
+          "match_score": 0.78
         }
       ],
-      "github_url": null,
-      "download_urls": [],
+      "github_url": "https://github.com/AchimPieters/ESP32-power-monitor-switch",
+      "download_urls": [
+        {
+          "label": "Lifecycle Manager (firmware precompilado)",
+          "url": "https://github.com/AchimPieters/esp32-lifecycle-manager/releases",
+          "kind": "zip"
+        },
+        {
+          "label": "ESP32 HomeKit framework",
+          "url": "https://github.com/AchimPieters/esp32-homekit",
+          "kind": "repo"
+        },
+        {
+          "label": "Generador de QR HomeKit",
+          "url": "https://github.com/AchimPieters/esp32-homekit-qrcode",
+          "kind": "repo"
+        }
+      ],
       "category": "esp32",
       "difficulty": "advanced",
-      "estimated_time_minutes": 240,
-      "estimated_cost_clp": 66710,
-      "tags": ["esp32-s3", "star-trek", "lcars", "co2", "haptico", "sensor-ambiental"]
+      "estimated_time_minutes": 180,
+      "estimated_cost_clp": 64760,
+      "tags": [
+        "esp32-c3",
+        "homekit",
+        "domotica",
+        "smart-switch",
+        "ota",
+        "lifecycle-manager",
+        "bl0942"
+      ],
+      "source_language": "en",
+      "re_angulation_applied": "Re-estructurado en bloques Concepto→Hardware→Pasos→Variantes; agregada advertencia 220V chilena, sección Personalización Chile con Sonoff como alternativa beginner-friendly, y sección Variantes con MQTT/Home Assistant que el original no tiene.",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.35,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
     },
     {
-      "id": "a30ba3ea3667",
-      "slug": "monitoreo-senales-radio-sdr-raspberry-pi-intercept",
-      "title_es": "Monitor de señales de radio con SDR y Raspberry Pi",
-      "subtitle_es": "Instala iNTERCEPT en tu Raspberry Pi con un dongle SDR USB para escanear BLE, ADS-B, AIS, ham radio y más en un dashboard web.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/908/medium800/wifi_overview_hero_lg.png?1776873624",
-      "body_es": "## Un centro de monitoreo de señales en casa\n\nUn Raspberry Pi conectado a un dongle SDR (Software Defined Radio) USB barato puede escanear y decodificar una variedad enorme de señales de radio:\n\n- **Bluetooth Low Energy (BLE)**: detectar AirTags, dispositivos cercanos, beacons.\n- **ADS-B (1090 MHz)**: ver aviones en vuelo a tu alrededor en un mapa.\n- **AIS (162 MHz)**: ver barcos y embarcaciones.\n- **AM / FM / HAM**: sintonizar emisoras comerciales o de radioaficionados.\n- **Morse code**: decodificar transmisiones CW automáticamente.\n\nEl problema histórico: configurar todo ese software (rtl-sdr, dump1090, gqrx, gr-air-modes, etc.) es una pesadilla. **iNTERCEPT** es un proyecto open-source que empaqueta todas estas herramientas detrás de una UI web con estética de película de espías. La instalación es un script y queda funcionando.\n\n![Raspberry Pi con SDR USB y antena monitoreando señales de radio](https://cdn-learn.adafruit.com/assets/assets/000/143/908/medium800/wifi_overview_hero_lg.png?1776873624)\n\n## ¿Qué necesitas?\n\n- **Raspberry Pi 3, 4 o 5** (mejor el 5 para procesamiento de ADS-B/AIS sin saltos)\n- **Dongle SDR USB** basado en RTL2832U (los \"RTL-SDR Blog v3\" o equivalentes baratos)\n- **Antena**: la genérica del dongle sirve para empezar. Para mejor recepción ADS-B, antena 1090 MHz dedicada.\n- **Tarjeta microSD 16 GB+** con Raspberry Pi OS\n- **Fuente USB-C** para el Pi (5V 3A)\n- **Cable Ethernet** opcional (para no depender del WiFi al usar BLE)\n\n## Funciones que dependen del modelo\n\n| Función | Pi 3 | Pi 4 | Pi 5 |\n|---|---|---|---|\n| BLE scanning (WiFi/BT integrado) | sí | sí | sí |\n| ADS-B (vía SDR) | lento | sí | sí |\n| AIS (vía SDR) | parcial | sí | sí |\n| FM/AM con waterfall | parcial | sí | sí |\n| HackRF (1 MHz a 6 GHz) | sí | sí | sí |\n\nUn Pi 3 sirve si solo te interesa BLE y radio comercial. Para todo lo demás, Pi 4/5.\n\n## Preparación del sistema\n\n```bash\n# Flash Raspberry Pi OS Lite 64-bit con Raspberry Pi Imager\n# SSH habilitado, WiFi configurado\nsudo apt update && sudo apt upgrade -y\nsudo apt install -y git curl python3 python3-pip\n```\n\n## Instalar iNTERCEPT\n\n```bash\ngit clone https://github.com/openintercept/intercept.git\ncd intercept\nsudo ./install.sh\n```\n\nEl script:\n\n1. Instala las herramientas SDR (`rtl-sdr`, `dump1090`, `gnuradio`, `gqrx`).\n2. Configura `systemd` para que iNTERCEPT arranque al boot.\n3. Crea un usuario sin privilegios para correr los servicios.\n4. Abre el puerto 8080 con la interfaz web.\n\nDespués de la instalación, conecta el dongle SDR a un puerto USB del Pi.\n\n## Verificar el SDR\n\n```bash\nrtl_test -t\n```\n\nDebería mostrar el chip RTL2832U y el sintonizador (R820T, FC0013, etc.). Si dice \"device not found\", revisa que el dongle esté conectado y vuelve a probar.\n\n## Acceder al dashboard\n\nAbre tu navegador en `http://<IP_DEL_PI>:8080` y verás:\n\n- **Map**: aviones ADS-B en tiempo real sobre un mapa Leaflet.\n- **Spectrum**: waterfall en vivo del rango sintonizado.\n- **BLE Scanner**: lista de dispositivos BLE cercanos con RSSI.\n- **AIS**: barcos visibles si estás cerca del mar.\n- **HAM**: presets para bandas de radioaficionados (2m, 70cm).\n\n## Consideraciones legales\n\nRecibir señales de radio es legal en casi todos los países (Chile incluido). **Transmitir** sin licencia no lo es. iNTERCEPT solo recibe, así que estás OK.\n\nUna excepción: las transmisiones cifradas (telefonía celular moderna, redes WiFi) no las puedes decodificar de forma útil sin la clave, y compartir contenido decodificado de comunicaciones privadas puede ser ilegal.\n\n## Antena para ADS-B\n\nSi quieres ver aviones a 200+ km, vale la pena fabricar una antena \"cantenna\" o dipolo de 1/4 de onda para 1090 MHz. Es solo un cable de cobre de 6.9 cm como elemento. Hay tutoriales abundantes.\n\n## Casos de uso\n\n- **AirTag scanner casero**: detecta AirTags Apple que viajan contigo sin tu consentimiento.\n- **Spotter de aviación**: identifica vuelos que pasan sobre tu casa.\n- **Radio amateur**: punto de partida para entrar al hobby ham.\n- **Captura de tramas CW (morse)**: traducción automática para aprender el código.\n\nUn proyecto que abre el mundo del espectro radioeléctrico con muy poco hardware.",
+      "id": "09364e5c76dc",
+      "slug": "primer-accesorio-homekit-esp32-paso-a-paso",
+      "title_es": "Tu primer accesorio HomeKit con ESP32: guía paso a paso desde cero",
+      "subtitle_es": "Flashea un ESP32-WROOM-32 con firmware HomeKit usando Docker, conecta un LED y emparéjalo con Apple Home en una tarde, sin instalar ESP-IDF a mano.",
+      "hero_image_url": "https://www.studiopieters.nl/wp-content/uploads/2026/01/for-TOTAL-beginners-scaled.png",
+      "body_es": "## Tu primer LED HomeKit casero: el camino completo desde cero\n\nSi llegaste a este tutorial probablemente buscaste \"ESP32 HomeKit\" en Google, abriste 5 pestañas y te encontraste con frases como \"asumiendo que ya tienes Docker configurado…\" o \"compila el firmware con ESP-IDF\". Y pensaste: ¿qué carajo es ESP-IDF? Tranquilo. Este tutorial está escrito justo para ese punto.\n\nVamos a flashear un ESP32 con firmware HomeKit, conectarle un LED real, y que aparezca en la app Home de tu iPhone — sin instalar manualmente compiladores ni romper tu sistema operativo. Para eso usamos Docker, que actúa como una \"caja de desarrollo\" aislada con todas las herramientas ya configuradas.\n\n## Lo que vas a tener al final\n\n- Un ESP32-WROOM-32 corriendo firmware HomeKit personalizado.\n- Un LED externo conectado a GPIO2, controlable desde la app Home.\n- Un entorno de desarrollo Docker que sirve para todos los proyectos ESP32 futuros (no solo HomeKit).\n- Las palabras \"flashear\", \"compilar\" y \"build\" sin miedo.\n\n## Concepto: por qué necesitas Docker y no Arduino IDE\n\nEl framework HomeKit que vamos a usar (esp32-homekit de StudioPieters) no es una librería de Arduino: es código pensado para ESP-IDF, el SDK oficial de Espressif en C. Instalar ESP-IDF a mano implica:\n\n- Bajar ~4 GB de toolchains.\n- Configurar variables de entorno por SO.\n- Resolver conflictos con Python del sistema.\n- Aceptar que cada actualización puede romperte el setup.\n\nDocker resuelve eso bajando una imagen `espressif/idf:v5.4` que ya contiene todo eso compilado y probado. Tu computador no cambia: solo descargas un archivo que Docker ejecuta cuando lo necesitas.\n\n## Hardware necesario\n\n| Componente | Función | Notas |\n|---|---|---|\n| ESP32-WROOM-32 (DevKit con USB) | Microcontrolador Wi-Fi | El de USB Tipo C funciona perfecto |\n| Cable USB (datos, NO solo carga) | Programación + alimentación | Verifica que sea de datos |\n| LED 5mm (cualquier color) | Indicador HomeKit | Funciona con cualquier color |\n| Resistencia 220Ω a 1kΩ | Limitar corriente del LED | 330Ω es lo más común |\n| 2 cables jumper macho-macho | Conexiones | Largos cómodos |\n| Protoboard | Soporte | Opcional pero recomendado |\n\n## Paso 1: instalar Docker Desktop\n\n1. Ve a https://www.docker.com/products/docker-desktop/\n2. Descarga la versión para tu sistema operativo (Windows, macOS Intel o Apple Silicon, Linux).\n3. Instala con opciones por defecto. En Windows, te pedirá habilitar WSL2 (sigue las instrucciones).\n4. Reinicia el computador.\n5. Abre Docker Desktop y espera el mensaje \"Docker is running\".\n\nVerifica desde la terminal (PowerShell en Windows, Terminal en macOS/Linux):\n\n```bash\ndocker --version\n# Esperado: Docker version 29.x.x\n\ndocker ps\n# Esperado: lista vacía (sin contenedores activos)\n```\n\nSi `docker ps` arroja error, vuelve a abrir Docker Desktop.\n\n## Paso 2: descargar la imagen ESP-IDF\n\n```bash\ndocker pull espressif/idf:v5.4\n```\n\nEsto baja ~4 GB. Toma 5-15 minutos según tu conexión. Cuando termine:\n\n```bash\ndocker images\n# REPOSITORY       TAG    SIZE\n# espressif/idf    v5.4   ~4GB\n```\n\nSi en cualquier momento quieres deshacer todo esto: `docker rmi espressif/idf:v5.4`. Cero daño al sistema.\n\n## Paso 3: instalar Git y Python\n\nGit lo necesitas para bajar el código del proyecto. Python para flashear el ESP32 después.\n\n```bash\n# Git: instala desde https://git-scm.com/downloads\ngit --version\n\n# Python 3 (si no lo tienes ya): https://www.python.org/downloads/\n# Importante: marca \"Add Python to PATH\" en el instalador\npython3 --version\n\n# esptool.py: herramienta oficial de Espressif para flashear\npip3 install esptool\nesptool.py version\n```\n\nSi `pip3` falla, prueba `python3 -m pip install esptool`. En Linux/macOS con permisos: `pip3 install --user esptool`.\n\n## Paso 4: clonar el demo HomeKit\n\n```bash\ngit clone --recursive https://github.com/AchimPieters/esp32-homekit-demo.git\ncd esp32-homekit-demo\n```\n\nEl flag `--recursive` es **crítico**: el repo usa submódulos para esp32-homekit y dependencias. Sin él, la compilación falla con errores raros de archivos faltantes.\n\n## Paso 5: entrar al \"container\" de desarrollo\n\nAquí montamos la carpeta del proyecto dentro de Docker, para que las herramientas ESP-IDF puedan leerla y compilar.\n\n```bash\n# macOS / Linux\ndocker run -it -v ~/esp32-homekit-demo:/project -w /project espressif/idf:v5.4\n\n# Windows (ajusta la ruta a tu usuario)\ndocker run -it -v C:/Users/TUUSUARIO/esp32-homekit-demo:/project -w /project espressif/idf:v5.4\n```\n\nTu prompt cambia (ahora estás dentro del container). Las próximas órdenes van adentro:\n\n```bash\ncd examples/led\nidf.py set-target esp32\n```\n\n`set-target esp32` le dice al sistema que vas a compilar para un ESP32 clásico (no C3, no S3). Solo se ejecuta una vez por proyecto.\n\n## Paso 6: configurar tu Wi-Fi\n\n```bash\nidf.py menuconfig\n```\n\nAparece un menú azul. Navega con las flechas:\n\n1. Entra a `StudioPieters`.\n2. Ajusta `Wi-Fi SSID` con el nombre de tu red.\n3. Ajusta `Wi-Fi password` con la contraseña.\n4. Presiona `S` para guardar, luego `Q` para salir.\n\n**Importante**: HomeKit y ESP32 solo trabajan en redes Wi-Fi 2.4 GHz, no 5 GHz. Si tu router emite ambas con el mismo SSID, considera separarlas o crear una red 2.4 GHz dedicada para IoT.\n\n## Paso 7: compilar firmware\n\n```bash\nidf.py build\n```\n\nLa primera compilación demora 2-5 minutos. Al final, dentro de `build/` aparecen:\n\n- `bootloader/bootloader.bin`\n- `partition_table/partition-table.bin`\n- `main.bin`\n\nEsos tres archivos van al ESP32.\n\n## Paso 8: conectar el LED\n\nMientras compila, arma el circuito físico:\n\n```text\nESP32 GPIO2 ───[Resistencia 220Ω]───┤>├─── ESP32 GND\n                                    LED\n                                   (ánodo + cátodo)\n```\n\nEl ánodo del LED (pata larga) va al lado de la resistencia. El cátodo (pata corta) va a GND. Si lo conectas al revés no se quema — simplemente no enciende.\n\n## Paso 9: borrar la flash y subir firmware\n\nAbre **otra terminal** (fuera de Docker), conecta el ESP32 por USB y:\n\n```bash\n# 1. Borrar flash (limpia firmware previo y muestra el puerto serial)\nesptool.py erase_flash\n\n# Anota el puerto que aparece:\n# macOS: /dev/cu.usbserial-XXXX\n# Linux: /dev/ttyUSB0\n# Windows: COM3 / COM4\n```\n\nSi \"Connecting…\" se queda colgado, mantén presionado **BOOT** en el ESP32, presiona y suelta **RESET**, luego suelta BOOT, y reintenta. Es normal en placas con CH340.\n\nDespués, flashea el firmware compilado:\n\n```bash\ncd esp32-homekit-demo/examples/led\n\npython -m esptool --chip esp32 -b 460800 \\\n  --before default_reset --after hard_reset write_flash \\\n  --flash_mode dio --flash_size 2MB --flash_freq 40m \\\n  0x1000 build/bootloader/bootloader.bin \\\n  0x8000 build/partition_table/partition-table.bin \\\n  0x10000 build/main.bin\n```\n\n## Paso 10: ver el ESP32 boot y emparejar con Apple Home\n\nAbre el monitor serial (en macOS/Linux con `screen`, en Windows con PuTTY o el monitor serial de Arduino IDE a 115200 baudios):\n\n```bash\nscreen /dev/cu.usbserial-XXXX 115200\n```\n\nDeberías ver:\n\n```text\n>>> HomeKit: Starting server\n>>> HomeKit: Using existing accessory ID: 1F:01:DB:62:5F:6A\n>>> HomeKit: Configuring mDNS\n>>> homekit_setup_mdns: Accessory Setup ID = 1QJ8\n>>> homekit_run_server: Starting HTTP server\n```\n\nEso significa que tu ESP32 está vivo, conectado a Wi-Fi y esperando emparejamiento.\n\nEn el iPhone:\n\n1. Abre la app Home → \"+\" → \"Agregar accesorio\".\n2. Cuando pida escanear un código, escanea el QR del demo (viene en el README del repo) o ingresa manualmente el setup code que muestra el log serial.\n3. La app dirá \"accesorio no certificado\" → presiona **\"Agregar de todos modos\"**.\n4. Asigna nombre y habitación.\n5. Toca el accesorio en la app: el LED se enciende y apaga.\n\nSi llegaste hasta aquí, oficialmente armaste un accesorio HomeKit DIY. El resto es agregarle sensores, relés, displays — todo el flujo es el mismo.\n\n## Cómo salir de `screen` (no es CTRL+C)\n\n`screen` no se cierra con CTRL+C ni cerrando la ventana. Para liberarlo correctamente:\n\n1. Presiona `CTRL + A`\n2. Después `K`\n3. Confirma con `Y`\n\nEsto suelta el puerto serial para que la próxima vez puedas flashear sin errores de \"puerto ocupado\".\n\n## Variantes y mejoras\n\n- **De LED a relé**: reemplaza el LED+resistencia por un módulo relé de 5V conectado a GPIO2 (a través de un transistor o módulo optoacoplado). Misma lógica en el código: ON pone GPIO2 en alto, OFF en bajo. Ahora controlas cualquier electrodoméstico desde HomeKit.\n- **Sensor de temperatura HomeKit**: el repo `esp32-homekit-demo` incluye un ejemplo con DHT22. Conéctalo a GPIO4 y aparece en la app Home como sensor de temperatura/humedad — útil para automatizaciones tipo \"si > 28°C, encender ventilador (otro accesorio)\".\n- **Múltiples accesorios en un solo ESP32**: el framework soporta hasta 100 accesorios por dispositivo. Puedes tener un ESP32 con 4 relés, un sensor PIR y un DHT22 todos como accesorios independientes en HomeKit.\n\n## Personalización para Chile\n\nLo bueno: **todos los componentes del tutorial están en stock en MechatronicStore**, no necesitas Adafruit ni Amazon.\n\n- **ESP32-WROOM-32 ESP32S Tipo C** (SKU X2-10V2) — $7.990 CLP. La placa exacta del tutorial, USB Tipo C es más práctico que micro USB.\n- **Cable USB a Micro USB** (SKU X3-10) — $1.290 CLP. Si tu ESP32 viene con micro USB, este es de datos (no de carga solamente).\n- **LED 3mm/5mm variedad de colores** (SKU GA5-5) — $100 CLP por unidad. Cualquier color sirve para el demo.\n- **Resistencia 1/4W 220Ω** (SKU GK1-18) — $100 CLP. El valor más usado para LEDs.\n- **Cables macho-macho 30cm** (SKU C-417) — $2.990 CLP el pack. Conectas todo el protoboard.\n- **Breadboard/Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP. Cabe el ESP32 completo y deja espacio para periféricos.\n\nTotal del kit completo: ~$16.260 CLP. Es probablemente la entrada más barata al ecosistema HomeKit sin pagar accesorios certificados (que rondan $30-80 mil cada uno).\n\n## Recursos\n\n- esp32-homekit-demo (repo principal): https://github.com/AchimPieters/esp32-homekit-demo\n- esp32-homekit (framework): https://github.com/AchimPieters/esp32-homekit\n- Tutorial original (inglés): https://www.studiopieters.nl/esp32-homekit-for-total-beginners\n",
       "materials_list": [
-        {"name": "Raspberry Pi 5 (o Pi 4 / Pi 3)", "qty": 1, "role": "computador principal"},
-        {"name": "Dongle SDR USB RTL2832U", "qty": 1, "role": "receptor de radio"},
-        {"name": "Antena 1090 MHz (opcional para ADS-B)", "qty": 1, "role": "captación de señal"},
-        {"name": "Tarjeta microSD 16GB+", "qty": 1, "role": "almacenamiento sistema"},
-        {"name": "Fuente USB-C 5V 3A", "qty": 1, "role": "alimentación"},
-        {"name": "Cable Ethernet (opcional)", "qty": 1, "role": "conexión red"}
+        {
+          "name": "Placa ESP32-WROOM-32 (DevKit con USB)",
+          "qty": 1,
+          "role": "microcontrolador"
+        },
+        {
+          "name": "Cable USB a Micro USB (de datos)",
+          "qty": 1,
+          "role": "programación"
+        },
+        {
+          "name": "LED 5mm cualquier color",
+          "qty": 1,
+          "role": "indicador HomeKit"
+        },
+        {
+          "name": "Resistencia 220Ω 1/4W",
+          "qty": 1,
+          "role": "limitar corriente LED"
+        },
+        {
+          "name": "Cables macho-macho jumper",
+          "qty": 2,
+          "role": "conexiones"
+        },
+        {
+          "name": "Protoboard 830 puntos",
+          "qty": 1,
+          "role": "soporte circuito"
+        }
       ],
       "steps": [
-        {"position": 1, "name": "Preparar Raspberry Pi OS", "text": "Flashea Raspberry Pi OS Lite 64-bit con SSH habilitado y WiFi configurado desde Raspberry Pi Imager."},
-        {"position": 2, "name": "Actualizar e instalar dependencias", "text": "apt update && apt upgrade. Instala git, curl y python3-pip como base para el script de iNTERCEPT."},
-        {"position": 3, "name": "Clonar e instalar iNTERCEPT", "text": "git clone del repo, ejecuta sudo ./install.sh. El script descarga rtl-sdr, dump1090, gnuradio y configura systemd."},
-        {"position": 4, "name": "Conectar dongle SDR", "text": "Inserta el RTL-SDR en un puerto USB. Verifica con rtl_test -t que el chip se detecta y reporta el sintonizador."},
-        {"position": 5, "name": "Acceder al dashboard web", "text": "Abre http://<IP_PI>:8080 desde otro dispositivo en la red. Explora las pestañas: ADS-B, BLE, AIS, espectro."},
-        {"position": 6, "name": "Mejorar antena (opcional)", "text": "Para mejor recepción ADS-B, fabrica una dipolo de 1/4 onda para 1090 MHz: cable de cobre de 6.9 cm como elemento radiante."}
+        {
+          "position": 1,
+          "name": "Instalar Docker Desktop",
+          "text": "Descarga Docker Desktop desde docker.com, instala con opciones por defecto, reinicia y verifica con docker --version y docker ps."
+        },
+        {
+          "position": 2,
+          "name": "Descargar imagen ESP-IDF",
+          "text": "Ejecuta docker pull espressif/idf:v5.4 (descarga ~4GB) y confirma con docker images."
+        },
+        {
+          "position": 3,
+          "name": "Instalar Git, Python y esptool",
+          "text": "Instala Git desde git-scm.com, Python 3 con Add to PATH, luego pip3 install esptool y verifica con esptool.py version."
+        },
+        {
+          "position": 4,
+          "name": "Clonar el demo HomeKit",
+          "text": "git clone --recursive https://github.com/AchimPieters/esp32-homekit-demo.git. El flag --recursive es crítico para los submódulos."
+        },
+        {
+          "position": 5,
+          "name": "Entrar al container Docker y configurar target",
+          "text": "docker run -it -v ~/esp32-homekit-demo:/project -w /project espressif/idf:v5.4. Adentro: cd examples/led && idf.py set-target esp32."
+        },
+        {
+          "position": 6,
+          "name": "Configurar Wi-Fi con menuconfig",
+          "text": "idf.py menuconfig → StudioPieters → Wi-Fi SSID y Wi-Fi password (red 2.4 GHz). Guardar con S, salir con Q."
+        },
+        {
+          "position": 7,
+          "name": "Compilar firmware",
+          "text": "idf.py build. Genera bootloader.bin, partition-table.bin y main.bin en la carpeta build/."
+        },
+        {
+          "position": 8,
+          "name": "Conectar el LED a GPIO2",
+          "text": "GPIO2 → resistencia 220Ω → ánodo LED → cátodo LED → GND. Si no enciende al final, posiblemente está invertido (no se quema, solo no funciona)."
+        },
+        {
+          "position": 9,
+          "name": "Borrar flash y flashear firmware",
+          "text": "Fuera de Docker: esptool.py erase_flash para anotar el puerto serial. Luego python -m esptool --chip esp32 con los offsets 0x1000, 0x8000, 0x10000 para cada bin."
+        },
+        {
+          "position": 10,
+          "name": "Monitor serial y emparejar HomeKit",
+          "text": "screen /dev/cu.usbserial-XXXX 115200 (o equivalente). Verifica logs HomeKit. En la app Home: + → Agregar accesorio → escanea QR → acepta accesorio no certificado → asigna nombre."
+        }
       ],
       "code_blocks": [
-        {"lang": "bash", "caption": "Preparar sistema e instalar dependencias", "code": "sudo apt update && sudo apt upgrade -y\nsudo apt install -y git curl python3 python3-pip"},
-        {"lang": "bash", "caption": "Clonar e instalar iNTERCEPT", "code": "git clone https://github.com/openintercept/intercept.git\ncd intercept\nsudo ./install.sh"},
-        {"lang": "bash", "caption": "Verificar el dongle SDR", "code": "rtl_test -t"}
+        {
+          "lang": "bash",
+          "caption": "Setup inicial Docker y ESP-IDF",
+          "code": "docker --version\ndocker ps\ndocker pull espressif/idf:v5.4\ndocker images"
+        },
+        {
+          "lang": "bash",
+          "caption": "Clonar y entrar al container",
+          "code": "git clone --recursive https://github.com/AchimPieters/esp32-homekit-demo.git\ncd esp32-homekit-demo\n\n# macOS / Linux\ndocker run -it -v ~/esp32-homekit-demo:/project -w /project espressif/idf:v5.4\n\n# Dentro del container:\ncd examples/led\nidf.py set-target esp32\nidf.py menuconfig\nidf.py build"
+        },
+        {
+          "lang": "bash",
+          "caption": "Flashear firmware al ESP32",
+          "code": "esptool.py erase_flash\n\npython -m esptool --chip esp32 -b 460800 \\\n  --before default_reset --after hard_reset write_flash \\\n  --flash_mode dio --flash_size 2MB --flash_freq 40m \\\n  0x1000 build/bootloader/bootloader.bin \\\n  0x8000 build/partition_table/partition-table.bin \\\n  0x10000 build/main.bin"
+        }
       ],
       "linked_products": [
         {
-          "name_original": "Raspberry Pi 5 4GB",
-          "product_id": "X5-14",
-          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-5-4gb-ram/?attribute_ram=4gb+Ram&utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=X5-14",
-          "price_clp": 107990,
-          "stock_available": false,
+          "name_original": "Placa ESP32-WROOM-32 (Tipo C)",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=primer-accesorio-homekit-esp32-paso-a-paso&utm_content=X2-10V2",
+          "price_clp": 7990,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "Cable USB a Micro USB",
+          "product_id": "X3-10",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=primer-accesorio-homekit-esp32-paso-a-paso&utm_content=X3-10",
+          "price_clp": 1290,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "LED 5mm variedad de colores",
+          "product_id": "GA5-5",
+          "product_url": "https://www.mechatronicstore.cl/led-3mm-5mm/?attribute_tamano-de-led=5mm&attribute_pa_color=verde&utm_source=blog&utm_medium=tutorial&utm_campaign=primer-accesorio-homekit-esp32-paso-a-paso&utm_content=GA5-5",
+          "price_clp": 100,
+          "stock_available": true,
+          "match_score": 0.9
+        },
+        {
+          "name_original": "Resistencia 220Ω 1/4W",
+          "product_id": "GK1-18",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=220%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=primer-accesorio-homekit-esp32-paso-a-paso&utm_content=GK1-18",
+          "price_clp": 100,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Cables macho-macho jumper 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=primer-accesorio-homekit-esp32-paso-a-paso&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=primer-accesorio-homekit-esp32-paso-a-paso&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.96
+        }
+      ],
+      "github_url": "https://github.com/AchimPieters/esp32-homekit-demo",
+      "download_urls": [
+        {
+          "label": "esp32-homekit framework (repo)",
+          "url": "https://github.com/AchimPieters/esp32-homekit",
+          "kind": "repo"
+        },
+        {
+          "label": "Demo HomeKit con LED (repo)",
+          "url": "https://github.com/AchimPieters/esp32-homekit-demo",
+          "kind": "repo"
+        }
+      ],
+      "category": "esp32",
+      "difficulty": "beginner",
+      "estimated_time_minutes": 120,
+      "estimated_cost_clp": 16260,
+      "tags": [
+        "esp32",
+        "homekit",
+        "apple-home",
+        "docker",
+        "esp-idf",
+        "domotica",
+        "tutorial"
+      ],
+      "source_language": "en",
+      "re_angulation_applied": "Conservada estructura paso-a-paso del original pero re-tonificada en tuteo chileno; reordenado el flujo USB/Docker; agregado bloque de troubleshooting Wi-Fi 2.4 GHz, sección Variantes (relé, DHT22, múltiples accesorios) y Personalización Chile con costo total CLP.",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.25,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
+    },
+    {
+      "id": "19720bb50959",
+      "slug": "ota-seguro-esp32-lifecycle-manager-firmware-firmado",
+      "title_es": "OTA seguro con ESP32 Lifecycle Manager: actualiza firmware firmado por aire",
+      "subtitle_es": "Configura un flujo OTA con firma ECDSA en ESP32 usando Lifecycle Manager v2.0, genera tus claves criptográficas y publica releases firmados en GitHub.",
+      "hero_image_url": "https://www.studiopieters.nl/wp-content/uploads/2026/04/LCM_V2-scaled.png",
+      "body_es": "## Por qué OTA \"casero\" termina mal sin firma criptográfica\n\nCualquiera que haya probado OTA (Over The Air) en ESP32 conoce la sensación: funciona perfecto en el laboratorio, pero ¿qué pasa cuando alguien en tu Wi-Fi reemplaza el binario en GitHub por uno malicioso? ¿O cuando un OTA se corta a mitad de camino y el ESP32 queda \"bricked\" sin acceso físico?\n\nLifecycle Manager (LCM) v2.0 resuelve ambas cosas. Es un mini-firmware que vive **antes** que tu código, hace de bootloader, gestiona el Wi-Fi via captive portal, descarga binarios firmados desde GitHub Releases, **verifica la firma ECDSA con tu clave pública** y solo entonces instala. Si la firma no calza, el OTA se rechaza sin tocar la versión actual.\n\nEn este tutorial vas a:\n\n1. Generar un par de claves ECDSA (prime256v1).\n2. Compilar y flashear LCM con la clave pública embebida.\n3. Compilar tu firmware (un demo LED HomeKit).\n4. Firmar el binario con tu clave privada.\n5. Subir firmware + firma a un GitHub Release.\n6. Configurar LCM via captive portal para que descargue tu release y haga OTA.\n\nResultado: tienes un ESP32 que **solo acepta firmware firmado por ti**. Cualquier otra cosa, la ignora.\n\n## Conceptos: claves, firmas y por qué importa\n\nSi los términos \"clave pública\", \"clave privada\" y \"firma\" te suenan a magia negra, este resumen alcanza para este tutorial:\n\n- **Clave privada**: archivo que solo tú tienes. Sirve para *firmar* un binario (calcular un hash criptográfico que solo se puede generar con esa clave).\n- **Clave pública**: derivada de la privada, **se puede compartir sin riesgo**. Sirve para *verificar* que una firma fue generada por la clave privada correspondiente.\n- **Firma**: un blob de ~64 bytes que se adjunta al binario. Si alguien modifica el binario sin tu clave privada, la verificación falla.\n\nLCM embebe tu clave pública. Tú guardas la privada (idealmente en un disco offline o gestor de contraseñas). Si la privada se filtra, generas un par nuevo y reflasheas LCM. No hay nube de terceros involucrada.\n\n## Hardware necesario\n\n| Componente | Notas |\n|---|---|\n| ESP32-WROOM-32 DevKit | El de 38 pines con USB integrado funciona perfecto |\n| Cable USB de datos | No solo cargador |\n| LED 5mm + resistencia 220Ω–1kΩ | Para el firmware demo |\n| Pulsador táctil | Para forzar recovery (botón GPIO0/BOOT del DevKit sirve) |\n| Protoboard + jumpers | Conectar todo |\n\n## Paso 1: entorno de desarrollo (Docker + Python)\n\nIgual que en cualquier tutorial ESP32 moderno, evitamos instalar ESP-IDF a mano usando Docker:\n\n```bash\ndocker pull espressif/idf:v5.4\ngit --version          # si no, instala desde git-scm.com\npython3 --version\npip3 install esptool\n```\n\nY un editor de código cualquiera (VS Code, Pulsar, Sublime — irrelevante).\n\n## Paso 2: generar las claves ECDSA\n\nEstos comandos van **fuera de Docker**, en tu terminal normal:\n\n```bash\n# Clave privada (NUNCA la subas a Git, no la compartas)\nopenssl ecparam -name prime256v1 -genkey -noout -out ota_signing_private.pem\n\n# Clave pública (esta sí, va embebida en LCM)\nopenssl ec -in ota_signing_private.pem -pubout -out ota_signing_public.pem\n```\n\nGuarda `ota_signing_private.pem` en un lugar seguro. Si lo pierdes, no puedes firmar updates nuevos. Si se filtra, alguien podría firmar firmware malicioso para tu ESP32.\n\n## Paso 3: clonar LCM e insertar tu clave pública\n\n```bash\ngit clone https://github.com/AchimPieters/esp32-lifecycle-manager.git\ncd esp32-lifecycle-manager\n```\n\nAbre `main/github_update.c` con tu editor. Busca:\n\n```c\nstatic const char OTA_PUBLIC_KEY_PEM[] = ...\n```\n\nReemplaza el contenido entre comillas con el texto exacto de tu `ota_signing_public.pem` (incluyendo `-----BEGIN PUBLIC KEY-----` y `-----END PUBLIC KEY-----`).\n\n## Paso 4: compilar LCM dentro de Docker\n\n```bash\ndocker run -it -v ~/esp32-lifecycle-manager:/project -w /project espressif/idf:v5.4\n\n# Dentro del container:\nidf.py set-target esp32\nidf.py build\n```\n\n**Importante**: deja esta ventana abierta. Al final del build muestra el comando exacto de `esptool` para flashear LCM. Lo vas a copiar después.\n\n## Paso 5: borrar la flash del ESP32\n\nEn **otra terminal** (fuera de Docker), conecta el ESP32 por USB y:\n\n```bash\ncd ~/esp32-lifecycle-manager\nesptool.py erase_flash\n```\n\nSi \"Connecting...\" se queda colgado: mantén **BOOT**, presiona y suelta **RESET**, suelta BOOT, y reintenta.\n\nAnota el puerto serial que aparece (`/dev/cu.usbserial-XXXX`, `/dev/ttyUSB0`, `COM3`, etc.).\n\n## Paso 6: flashear LCM\n\nCopia el comando que mostró `idf.py build` al final. Algo similar a:\n\n```bash\npython -m esptool --chip esp32 -b 460800 \\\n  --before default_reset --after hard_reset write_flash \\\n  --flash_mode dio --flash_size 4MB --flash_freq 40m \\\n  0x1000 build/bootloader/bootloader.bin \\\n  0x8000 build/partition_table/partition-table.bin \\\n  0xe000 build/ota_data_initial.bin \\\n  0x20000 build/esp32-lifecycle-manager.bin\n```\n\nPégalo en la terminal fuera de Docker y ejecuta. Al terminar, LCM está activo en tu ESP32.\n\n## Paso 7: compilar tu firmware (demo LED)\n\nLCM viene con un ejemplo HomeKit LED listo. Vamos a usarlo como \"tu\" firmware.\n\nAbre otra terminal con Docker:\n\n```bash\ndocker run -it -v ~/esp32-lifecycle-manager:/project -w /project espressif/idf:v5.4\n\n# Adentro:\ncd examples/led\nidf.py set-target esp32\nidf.py build\n# Genera build/main.bin\n```\n\n## Paso 8: firmar el firmware\n\nSal del container. Desde la raíz de `esp32-lifecycle-manager`:\n\n```bash\n./generate_sig.sh examples/led/build/main.bin ota_signing_private.pem\n```\n\nEsto produce:\n\n- `main.bin` (el firmware)\n- `main.bin.sig` (la firma de 64 bytes)\n\nSi alguien modifica `main.bin` aunque sea un byte, la firma deja de ser válida.\n\n## Paso 9: publicar el release en GitHub\n\n1. En GitHub, crea un repo nuevo (puede ser privado).\n2. Crea un nuevo Release con tag `1.0.0`.\n3. Sube `main.bin` y `main.bin.sig` como assets del release.\n4. Anota el nombre del repo: `tu-usuario/esp32-test`.\n\n## Paso 10: conectar al captive portal de LCM\n\nTras flashear LCM, el ESP32 levanta una red Wi-Fi propia llamada `LCM-XXXXXX`. En macOS puede demorar unos minutos en aparecer.\n\n1. Desde tu celular o laptop, únete a `LCM-XXXXXX` (sin contraseña).\n2. Se abre automáticamente un portal cautivo.\n3. Selecciona tu red Wi-Fi de casa, ingresa la contraseña.\n4. En el campo de firmware ingresa `tu-usuario/esp32-test`.\n5. Habilita la opción \"LED durante update\" (con tu GPIO y polaridad correctos).\n6. Presiona **Join**.\n\nLCM se reconecta a tu Wi-Fi, descarga el release, verifica la firma con tu clave pública y, si todo calza, instala el firmware nuevo y reinicia.\n\n## Paso 11: verificar boot y emparejar con HomeKit\n\nAbre el monitor serial (`screen /dev/cu.usbserial-XXXX 115200`). Vas a ver mensajes del firmware demo (HomeKit LED). Para salir de `screen`: `CTRL+A`, luego `K`, luego `Y`.\n\nEn el iPhone, app Home → \"+\" → escanea el QR del demo → acepta accesorio no certificado → controla el LED.\n\n## Recovery: cuando todo se va al carajo\n\nLCM v2.0 incluye dos mecanismos de recuperación:\n\n- **Factory reset por software**: vía API de LCM, limpia configuración y reinicia.\n- **Factory reset por hardware**: si **enciendes y apagas el ESP32 diez veces seguidas**, LCM detecta el patrón, espera ~11 segundos, limpia la config y restaura defaults. Útil cuando perdiste credenciales o el firmware está roto.\n\nY el botón mantiene presionado 30 segundos te lleva siempre de vuelta a LCM, incluso después de un OTA fallido.\n\n## Variantes y mejoras\n\n- **GitHub privado con token**: si tu repo es privado, LCM acepta un Personal Access Token en el captive portal. Útil para empresas que no quieren exponer firmware comercial públicamente.\n- **Servidor de updates propio (sin GitHub)**: LCM puede apuntar a cualquier URL HTTPS que devuelva `main.bin` + `main.bin.sig`. Puedes correr un servidor estático (nginx + cert Let's Encrypt) y servir tus updates desde tu propia infraestructura. Ideal cuando no quieres depender de GitHub Releases para fleet management.\n- **Múltiples firmas por release**: si vas a flashear varios ESP32 (oficina, casa, taller) cada uno con clave pública propia, generas una privada distinta por nodo y firmas el mismo `main.bin` con cada una. Así un nodo comprometido no compromete el resto del fleet.\n\n## Personalización para Chile\n\nTodo el hardware está disponible en stock local:\n\n- **ESP32-WROOM-32 DOIT 38 pines Tipo C** (SKU X2-10V2) — $7.990 CLP. La placa exacta del tutorial; el formato 38 pines deja más GPIO libres para extensiones.\n- **Cable USB a Micro USB** (SKU X3-10) — $1.290 CLP. De datos, no solo carga.\n- **LED 3mm/5mm variedad de colores** (SKU GA5-5) — $100 CLP. Para el demo del LED HomeKit.\n- **Resistencia 220Ω 1/4W** (SKU GK1-18) — $100 CLP. Limitador de corriente para el LED.\n- **Botón Pulsador 6x6x7mm** (SKU GG4-6) — $290 CLP. Recovery físico además del botón BOOT.\n- **Cables macho-macho 30cm** (SKU C-417) — $2.990 CLP.\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP.\n\nTotal kit: ~$16.450 CLP. Una vez configurado, este mismo ESP32 te sirve para cualquier proyecto OTA seguro (relés, sensores, displays).\n\n## Recursos\n\n- Lifecycle Manager: https://github.com/AchimPieters/esp32-lifecycle-manager\n- ESP32 HomeKit framework: https://github.com/AchimPieters/esp32-homekit\n- Tutorial original (inglés): https://www.studiopieters.nl/esp32-lifecycle-manager-for-total-beginners\n",
+      "materials_list": [
+        {
+          "name": "Placa ESP32-WROOM-32 DevKit (38 pines, USB integrado)",
+          "qty": 1,
+          "role": "microcontrolador"
+        },
+        {
+          "name": "Cable USB a Micro USB (datos)",
+          "qty": 1,
+          "role": "programación"
+        },
+        {
+          "name": "LED 5mm cualquier color",
+          "qty": 1,
+          "role": "demo firmware HomeKit"
+        },
+        {
+          "name": "Resistencia 220Ω 1/4W",
+          "qty": 1,
+          "role": "limitar corriente LED"
+        },
+        {
+          "name": "Botón pulsador táctil",
+          "qty": 1,
+          "role": "recovery manual"
+        },
+        {
+          "name": "Cables macho-macho jumper",
+          "qty": 4,
+          "role": "conexiones"
+        },
+        {
+          "name": "Protoboard 830 puntos",
+          "qty": 1,
+          "role": "soporte circuito"
+        }
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Preparar entorno (Docker + Python + Git)",
+          "text": "docker pull espressif/idf:v5.4. Instala Git y Python 3, luego pip3 install esptool. Verifica esptool.py version."
+        },
+        {
+          "position": 2,
+          "name": "Generar par de claves ECDSA prime256v1",
+          "text": "openssl ecparam -name prime256v1 -genkey -noout -out ota_signing_private.pem y openssl ec -in ota_signing_private.pem -pubout -out ota_signing_public.pem. Guarda la privada en lugar seguro."
+        },
+        {
+          "position": 3,
+          "name": "Embeber clave pública en LCM",
+          "text": "git clone esp32-lifecycle-manager. Editar main/github_update.c y reemplazar el contenido de OTA_PUBLIC_KEY_PEM con el texto completo de ota_signing_public.pem."
+        },
+        {
+          "position": 4,
+          "name": "Compilar LCM en Docker",
+          "text": "docker run -it -v ~/esp32-lifecycle-manager:/project espressif/idf:v5.4. Adentro: idf.py set-target esp32 && idf.py build. Mantén la ventana abierta para copiar el comando flash."
+        },
+        {
+          "position": 5,
+          "name": "Borrar flash y flashear LCM",
+          "text": "Fuera de Docker: esptool.py erase_flash. Luego copia el comando python -m esptool de la salida del build y ejecútalo."
+        },
+        {
+          "position": 6,
+          "name": "Compilar firmware demo LED",
+          "text": "En otra ventana Docker: cd examples/led && idf.py set-target esp32 && idf.py build. Genera build/main.bin."
+        },
+        {
+          "position": 7,
+          "name": "Firmar el binario",
+          "text": "Fuera de Docker desde la raíz: ./generate_sig.sh examples/led/build/main.bin ota_signing_private.pem. Produce main.bin.sig."
+        },
+        {
+          "position": 8,
+          "name": "Crear GitHub Release",
+          "text": "Crea repo nuevo en GitHub (puede ser privado), nuevo Release tag 1.0.0, sube main.bin y main.bin.sig como assets."
+        },
+        {
+          "position": 9,
+          "name": "Configurar LCM vía captive portal",
+          "text": "Únete a la red Wi-Fi LCM-XXXXXX, selecciona tu Wi-Fi de casa, ingresa repo tu-usuario/esp32-test, habilita LED durante update con GPIO/polaridad correctos, Join."
+        },
+        {
+          "position": 10,
+          "name": "Verificar OTA y emparejar HomeKit",
+          "text": "LCM descarga, verifica firma, instala y reinicia. Monitor serial confirma boot del firmware. En la app Home: agregar accesorio → escanea QR → aceptar no certificado."
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "bash",
+          "caption": "Generar par de claves ECDSA prime256v1",
+          "code": "openssl ecparam -name prime256v1 -genkey -noout -out ota_signing_private.pem\nopenssl ec -in ota_signing_private.pem -pubout -out ota_signing_public.pem"
+        },
+        {
+          "lang": "c",
+          "caption": "Insertar clave pública en main/github_update.c",
+          "code": "static const char OTA_PUBLIC_KEY_PEM[] = \"-----BEGIN PUBLIC KEY-----\\n\"\n    \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExxxxxxxxxxxxxxxxxxxxxxxxxxxx\\n\"\n    \"...resto de tu clave publica aqui...\\n\"\n    \"-----END PUBLIC KEY-----\\n\";"
+        },
+        {
+          "lang": "bash",
+          "caption": "Compilar LCM y firmar firmware",
+          "code": "# Dentro del container Docker\ncd esp32-lifecycle-manager\nidf.py set-target esp32\nidf.py build\n\n# Fuera del container, firmar firmware demo\n./generate_sig.sh examples/led/build/main.bin ota_signing_private.pem\n# Resultado: main.bin + main.bin.sig"
+        },
+        {
+          "lang": "bash",
+          "caption": "Flashear LCM al ESP32",
+          "code": "esptool.py erase_flash\n\npython -m esptool --chip esp32 -b 460800 \\\n  --before default_reset --after hard_reset write_flash \\\n  --flash_mode dio --flash_size 4MB --flash_freq 40m \\\n  0x1000 build/bootloader/bootloader.bin \\\n  0x8000 build/partition_table/partition-table.bin \\\n  0xe000 build/ota_data_initial.bin \\\n  0x20000 build/esp32-lifecycle-manager.bin"
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "Placa ESP32-WROOM-32 DOIT 38 pines",
+          "product_id": "X2-12V1",
+          "product_url": "https://www.mechatronicstore.cl/esp32-wroom-32-38pin-usb-c/?attribute_entrada=Micro+USB&utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=X2-12V1",
+          "price_clp": 8990,
+          "stock_available": true,
+          "match_score": 0.9
+        },
+        {
+          "name_original": "Cable USB a Micro USB",
+          "product_id": "X3-10",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=X3-10",
+          "price_clp": 1290,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "LED 5mm cualquier color",
+          "product_id": "GA5-5",
+          "product_url": "https://www.mechatronicstore.cl/led-3mm-5mm/?attribute_tamano-de-led=5mm&attribute_pa_color=verde&utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=GA5-5",
+          "price_clp": 100,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Resistencia 220Ω 1/4W",
+          "product_id": "GK1-18",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=220%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=GK1-18",
+          "price_clp": 100,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Botón Pulsador 6x6x7mm",
+          "product_id": "GG4-6",
+          "product_url": "https://www.mechatronicstore.cl/boton-pulsador-switch-2-pines-6x6x7mm/?utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=GG4-6",
+          "price_clp": 290,
+          "stock_available": true,
+          "match_score": 0.86
+        },
+        {
+          "name_original": "Cables macho-macho 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=ota-seguro-esp32-lifecycle-manager-firmware-firmado&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.96
+        }
+      ],
+      "github_url": "https://github.com/AchimPieters/esp32-lifecycle-manager",
+      "download_urls": [
+        {
+          "label": "Lifecycle Manager (repo + binarios)",
+          "url": "https://github.com/AchimPieters/esp32-lifecycle-manager",
+          "kind": "repo"
+        },
+        {
+          "label": "esp32-homekit framework",
+          "url": "https://github.com/AchimPieters/esp32-homekit",
+          "kind": "repo"
+        }
+      ],
+      "category": "esp32",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 150,
+      "estimated_cost_clp": 17550,
+      "tags": [
+        "esp32",
+        "ota",
+        "lifecycle-manager",
+        "ecdsa",
+        "firmware",
+        "seguridad",
+        "homekit"
+      ],
+      "source_language": "en",
+      "re_angulation_applied": "Re-estructurado en 11 pasos numerados (vs prosa narrativa del original); agregado glosario criptográfico, sección de recovery con factory reset de 10 power-cycles, variantes (GitHub privado, servidor propio, multi-clave) y Personalización Chile con kit completo CLP.",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.28,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
+    },
+    {
+      "id": "b0650d488fae",
+      "slug": "comunicacion-rf-315-433mhz-arduino-virtualwire",
+      "title_es": "Comunicación inalámbrica entre dos Arduino con módulos RF 315/433 MHz y VirtualWire",
+      "subtitle_es": "Envía datos, botones y lecturas analógicas entre dos Arduino Uno con módulos RF baratos y la librería VirtualWire, en tres proyectos.",
+      "hero_image_url": "https://tronixstuff.com/wp-content/uploads/2025/04/transmitterbuild_grande.webp",
+      "body_es": "## Wireless barato entre dos Arduino: cuándo conviene RF puro\n\nESP-NOW, Wi-Fi, Bluetooth, LoRa, Zigbee… hay diez maneras de comunicar microcontroladores hoy. ¿Por qué seguir usando módulos RF puros de 315 MHz o 433 MHz en 2026? Porque cuestan menos de $3.000 CLP el kit completo (transmisor + receptor), no requieren stack TCP/IP, su consumo es bajísimo en standby, y para sensores remotos simples (estación meteorológica, control de portón, alerta de buzón) son brutalmente eficientes.\n\nEn este tutorial vamos a:\n\n1. Probar comunicación básica un Arduino → otro Arduino con un LED de confirmación.\n2. Hacer control remoto inalámbrico de 2 canales (botones → LEDs).\n3. Enviar valores enteros (sensor analógico) por aire.\n\nTodo con la librería VirtualWire de Mike McCauley (clásica, estable, funciona con cualquier módulo OOK/ASK genérico).\n\n## Concepto: cómo funcionan estos módulos\n\nLos kits RF 315/433 MHz vienen como dos PCB pequeñas: una transmisora con un solo pin de datos (DATA o SIG), y una receptora con cuatro pines (incluida DATA). No hacen modulación inteligente: solo *encienden y apagan* la portadora según el bit que les des (modulación OOK/ASK).\n\nLa librería **VirtualWire** se encarga del resto: codificación con bits de start/stop, checksum CRC, deserialización en el receptor. Tú solo le pasas bytes y recibes bytes.\n\nLimitaciones honestas:\n\n- Banda libre (en Chile 433 MHz ISM, 315 MHz está fuera de la banda asignada al ISM nacional pero los módulos funcionan eléctricamente igual).\n- Half-duplex: no escuchas mientras transmites.\n- ~2 kbps de bitrate efectivo con VirtualWire.\n- Alcance real: 30-100 m según antena y altura.\n\nPara proyectos serios, LoRa o ESP-NOW son mejores. Para hacks fines de semana, esto es perfecto.\n\n## Hardware necesario (3 proyectos)\n\n| Componente | Cantidad | Notas |\n|---|---|---|\n| Arduino Uno R3 (o compatible) | 2 | Uno para TX, uno para RX |\n| Kit RF 433 MHz (TX+RX) o Kit 315 MHz | 1 | El 433 MHz tiene mejor disponibilidad |\n| Protoboard 830 puntos | 2 | Una por Arduino |\n| Cables macho-macho | ~20 | Conexiones |\n| Cable USB | 2 | Programar + monitor serial |\n| LED 5mm (proyecto 1) | 1 | Indicador en RX |\n| Resistencia 330-560Ω | 1 | Limitador LED |\n| LED 5mm (proyecto 2) | 2 | Dos canales output |\n| Botón táctil 12x12 | 2 | Inputs TX (proyecto 2) |\n| Resistencia 10kΩ | 2 | Pull-down botones |\n| Fuente externa para TX | 1 | USB power bank funciona |\n\n## Instalación de la librería VirtualWire\n\nVirtualWire NO está en el Library Manager por defecto. La instalas con el `.zip`:\n\n1. Descarga el `.zip` oficial desde el sitio de Airspayce (o el mirror del tutorial original).\n2. En Arduino IDE: `Sketch → Include Library → Add .zip Library…` → selecciona el zip.\n3. Verifica: `Sketch → Include Library` → debe aparecer \"VirtualWire\" en la lista.\n\nSi usas PlatformIO: agrega `lib_deps = mikem/VirtualWire@^1.27` en `platformio.ini`.\n\n## Proyecto 1: prueba de transmisión \"hello #N\"\n\nConexiones (módulo TX → Arduino TX):\n\n```text\nTX módulo VCC   →  Arduino 5V\nTX módulo GND   →  Arduino GND\nTX módulo DATA  →  Arduino D12\n```\n\nConexiones (módulo RX → Arduino RX):\n\n```text\nRX módulo VCC   →  Arduino 5V\nRX módulo GND   →  Arduino GND\nRX módulo DATA  →  Arduino D11\nLED ánodo       →  Arduino D2\nLED cátodo      →  Resistencia 330Ω → GND\n```\n\n**Importante**: alimenta el Arduino TX con una fuente externa (USB power bank, wall wart) — no con el mismo PC que el RX, porque al estar tan cerca pueden interferir.\n\n### Sketch transmisor (`transmitter.ino`)\n\n```cpp\n// transmitter.ino — TX simplex con módulo OOK 315/433 MHz\n#include <VirtualWire.h>\n\nconst int led_pin = 11;\nconst int transmit_pin = 12;\nconst int receive_pin = 2;\nconst int transmit_en_pin = 3;\n\nvoid setup() {\n  vw_set_tx_pin(transmit_pin);\n  vw_set_rx_pin(receive_pin);\n  vw_set_ptt_pin(transmit_en_pin);\n  vw_set_ptt_inverted(true);   // Requerido por módulos tipo DR3100\n  vw_setup(2000);              // 2000 bps\n  pinMode(led_pin, OUTPUT);\n}\n\nbyte count = 1;\nvoid loop() {\n  char msg[7] = {'h','e','l','l','o',' ','#'};\n  msg[6] = count;\n\n  digitalWrite(led_pin, HIGH);  // Indicador \"transmitiendo\"\n  vw_send((uint8_t *)msg, 7);\n  vw_wait_tx();                 // Espera fin del envío\n  digitalWrite(led_pin, LOW);\n\n  delay(1000);\n  count++;\n}\n```\n\n### Sketch receptor (`receiver.ino`)\n\n```cpp\n// receiver.ino — RX simplex con módulo OOK\n#include <VirtualWire.h>\n\nconst int led_pin = 2;\nconst int transmit_pin = 12;\nconst int receive_pin = 11;\nconst int transmit_en_pin = 3;\n\nvoid setup() {\n  delay(1000);\n  Serial.begin(9600);\n  Serial.println(\"setup\");\n\n  vw_set_tx_pin(transmit_pin);\n  vw_set_rx_pin(receive_pin);\n  vw_set_ptt_pin(transmit_en_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  vw_rx_start();                // Arranca el PLL receptor\n  pinMode(led_pin, OUTPUT);\n}\n\nvoid loop() {\n  uint8_t buf[VW_MAX_MESSAGE_LEN];\n  uint8_t buflen = VW_MAX_MESSAGE_LEN;\n\n  if (vw_get_message(buf, &buflen)) {\n    digitalWrite(led_pin, HIGH);\n    Serial.print(\"Got: \");\n    for (int i = 0; i < buflen; i++) {\n      Serial.print(buf[i], HEX);\n      Serial.print(' ');\n    }\n    Serial.println();\n    digitalWrite(led_pin, LOW);\n  }\n}\n```\n\n### Qué deberías ver\n\n- El LED del RX parpadea ~1 vez por segundo (un mensaje cada loop del TX).\n- El monitor serial del RX muestra `Got: 68 65 6C 6C 6F 20 01` (hex de \"hello #1\"), incrementando el último byte.\n\n### Probar el alcance\n\nPara medir alcance real: alimenta el RX con USB power bank, conserva el TX enchufado a 5 V, y aléjate caminando con el RX. El LED deja de parpadear cuando salís de rango. En espacios abiertos sin obstáculos, con módulos de 5 V, deberías llegar 30-50 m. Subir el TX a 9-12 V (modelos que lo soportan) puede duplicar el alcance.\n\n## Proyecto 2: control remoto inalámbrico 2 canales\n\nMismo hardware base, pero ahora el TX tiene **dos botones** y el RX tiene **dos LEDs**.\n\n### Conexiones TX (botones)\n\n```text\nBotón 1: una pata → Arduino 5V, otra pata → Arduino D8 + resistencia 10kΩ a GND\nBotón 2: una pata → Arduino 5V, otra pata → Arduino D7 + resistencia 10kΩ a GND\nMódulo TX DATA → Arduino D12\n```\n\nLas resistencias 10kΩ funcionan como **pull-down**: cuando el botón está suelto, el pin lee LOW; cuando se presiona, el botón conecta el pin a 5V y lee HIGH.\n\n### Conexiones RX (LEDs)\n\n```text\nLED 1: ánodo → Arduino D2, cátodo → Resistencia 330Ω → GND\nLED 2: ánodo → Arduino D3, cátodo → Resistencia 330Ω → GND\nMódulo RX DATA → Arduino D11\n```\n\n### Sketch TX (botones)\n\n```cpp\n#include <VirtualWire.h>\n\nconst char *on1 = \"a\", *off1 = \"b\";\nconst char *on2 = \"c\", *off2 = \"d\";\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_tx_pin(12);\n  pinMode(8, INPUT);\n  pinMode(7, INPUT);\n}\n\nvoid loop() {\n  if (digitalRead(8) == HIGH) {\n    vw_send((uint8_t *)on1, strlen(on1));\n    vw_wait_tx();\n    delay(200);\n  } else {\n    vw_send((uint8_t *)off1, strlen(off1));\n    vw_wait_tx();\n    delay(200);\n  }\n  if (digitalRead(7) == HIGH) {\n    vw_send((uint8_t *)on2, strlen(on2));\n    vw_wait_tx();\n    delay(200);\n  } else {\n    vw_send((uint8_t *)off2, strlen(off2));\n    vw_wait_tx();\n    delay(200);\n  }\n}\n```\n\n### Sketch RX (LEDs)\n\n```cpp\n#include <VirtualWire.h>\n\nuint8_t buf[VW_MAX_MESSAGE_LEN];\nuint8_t buflen = VW_MAX_MESSAGE_LEN;\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_rx_pin(11);\n  vw_rx_start();\n  pinMode(2, OUTPUT);\n  pinMode(3, OUTPUT);\n}\n\nvoid loop() {\n  if (vw_get_message(buf, &buflen)) {\n    switch (buf[0]) {\n      case 'a': digitalWrite(2, HIGH); break;\n      case 'b': digitalWrite(2, LOW);  break;\n      case 'c': digitalWrite(3, HIGH); break;\n      case 'd': digitalWrite(3, LOW);  break;\n    }\n  }\n}\n```\n\nBitrate bajado a 300 bps para máximo alcance (a más bps, menos margen de error en distancia larga).\n\n## Proyecto 3: enviar enteros por aire (sensor analógico)\n\nÚtil para sensores remotos (temperatura, luz, humedad, etc.). El truco: VirtualWire envía bytes, así que convertimos `int → char[]` con `itoa()` y al recibir `char[] → int` con `atoi()`.\n\n```cpp\n// TX: lee A1 cada segundo y lo envía\n#include <VirtualWire.h>\nint sensorData;\nchar sensorMsg[4];\n\nvoid setup() {\n  pinMode(13, OUTPUT);\n  pinMode(A1, INPUT);\n  vw_setup(2000);\n  vw_set_tx_pin(12);\n}\n\nvoid loop() {\n  sensorData = analogRead(A1);\n  itoa(sensorData, sensorMsg, 10);  // int → char[]\n\n  digitalWrite(13, HIGH);\n  vw_send((uint8_t *)sensorMsg, strlen(sensorMsg));\n  vw_wait_tx();\n  digitalWrite(13, LOW);\n  delay(1000);\n}\n```\n\n```cpp\n// RX: imprime el valor del A1 remoto en Serial Monitor\n#include <VirtualWire.h>\nint sensorData;\nchar sensorMsg[4];\n\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(13, OUTPUT);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  vw_set_rx_pin(11);\n  vw_rx_start();\n}\n\nvoid loop() {\n  uint8_t buf[VW_MAX_MESSAGE_LEN];\n  uint8_t buflen = VW_MAX_MESSAGE_LEN;\n\n  if (vw_get_message(buf, &buflen)) {\n    digitalWrite(13, HIGH);\n    for (int i = 0; i < buflen; i++) sensorMsg[i] = char(buf[i]);\n    sensorMsg[buflen] = '\\0';            // Null terminator\n    sensorData = atoi(sensorMsg);        // char[] → int\n    Serial.print(\"TX A1 = \");\n    Serial.println(sensorData);\n    digitalWrite(13, LOW);\n  }\n}\n```\n\n## Variantes y mejoras\n\n- **Antena helicoidal o monopolo**: los módulos baratos vienen sin antena. Soldar un cable de cobre de 17 cm (λ/4 a 433 MHz) o 23.8 cm (λ/4 a 315 MHz) al pin ANT del módulo TX y RX **multiplica el alcance por 3-5x**. Es la mejora de mejor relación costo/beneficio.\n- **Protocolo con direcciones**: VirtualWire no tiene direccionamiento. Si tienes varios receptores, agrega un byte inicial como \"address\" en el mensaje (`{addr, cmd, value}`) y descarta paquetes que no sean para tu dirección. Así varios receptores pueden coexistir en el mismo canal.\n- **Sleep + watchdog para sensor remoto a batería**: el Arduino consume ~50 mA siempre encendido. Combinando `LowPower.h` con un timer watchdog, despertás cada 60 segundos, leés sensor, transmitís y volvés a dormir. Una pila CR2032 dura meses así.\n\n## Personalización para Chile\n\n- **Arduino Uno R3** (SKU X4-8) — $9.990 CLP cada uno. Necesitas dos para el setup completo (TX + RX).\n- **Kit Radiofrecuencia 433 MHz 5V (TX + RX)** (SKU GP3-6) — $2.490 CLP. La frecuencia 433 MHz es ISM en Chile (uso libre sin licencia), preferible al 315 MHz.\n- **Kit Radiofrecuencia 315 MHz 5V (TX + RX)** (SKU F-444) — $2.490 CLP. Misma electrónica, alternativa si tu proyecto lo requiere.\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP. Llevas dos al carrito.\n- **Cables macho-macho 30cm** (SKU C-417) — $2.990 CLP el pack de 40.\n- **LED 5mm variedad de colores** (SKU GA5-5) — $100 CLP por unidad.\n- **Resistencia 220Ω 1/4W** (SKU GK1-18) — $100 CLP. Reemplaza la 330-560Ω del original (valor más común en stock, sirve igual para LEDs).\n- **Resistencia 10kΩ 1/4W** (SKU GK2-15) — $100 CLP. Para pull-down de los botones.\n- **Botón Pulsador 6x6x7mm** (SKU GG4-6) — $290 CLP.\n\nTotal para los 3 proyectos: ~$36.000 CLP — más barato que cualquier kit LoRa equivalente, y suficiente para entender comunicación RF antes de saltar a protocolos más sofisticados.\n\n## Recursos\n\n- Tutorial original (inglés): https://tronixstuff.com/2025/04/23/tutorial-315mhz-wireless-arduino/\n- Librería VirtualWire (Mike McCauley): http://www.airspayce.com/mikem/arduino/VirtualWire/\n",
+      "materials_list": [
+        {
+          "name": "Arduino Uno R3",
+          "qty": 2,
+          "role": "microcontrolador TX y RX"
+        },
+        {
+          "name": "Kit RF 433 MHz (transmisor + receptor)",
+          "qty": 1,
+          "role": "comunicación inalámbrica"
+        },
+        {
+          "name": "Protoboard 830 puntos MB102",
+          "qty": 2,
+          "role": "soporte circuitos"
+        },
+        {
+          "name": "Cables macho-macho 30cm",
+          "qty": 1,
+          "role": "conexiones"
+        },
+        {
+          "name": "Cable USB a Micro USB",
+          "qty": 2,
+          "role": "programación + monitor"
+        },
+        {
+          "name": "LED 5mm cualquier color",
+          "qty": 3,
+          "role": "indicadores"
+        },
+        {
+          "name": "Resistencia 220Ω 1/4W",
+          "qty": 3,
+          "role": "limitar LEDs"
+        },
+        {
+          "name": "Botón pulsador 6x6mm",
+          "qty": 2,
+          "role": "inputs proyecto 2"
+        },
+        {
+          "name": "Resistencia 10kΩ 1/4W",
+          "qty": 2,
+          "role": "pull-down botones"
+        }
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Instalar librería VirtualWire",
+          "text": "Descarga el .zip oficial, en Arduino IDE: Sketch → Include Library → Add .zip Library. Verifica que aparezca en la lista."
+        },
+        {
+          "position": 2,
+          "name": "Cablear TX básico",
+          "text": "Módulo TX VCC→5V, GND→GND, DATA→D12 del Arduino TX. Alimenta este Arduino con fuente externa (no el mismo PC del RX)."
+        },
+        {
+          "position": 3,
+          "name": "Cablear RX básico",
+          "text": "Módulo RX VCC→5V, GND→GND, DATA→D11 del Arduino RX. LED en D2 con resistencia 330Ω a GND."
+        },
+        {
+          "position": 4,
+          "name": "Cargar sketch transmitter.ino",
+          "text": "vw_setup(2000), vw_set_tx_pin(12), envía 'hello #N' cada segundo con vw_send() y vw_wait_tx()."
+        },
+        {
+          "position": 5,
+          "name": "Cargar sketch receiver.ino",
+          "text": "vw_setup(2000), vw_set_rx_pin(11), vw_rx_start(). Loop con vw_get_message(buf, &buflen), imprime hex en serial e ilumina LED."
+        },
+        {
+          "position": 6,
+          "name": "Probar alcance",
+          "text": "Alimenta RX con USB power bank, camina alejándote. LED deja de parpadear cuando salís de rango (30-50m en exterior con 5V)."
+        },
+        {
+          "position": 7,
+          "name": "Proyecto 2 - control remoto 2 canales",
+          "text": "TX: dos botones a D7 y D8 con pull-down 10kΩ. RX: dos LEDs a D2 y D3. Sketches envían caracteres 'a/b/c/d' que switch-case enciende/apaga los LEDs."
+        },
+        {
+          "position": 8,
+          "name": "Proyecto 3 - enviar enteros analógicos",
+          "text": "TX lee analogRead(A1), convierte con itoa() a char[], envía. RX recibe, recompone con atoi() y muestra en Serial Monitor."
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "cpp",
+          "caption": "Transmisor básico (proyecto 1)",
+          "code": "#include <VirtualWire.h>\nconst int led_pin = 11;\nconst int transmit_pin = 12;\n\nvoid setup() {\n  vw_set_tx_pin(transmit_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  pinMode(led_pin, OUTPUT);\n}\n\nbyte count = 1;\nvoid loop() {\n  char msg[7] = {'h','e','l','l','o',' ','#'};\n  msg[6] = count;\n  digitalWrite(led_pin, HIGH);\n  vw_send((uint8_t *)msg, 7);\n  vw_wait_tx();\n  digitalWrite(led_pin, LOW);\n  delay(1000);\n  count++;\n}"
+        },
+        {
+          "lang": "cpp",
+          "caption": "Receptor básico (proyecto 1)",
+          "code": "#include <VirtualWire.h>\nconst int led_pin = 2;\nconst int receive_pin = 11;\n\nvoid setup() {\n  Serial.begin(9600);\n  vw_set_rx_pin(receive_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  vw_rx_start();\n  pinMode(led_pin, OUTPUT);\n}\n\nvoid loop() {\n  uint8_t buf[VW_MAX_MESSAGE_LEN];\n  uint8_t buflen = VW_MAX_MESSAGE_LEN;\n  if (vw_get_message(buf, &buflen)) {\n    digitalWrite(led_pin, HIGH);\n    Serial.print(\"Got: \");\n    for (int i = 0; i < buflen; i++) {\n      Serial.print(buf[i], HEX); Serial.print(' ');\n    }\n    Serial.println();\n    digitalWrite(led_pin, LOW);\n  }\n}"
+        },
+        {
+          "lang": "cpp",
+          "caption": "Control remoto 2 canales - TX (proyecto 2)",
+          "code": "#include <VirtualWire.h>\nconst char *on1 = \"a\", *off1 = \"b\", *on2 = \"c\", *off2 = \"d\";\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_tx_pin(12);\n  pinMode(8, INPUT);\n  pinMode(7, INPUT);\n}\n\nvoid loop() {\n  vw_send((uint8_t *)(digitalRead(8) == HIGH ? on1 : off1), 1);\n  vw_wait_tx(); delay(200);\n  vw_send((uint8_t *)(digitalRead(7) == HIGH ? on2 : off2), 1);\n  vw_wait_tx(); delay(200);\n}"
+        },
+        {
+          "lang": "cpp",
+          "caption": "Envío de enteros - TX (proyecto 3)",
+          "code": "#include <VirtualWire.h>\nint sensorData;\nchar sensorMsg[4];\n\nvoid setup() {\n  pinMode(A1, INPUT);\n  vw_setup(2000);\n  vw_set_tx_pin(12);\n}\n\nvoid loop() {\n  sensorData = analogRead(A1);\n  itoa(sensorData, sensorMsg, 10);\n  vw_send((uint8_t *)sensorMsg, strlen(sensorMsg));\n  vw_wait_tx();\n  delay(1000);\n}"
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "Arduino Uno R3",
+          "product_id": "X4-8",
+          "product_url": "https://www.mechatronicstore.cl/arduino-uno-r3/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=X4-8",
+          "price_clp": 9990,
+          "stock_available": true,
+          "match_score": 0.97
+        },
+        {
+          "name_original": "Kit Radiofrecuencia 433 MHz 5V (TX + RX)",
+          "product_id": "GP3-6",
+          "product_url": "https://www.mechatronicstore.cl/kit-de-radiofrecuencia-433mhz-5v-transmisor-y-receptor/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=GP3-6",
+          "price_clp": 2490,
+          "stock_available": true,
           "match_score": 0.93
         },
         {
-          "name_original": "Tarjeta microSD 32GB",
-          "product_id": "B-450",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=32gb&utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=B-450",
-          "price_clp": 9990,
-          "stock_available": false,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Fuente USB-C 5V 3A",
-          "product_id": "B-006",
-          "product_url": "https://www.mechatronicstore.cl/transformador-cargador-fuente-de-alimentacion-5v-3a/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=B-006",
-          "price_clp": 3990,
-          "stock_available": false,
-          "match_score": 0.76
-        },
-        {
-          "name_original": "Cable Ethernet CAT6 5m",
-          "product_id": "F-504",
-          "product_url": "https://www.mechatronicstore.cl/cable-ethernet-cat6e-30-metros/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitoreo-senales-radio-sdr-raspberry-pi-intercept&utm_content=F-504",
-          "price_clp": 3190,
+          "name_original": "Kit Radiofrecuencia 315 MHz 5V (TX + RX)",
+          "product_id": "F-444",
+          "product_url": "https://www.mechatronicstore.cl/kit-de-radiofrecuencia-module-315khz-5v-transmisor-y-receptor/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=F-444",
+          "price_clp": 2490,
           "stock_available": true,
-          "match_score": 0.85
-        }
-      ],
-      "github_url": "https://github.com/openintercept/intercept",
-      "download_urls": [],
-      "category": "rpi",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 90,
-      "estimated_cost_clp": 125160,
-      "tags": ["raspberry-pi", "sdr", "rtl-sdr", "ads-b", "ble", "radio"]
-    },
-    {
-      "id": "b3b6286d1c33",
-      "slug": "orejas-led-beacon-bluetooth-disney-esp32-s3",
-      "title_es": "Orejas con NeoPixel que reaccionan a beacons BLE de Disney",
-      "subtitle_es": "Construye unas orejas wearables que detectan los beacons Bluetooth de los parques Disney y se iluminan en sincronía con el show.",
-      "hero_image_url": null,
-      "body_es": "## Orejas que se prenden con la magia\n\nEn los parques Disney hay zonas (especialmente durante shows nocturnos y desfiles) donde se emiten **beacons Bluetooth Low Energy** que las orejas oficiales \"Made With Magic\" usan para sincronizar colores con la música y los fuegos artificiales. Es una experiencia inmersiva muy bien hecha.\n\nCon una placa ESP32-S3 (o un Adafruit CLUE con nRF52840) puedes escanear esos beacons tú mismo y replicar el efecto en tus propias orejas con un anillo NeoPixel de 7 LEDs por lado. Sin pagar las oficiales y con la posibilidad de hackear los colores, patrones y triggers.\n\n## ¿Cómo funcionan los beacons?\n\nLos beacons BLE transmiten paquetes de advertisement periódicos (típicamente cada 100-1000 ms) con un payload corto. Disney usa códigos que identifican zona y \"evento\" actual. Tu hardware solo necesita:\n\n1. Estar en **modo scanner BLE pasivo** (no se conecta, solo escucha).\n2. Filtrar los advertisements por **UUID conocido** o por **manufacturer data**.\n3. Mapear el contenido del paquete → patrón de color.\n\n## Materiales\n\n- Placa ESP32-S3 con BLE (QT Py ESP32-S3 o ESP32-C3 SuperMini)\n- 2 anillos NeoPixel de 7 LEDs (uno por oreja)\n- Batería LiPo 3.7V 500-1200 mAh\n- Módulo cargador LiPo con conector JST (si tu placa no integra carga)\n- Cable plano flexible 4 hilos (1 metro) para llevar señal a las orejas\n- Headers macho 2.54mm cortos\n- Diadema con orejas o cintillo (la base mecánica)\n- Hilo conductor, aguja, silicona caliente\n\n## Esquema\n\n```\nESP32-S3 ─── GPIO5 ─── Datos NeoPixel oreja izquierda (7 LED)\n     └────── GPIO6 ─── Datos NeoPixel oreja derecha (7 LED)\nGND y 3.3V compartidos\nBatería LiPo en JST de la placa\n```\n\nUna sola placa controla ambas orejas. El cable plano de 4 hilos lleva VCC, GND, DATA-IZQ, DATA-DER por debajo del cintillo.\n\n## Código (scanner BLE + animación)\n\n```python\nimport time\nimport board\nimport neopixel\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\n\nizq = neopixel.NeoPixel(board.D5, 7, brightness=0.5, auto_write=False)\nder = neopixel.NeoPixel(board.D6, 7, brightness=0.5, auto_write=False)\n\nble = BLERadio()\n\nUUID_DISNEY = b\"\\xfd\\x6f\"  # placeholder, depende del beacon\n\ndef pintar(color):\n    izq.fill(color)\n    der.fill(color)\n    izq.show()\n    der.show()\n\nwhile True:\n    found = False\n    for adv in ble.start_scan(Advertisement, timeout=1):\n        # Si el manufacturer data contiene tu UUID conocido\n        if UUID_DISNEY in (adv.manufacturer_specific_data or b\"\"):\n            # Decodifica el byte de \"escena\" del payload\n            escena = adv.manufacturer_specific_data[-1]\n            if escena % 3 == 0:\n                pintar((255, 0, 0))\n            elif escena % 3 == 1:\n                pintar((0, 255, 0))\n            else:\n                pintar((0, 0, 255))\n            found = True\n            break\n    ble.stop_scan()\n    if not found:\n        pintar((20, 20, 60))  # color por defecto: azul tenue\n    time.sleep(0.1)\n```\n\n> **Nota legal**: este proyecto es para uso personal/educativo. Los UUIDs y formatos exactos de los beacons no se publican públicamente; este código es un esqueleto que tendrás que adaptar observando el tráfico BLE con apps como nRF Connect.\n\n## Montaje en el cintillo\n\n1. **Cose una bolsita** en la parte trasera del cintillo para la placa y batería. Que el switch on/off quede accesible.\n2. **Esconde el cable plano** corriendo por dentro del forro del cintillo, hasta cada oreja.\n3. **Pega los anillos NeoPixel** detrás de un círculo de tela traslúcida o filamento PETG blanco que difunde la luz.\n4. **Sella las soldaduras** con silicona caliente para que no se cortocircuiten al moverse.\n\n## Modo \"sin beacons\"\n\nPara que las orejas se vean bien también fuera del parque, programa varios modos seleccionables con un botón corto:\n\n- Modo arcoíris.\n- Modo respiración (fade in/out).\n- Modo música (reactivo a un micrófono, si lo agregas).\n- Modo \"beacons\" (el principal).\n\n## Autonomía\n\nCon escaneo BLE constante y los 14 LEDs prendidos al 50% de brillo, una LiPo de 1200 mAh dura unas 4-5 horas. Suficiente para un show + desfile.\n\nUn wearable BLE con utilidad real para fanáticos del parque.",
-      "materials_list": [
-        {"name": "Placa ESP32-S3 con BLE", "qty": 1, "role": "controlador"},
-        {"name": "Anillo NeoPixel 7 LEDs", "qty": 2, "role": "iluminación por oreja"},
-        {"name": "Batería LiPo 3.7V 500-1200mAh", "qty": 1, "role": "alimentación"},
-        {"name": "Cable plano 4 hilos 1m", "qty": 1, "role": "señal a orejas"},
-        {"name": "Headers macho 2.54mm", "qty": 1, "role": "conexiones"},
-        {"name": "Cintillo con orejas", "qty": 1, "role": "base mecánica"}
-      ],
-      "steps": [
-        {"position": 1, "name": "Verificar anillos NeoPixel", "text": "Conecta un anillo a un GPIO de la placa y prueba un ejemplo simple de fill con la librería neopixel para confirmar polaridad y orden de colores."},
-        {"position": 2, "name": "Probar scanner BLE", "text": "Carga un script básico de adafruit_ble que imprima por consola los advertisements detectados. Identifica los beacons objetivo por UUID o manufacturer data."},
-        {"position": 3, "name": "Mapear payloads a colores", "text": "Decodifica el campo de escena/zona del beacon y define una tabla payload->color. Empieza con 3-4 colores hasta entender el patrón."},
-        {"position": 4, "name": "Implementar modo standalone", "text": "Agrega un botón corto para alternar entre modos: arcoíris, respiración, beacons. El modo activo se guarda en RAM (no persistente)."},
-        {"position": 5, "name": "Coser al cintillo", "text": "Cose una bolsita trasera para placa y batería con acceso al switch on/off. Pasa el cable plano por dentro del forro hasta cada oreja."},
-        {"position": 6, "name": "Difusión de luz", "text": "Pega los anillos detrás de un círculo de tela traslúcida o filamento PETG blanco para difuminar y evitar puntos de luz duros."}
-      ],
-      "code_blocks": [
-        {"lang": "python", "caption": "Scanner BLE + animación de los dos anillos NeoPixel", "code": "import time\nimport board\nimport neopixel\nfrom adafruit_ble import BLERadio\nfrom adafruit_ble.advertising import Advertisement\n\nizq = neopixel.NeoPixel(board.D5, 7, brightness=0.5, auto_write=False)\nder = neopixel.NeoPixel(board.D6, 7, brightness=0.5, auto_write=False)\n\nble = BLERadio()\n\nUUID_DISNEY = b\"\\xfd\\x6f\"\n\ndef pintar(color):\n    izq.fill(color)\n    der.fill(color)\n    izq.show()\n    der.show()\n\nwhile True:\n    found = False\n    for adv in ble.start_scan(Advertisement, timeout=1):\n        if UUID_DISNEY in (adv.manufacturer_specific_data or b\"\"):\n            escena = adv.manufacturer_specific_data[-1]\n            if escena % 3 == 0:\n                pintar((255, 0, 0))\n            elif escena % 3 == 1:\n                pintar((0, 255, 0))\n            else:\n                pintar((0, 0, 255))\n            found = True\n            break\n    ble.stop_scan()\n    if not found:\n        pintar((20, 20, 60))\n    time.sleep(0.1)"}
-      ],
-      "linked_products": [
+          "match_score": 0.92
+        },
         {
-          "name_original": "Placa ESP32-S3 con BLE",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=GS1-3",
-          "price_clp": 13670,
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.96
+        },
+        {
+          "name_original": "Cables macho-macho 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=C-417",
+          "price_clp": 2990,
           "stock_available": true,
           "match_score": 0.88
         },
         {
-          "name_original": "Anillo NeoPixel 7 LEDs RGB",
-          "product_id": "GN2-10",
-          "product_url": "https://www.mechatronicstore.cl/modulo-led-rgb-de-7-bits/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=GN2-10",
-          "price_clp": 1990,
-          "stock_available": false,
-          "match_score": 0.90
-        },
-        {
-          "name_original": "Batería LiPo 3.7V 600mAh",
-          "product_id": "L-330",
-          "product_url": "https://www.mechatronicstore.cl/bateria-li-ion-602535-3-7v-600mah/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=L-330",
-          "price_clp": 9990,
-          "stock_available": false,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Cable paralelo flexible 24 AWG",
-          "product_id": "V-109_5",
-          "product_url": "https://www.mechatronicstore.cl/cable-paralelo-variedad-calibres/?attribute_medidas=24+awg&utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=V-109_5",
-          "price_clp": 200,
+          "name_original": "LED 5mm variedad de colores",
+          "product_id": "GA5-5",
+          "product_url": "https://www.mechatronicstore.cl/led-3mm-5mm/?attribute_tamano-de-led=5mm&attribute_pa_color=verde&utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=GA5-5",
+          "price_clp": 100,
           "stock_available": true,
-          "match_score": 0.70
+          "match_score": 0.88
         },
         {
-          "name_original": "Headers macho 2.54mm 2x40 pin",
-          "product_id": "GI5-3",
-          "product_url": "https://www.mechatronicstore.cl/fila-pin-header-macho-2x40-pin/?utm_source=blog&utm_medium=tutorial&utm_campaign=orejas-led-beacon-bluetooth-disney-esp32-s3&utm_content=GI5-3",
-          "price_clp": 490,
+          "name_original": "Resistencia 220Ω 1/4W",
+          "product_id": "GK1-18",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=220%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=GK1-18",
+          "price_clp": 100,
           "stock_available": true,
-          "match_score": 0.82
+          "match_score": 0.94
+        },
+        {
+          "name_original": "Resistencia 10kΩ 1/4W",
+          "product_id": "GK2-15",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=10k%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=GK2-15",
+          "price_clp": 100,
+          "stock_available": true,
+          "match_score": 0.95
+        },
+        {
+          "name_original": "Botón Pulsador 6x6x7mm",
+          "product_id": "GG4-6",
+          "product_url": "https://www.mechatronicstore.cl/boton-pulsador-switch-2-pines-6x6x7mm/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=GG4-6",
+          "price_clp": 290,
+          "stock_available": true,
+          "match_score": 0.86
+        },
+        {
+          "name_original": "Cable USB a Micro USB",
+          "product_id": "X3-10",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=comunicacion-rf-315-433mhz-arduino-virtualwire&utm_content=X3-10",
+          "price_clp": 1290,
+          "stock_available": true,
+          "match_score": 0.88
         }
       ],
       "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
+      "download_urls": [
+        {
+          "label": "Librería VirtualWire (Airspayce)",
+          "url": "http://www.airspayce.com/mikem/arduino/VirtualWire/",
+          "kind": "library"
+        },
+        {
+          "label": "Tutorial original Tronixstuff",
+          "url": "https://tronixstuff.com/2025/04/23/tutorial-315mhz-wireless-arduino/",
+          "kind": "article"
+        }
+      ],
+      "category": "arduino",
       "difficulty": "intermediate",
-      "estimated_time_minutes": 180,
-      "estimated_cost_clp": 28330,
-      "tags": ["esp32", "ble", "neopixel", "wearable", "beacon", "disney"]
+      "estimated_time_minutes": 90,
+      "estimated_cost_clp": 36300,
+      "tags": [
+        "arduino",
+        "rf",
+        "433mhz",
+        "315mhz",
+        "virtualwire",
+        "inalambrico",
+        "tutorial"
+      ],
+      "source_language": "en",
+      "re_angulation_applied": "Re-estructurado de 'lineal narrativo' a '3 proyectos progresivos' (TX/RX básico → control 2 canales → enteros analógicos); agregado contexto regulatorio chileno (433MHz ISM), análisis de limitaciones honesto, sección Variantes (antena λ/4, direccionamiento, low-power con LowPower.h) y kit completo CLP.",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.3,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
     },
     {
-      "id": "07cbf6c824eb",
-      "slug": "sensor-luz-lux-max44009-i2c-arduino-circuitpython",
-      "title_es": "Sensor de luz MAX44009: lux precisos con I2C para Arduino y CircuitPython",
-      "subtitle_es": "Aprende a usar el sensor de luz MAX44009 con 22 bits de rango dinámico desde 0.045 hasta 188.000 lux con auto-range y conexión I2C plug-and-play.",
-      "hero_image_url": "https://cdn-learn.adafruit.com/assets/assets/000/143/719/medium800/adafruit_products_max44009_demo_photo.jpg?1776115863",
-      "body_es": "## Un sensor de luz que entrega lux, no \"números\"\n\nLa mayoría de los sensores de luz baratos (LDR, fotodiodos genéricos) te dan un valor crudo entre 0 y 1023 (o 0 y 4095) que es proporcional al brillo, pero no es una **unidad real**. Para calibrarlo necesitas otro sensor patrón o aceptar que tus números no comparan entre proyectos.\n\nEl **MAX44009** es distinto: entrega directamente **lux**, la unidad SI de iluminancia. Y lo hace en un rango brutal: desde **0.045 lux** (noche cerrada, casi sin luz) hasta **188.000 lux** (sol directo del mediodía en verano). Eso es **22 bits de rango dinámico**, suficiente para usar el mismo sensor adentro y afuera sin cambiar nada.\n\n![Sensor MAX44009 conectado a una breakout TFT mostrando lectura de lux](https://cdn-learn.adafruit.com/assets/assets/000/143/719/medium800/adafruit_products_max44009_demo_photo.jpg?1776115863)\n\n## ¿Por qué importa medir en lux?\n\n- Comparas datos entre lugares y horas distintas sin recalibrar.\n- Tus algoritmos (\"si está oscuro, prende la luz\") usan umbrales con significado real (50 lux = mesa de trabajo iluminada, 500 lux = oficina).\n- Tu logger ambiental queda con datos publicables si quieres compartirlos.\n\n## Características clave\n\n- **Rango**: 0.045 a 188.000 lux\n- **Resolución**: hasta 0.045 lux por bit (mínimo más fino)\n- **Interfaz**: I2C estándar (3.3V o 5V con level-shifter)\n- **Auto-range**: el chip elige solo el tiempo de integración y la ganancia\n- **Bajo consumo**: ~1 µA en idle\n- **Direcciones I2C**: 0x4A o 0x4B (puente solder selecciona)\n\n![Vista superior del módulo MAX44009 con conectores STEMMA QT](https://cdn-learn.adafruit.com/assets/assets/000/143/720/medium800/adafruit_products_max44009_top_straight.jpg?1776115929)\n\n## Conexión\n\nEl breakout viene con cuatro pines I2C estándar:\n\n```\nMáster (ESP32/Arduino)     MAX44009\n     SDA   ──────────────  SDA\n     SCL   ──────────────  SCL\n     3.3V  ──────────────  VIN\n     GND   ──────────────  GND\n```\n\nSi tu placa tiene conector **STEMMA QT / Qwiic** (JST-SH 4 pines), enchufas directo sin soldar.\n\n## Código en CircuitPython\n\nInstala la librería `adafruit_max44009` desde el bundle:\n\n```python\nimport time\nimport board\nimport busio\nimport adafruit_max44009\n\ni2c = busio.I2C(board.SCL, board.SDA)\nsensor = adafruit_max44009.MAX44009(i2c)\n\nwhile True:\n    print(f\"Iluminancia: {sensor.lux:.2f} lux\")\n    time.sleep(1)\n```\n\nSalida típica:\n\n```\nIluminancia: 245.30 lux       # mesa de oficina\nIluminancia: 1.50 lux         # pieza apagada con luz de pasillo\nIluminancia: 65000.00 lux     # sol indirecto a través de ventana\n```\n\n## Código en Arduino\n\n```cpp\n#include <Wire.h>\n#include <Adafruit_MAX44009.h>\n\nAdafruit_MAX44009 sensor;\n\nvoid setup() {\n  Serial.begin(115200);\n  if (!sensor.begin()) {\n    Serial.println(\"No se detecta el MAX44009. Verifica cableado.\");\n    while (1) delay(10);\n  }\n}\n\nvoid loop() {\n  float lux = sensor.readLuminosity();\n  Serial.print(\"Iluminancia: \");\n  Serial.print(lux);\n  Serial.println(\" lux\");\n  delay(1000);\n}\n```\n\n## Aplicaciones típicas\n\n- **Reloj con backlight adaptativo**: ajusta el brillo del display según luz ambiente.\n- **Persiana motorizada inteligente**: cierra cuando el sol pega directo.\n- **Foco solar tracker**: orienta paneles solares siguiendo el máximo de lux.\n- **Logger lumínico**: registra exposición de plantas durante el día.\n- **Cámara astrofotográfica**: detecta cuándo es \"noche cerrada\" para empezar a capturar.\n\n## Auto-range vs. configuración manual\n\nPor defecto el chip ajusta solo el tiempo de integración (de 6.25 ms a 800 ms) y la ganancia. Para la mayoría de los proyectos, deja auto-range encendido.\n\nSi tu aplicación necesita lecturas **muy rápidas** (>10 Hz), puedes fijar manualmente integración de 6.25 ms y aceptar menor resolución a niveles bajos de luz.\n\n## I2C scan para verificar conexión\n\n```python\nimport board, busio\ni2c = busio.I2C(board.SCL, board.SDA)\nwhile not i2c.try_lock(): pass\nprint([hex(x) for x in i2c.scan()])\ni2c.unlock()\n```\n\nDeberías ver `0x4a` (o `0x4b` si moviste el jumper).\n\n## Alternativas en el catálogo\n\nSi el MAX44009 no está disponible, otros sensores de luz I2C con respuesta similar:\n\n- **BH1750 (GY-302)**: también entrega lux directos, rango 1-65.535 lux, más económico.\n- **TEMT6000**: salida analógica, requiere calibración pero es muy barato.\n- **APDS-9930**: incluye proximidad además de luz.\n\nPara la mayoría de proyectos donde quieres lux reales, el **GY-302 (BH1750)** es el reemplazo más directo y disponible.",
+      "id": "39033b956256",
+      "slug": "multiplexor-i2c-tca9548a-8-dispositivos-arduino",
+      "title_es": "Multiplexor I2C TCA9548A: conecta 8 dispositivos con dirección repetida en Arduino",
+      "subtitle_es": "Aprende a usar el multiplexor TCA9548A para conectar OLED, BMP180 y otros dispositivos I2C con direcciones idénticas a un solo Arduino, paso a paso.",
+      "hero_image_url": "https://tronixstuff.com/wp-content/uploads/2025/04/tca9548a_breadboard_ready_large.webp",
+      "body_es": "## Cuando dos sensores I2C tienen la misma dirección, llega el multiplexor\n\nI2C es el bus más cómodo del mundo Arduino: dos cables (SDA + SCL) y a volar. Pero tiene un límite molesto: cada dispositivo tiene una dirección fija, y si querés conectar **dos OLED iguales** o **siete sensores de temperatura del mismo modelo**, todos comparten la misma dirección y se \"pelean\" en el bus.\n\nEl **TCA9548A** (Texas Instruments) es un multiplexor 1-a-8: un solo bus I2C del Arduino entra, y el chip lo distribuye a 8 buses I2C independientes. Vos le decís por software \"ahora hablo con el canal 0\", el TCA9548A conecta el bus principal al canal 0, y el dispositivo de ese canal responde como si fuera el único.\n\nEn este tutorial vas a:\n\n1. Cablear un TCA9548A en protoboard.\n2. Verificar con un I2C scanner que aparezca en `0x70`.\n3. Aprender a seleccionar canales por software con una función mínima.\n4. Conectar dos dispositivos I2C reales en canales distintos (OLED + BMP180) y leerlos sin conflictos.\n\n## Concepto: cómo funciona el TCA9548A\n\nTres datos clave:\n\n- **Voltaje**: el chip opera entre 1.8 V y 5 V, y traduce entre niveles. Podés tener un Arduino Uno a 5 V hablando con sensores 3.3 V del lado del multiplexor sin level shifters.\n- **Dirección base**: por defecto `0x70`. Cambiable a `0x71`-`0x77` conectando los pines A0/A1/A2 a 5 V o GND.\n- **Selección de canal**: enviás un byte al TCA9548A donde cada bit representa un canal (LSB = canal 0, MSB = canal 7). Múltiples bits encendidos = múltiples canales conectados simultáneamente (útil para devices write-only).\n\nConfigurar todos los A0/A1/A2 a GND deja la dirección en `0x70`. Solo cambiala si **otro** dispositivo I2C en tu setup ya usa `0x70`.\n\n## Hardware necesario\n\n| Componente | Función |\n|---|---|\n| Arduino Uno R3 (o compatible) | Maestro I2C |\n| Multiplexor TCA9548A breakout | El multiplexor en sí |\n| Pantalla OLED 0.91\" 128x32 I2C SSD1306 | Dispositivo en canal 0 |\n| Sensor BMP180 GY-68 (presión + temperatura) | Dispositivo en canal 7 |\n| Protoboard 830 puntos | Soporte |\n| Cables macho-macho | Conexiones |\n| Cable USB | Programación |\n\n## Paso 1: armar el módulo TCA9548A\n\nLos breakouts suelen venir con los headers inline **sin soldar**. Para alinearlos derechos:\n\n1. Mete los headers en un protoboard primero (orientados hacia arriba).\n2. Apoya la PCB del TCA9548A encima.\n3. Suelda dos pins de las esquinas opuestas.\n4. Verifica visualmente que todo esté plano.\n5. Suelda el resto.\n\n## Paso 2: cablear al Arduino\n\n```text\nTCA9548A          Arduino Uno\n  Vin       →     5V\n  GND       →     GND\n  A0        →     GND   (dirección 0x70)\n  A1        →     GND\n  A2        →     GND\n  SDA       →     A4\n  SCL       →     A5\n```\n\nRecordá: en Arduino Uno, **SDA = A4** y **SCL = A5**. En Mega son distintos (SDA = 20, SCL = 21). En ESP32 los podés mapear casi a cualquier GPIO con `Wire.begin(sda, scl)`.\n\n## Paso 3: cambiar la dirección base (opcional)\n\nSi ya tenés algo en `0x70`, conectá los pines A0/A1/A2 a 5V (HIGH) o GND (LOW) según esta tabla:\n\n| A2 | A1 | A0 | Dirección |\n|---|---|---|---|\n| L | L | L | 0x70 |\n| L | L | H | 0x71 |\n| L | H | L | 0x72 |\n| L | H | H | 0x73 |\n| H | L | L | 0x74 |\n| H | L | H | 0x75 |\n| H | H | L | 0x76 |\n| H | H | H | 0x77 |\n\n## Paso 4: verificar con I2C scanner\n\nAntes de tocar dispositivos posteriores, confirmá que el Arduino ve al TCA9548A.\n\n```cpp\n#include <Wire.h>\n\nvoid setup() {\n  Wire.begin();\n  Serial.begin(115200);\n  Serial.println(\"\\nI2C Scanner\");\n}\n\nvoid loop() {\n  byte error, address;\n  int nDevices = 0;\n  Serial.println(\"Scanning…\");\n\n  for (address = 1; address < 127; address++) {\n    Wire.beginTransmission(address);\n    error = Wire.endTransmission();\n    if (error == 0) {\n      Serial.print(\"I2C device found at address 0x\");\n      if (address < 16) Serial.print(\"0\");\n      Serial.println(address, HEX);\n      nDevices++;\n    } else if (error == 4) {\n      Serial.print(\"Unknown error at address 0x\");\n      if (address < 16) Serial.print(\"0\");\n      Serial.println(address, HEX);\n    }\n  }\n  if (nDevices == 0) Serial.println(\"No I2C devices found\\n\");\n  else Serial.println(\"done\\n\");\n  delay(5000);\n}\n```\n\nSubí el sketch, abrí Serial Monitor a 115200 baudios y deberías ver:\n\n```text\nI2C Scanner\nScanning…\nI2C device found at address 0x70\ndone\n```\n\nSi no aparece nada: revisá las soldaduras del breakout, las conexiones SDA/SCL (es muy común invertirlas), y que A0/A1/A2 estén a GND.\n\n## Paso 5: función helper para seleccionar canal\n\nEl truco de programación del TCA9548A cabe en cuatro líneas:\n\n```cpp\nvoid TCA9548A(uint8_t bus) {\n  Wire.beginTransmission(0x70);   // Dirección del TCA9548A\n  Wire.write(1 << bus);            // Bit shift: bus 0 → 0b00000001, bus 5 → 0b00100000\n  Wire.endTransmission();\n}\n```\n\nCada vez que querés hablar con un dispositivo en un canal distinto, llamás a `TCA9548A(N)` antes de usar `Wire.*` o cualquier librería de sensor.\n\n## Paso 6: conectar primer dispositivo en canal 0 (OLED)\n\nCableado OLED 0.91\" 128x32 (Vcc puede ir a 3.3 V o 5 V según el breakout):\n\n```text\nOLED          TCA9548A canal 0\n  GND   →     GND\n  Vcc   →     3.3V (Arduino)\n  CL    →     SC0   (clock canal 0)\n  DA    →     SD0   (data canal 0)\n```\n\nSketch:\n\n```cpp\n#include <Arduino.h>\n#include <U8g2lib.h>\n#include <Wire.h>\n\nvoid TCA9548A(uint8_t bus) {\n  Wire.beginTransmission(0x70);\n  Wire.write(1 << bus);\n  Wire.endTransmission();\n}\n\nU8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);\n\nvoid setup() {\n  Wire.begin();\n  u8g2.begin();\n}\n\nvoid loop() {\n  TCA9548A(0);   // Canal 0 = OLED\n  for (int a = 999; a >= 0; a--) {\n    u8g2.clearBuffer();\n    u8g2.setFont(u8g2_font_inb24_mr);\n    u8g2.setCursor(0, 24);\n    u8g2.print(a);\n    u8g2.sendBuffer();\n    delay(100);\n  }\n}\n```\n\n(Nota: el demo original usa `U8G2_SSD1306_64X32_1F_F_HW_I2C` para una OLED 64x32. Si tenés la 128x32 de MechatronicStore, ajustá el constructor como arriba.)\n\n## Paso 7: agregar segundo dispositivo en canal 7 (BMP180)\n\nCableado BMP180:\n\n```text\nBMP180        TCA9548A canal 7\n  GND   →     GND\n  Vcc   →     3.3V (Arduino)\n  CL    →     SC7\n  DA    →     SD7\n```\n\nSketch con ambos dispositivos:\n\n```cpp\n#include <Arduino.h>\n#include <U8g2lib.h>\n#include <Adafruit_BMP085.h>\n#include <Wire.h>\n\nU8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);\nAdafruit_BMP085 bmp;\nint temperature;\n\nvoid TCA9548A(uint8_t bus) {\n  Wire.beginTransmission(0x70);\n  Wire.write(1 << bus);\n  Wire.endTransmission();\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin();\n  u8g2.begin();\n\n  TCA9548A(7);              // Canal 7 = BMP180\n  if (!bmp.begin()) {\n    Serial.println(\"BMP180 no encontrado, revisa cableado\");\n    while (1) {}\n  }\n}\n\nvoid loop() {\n  TCA9548A(7);                                // Hablar con BMP180\n  temperature = int(bmp.readTemperature());\n\n  TCA9548A(0);                                // Hablar con OLED\n  u8g2.clearBuffer();\n  u8g2.setFont(u8g2_font_inb24_mr);\n  u8g2.setCursor(0, 24);\n  u8g2.print(temperature);\n  u8g2.sendBuffer();\n  delay(500);\n}\n```\n\nPones el dedo sobre el sensor BMP180 y la temperatura mostrada en el OLED sube. El multiplexor cambia entre canales en ~150 µs, así que no hay parpadeo visible.\n\n## Pull-ups: cuándo agregarlos manualmente\n\nLos buses I2C necesitan pull-ups (típicamente 4.7-10 kΩ entre SDA/SCL y Vcc). En la mayoría de breakouts del TCA9548A vienen integrados. Si usás el chip \"pelado\" (SMD sin breakout) tenés que agregar 8 pares de pull-ups manualmente, uno por cada bus secundario. Para módulos comerciales ya están y no te tenés que preocupar.\n\n## Pin de RESET\n\nEl TCA9548A tiene un pin RESET que normalmente se deja sin conectar (queda en estado \"flotante\" con pull-up interno). Si tu setup llega a fallar por bus-fault (alguno de los dispositivos congeló el bus), drop temporal del RESET a GND restablece todos los canales. Útil para sistemas embebidos donde no podés desenchufar el Arduino.\n\n## Variantes y mejoras\n\n- **8 OLED idénticos para dashboards multi-pantalla**: una aplicación clásica es conectar 4-8 OLEDs SSD1306 del mismo modelo (todos en `0x3C`) en canales distintos del TCA9548A, y mostrar métricas separadas (hora, temperatura, humedad, presión, RSSI, kWh, etc.). Con un solo Arduino manejás un mini-dashboard \"industrial\".\n- **Múltiples sensores DS18B20 en una misma red**: aunque DS18B20 es 1-Wire (no I2C), si usás conversores 1-Wire-a-I2C (DS28E17), podés colgar 8 cadenas independientes de termómetros del TCA9548A. Cada cadena puede tener hasta 64 sensores → 512 sensores totales. Útil para incubadoras grandes o monitoreo industrial.\n- **Combinación con ESP32 y MQTT**: el TCA9548A funciona idéntico con ESP32 (cambias los pines SDA/SCL en `Wire.begin(21, 22)` o donde quieras). Sumando MQTT a la mezcla, podés publicar las lecturas de los 8 canales a Home Assistant con un solo ESP32.\n\n## Personalización para Chile\n\nTodo el hardware está en stock local en MechatronicStore:\n\n- **Arduino Uno R3** (SKU X4-8) — $9.990 CLP. Cerebro del proyecto.\n- **Multiplexor I2C 1 a 8 canales TCA9548A** (SKU GN1-7) — $7.800 CLP. El chip exacto del tutorial, en breakout listo para protoboard.\n- **Pantalla OLED 128x32 I2C 0.91\" SSD1306** (SKU D-112) — $3.990 CLP. Equivalente económico al OLED 0.49\" del tutorial original (que es muy chico para leer); el 128x32 es mucho más legible.\n- **Sensor de Presión Barométrica BMP180 Digital GY-68** (SKU GE1-10) — $2.490 CLP. El sensor exacto del tutorial, con pull-ups I2C integrados.\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP.\n- **Cables macho-macho 30cm** (SKU C-417) — $2.990 CLP el pack.\n- **Cable USB a Micro USB** (SKU X3-10) — $1.290 CLP.\n\nTotal: ~$32.340 CLP. Con esto te llevás todo lo necesario para replicar el demo y extenderlo con más dispositivos I2C de tu elección.\n\n## Recursos\n\n- Tutorial original (inglés): https://tronixstuff.com/2025/04/14/tutorial-tca9548a-i2c-multiplexer-arduino/\n- Datasheet TCA9548A: https://www.ti.com/lit/ds/symlink/tca9548a.pdf\n- Librería U8g2 (para OLED): https://github.com/olikraus/u8g2\n- Librería Adafruit BMP085 (sirve para BMP180): https://github.com/adafruit/Adafruit-BMP085-Library\n",
       "materials_list": [
-        {"name": "Sensor de luz MAX44009 (o BH1750 alternativo)", "qty": 1, "role": "sensor lux"},
-        {"name": "Microcontrolador con I2C (Arduino / ESP32)", "qty": 1, "role": "lectura datos"},
-        {"name": "Cable STEMMA QT / Dupont 4 hilos", "qty": 1, "role": "conexión I2C"}
+        {
+          "name": "Arduino Uno R3",
+          "qty": 1,
+          "role": "maestro I2C"
+        },
+        {
+          "name": "Multiplexor I2C 1 a 8 canales TCA9548A",
+          "qty": 1,
+          "role": "multiplexor del bus"
+        },
+        {
+          "name": "Pantalla OLED 128x32 I2C 0.91\" SSD1306",
+          "qty": 1,
+          "role": "display canal 0"
+        },
+        {
+          "name": "Sensor BMP180 GY-68 (presión + temperatura)",
+          "qty": 1,
+          "role": "sensor canal 7"
+        },
+        {
+          "name": "Protoboard 830 puntos MB102",
+          "qty": 1,
+          "role": "soporte circuito"
+        },
+        {
+          "name": "Cables macho-macho jumper",
+          "qty": 10,
+          "role": "conexiones"
+        },
+        {
+          "name": "Cable USB a Micro USB",
+          "qty": 1,
+          "role": "programación"
+        }
       ],
       "steps": [
-        {"position": 1, "name": "Conectar I2C", "text": "Conecta VIN a 3.3V, GND a GND, SDA al SDA del micro y SCL al SCL. Si tu micro tiene STEMMA QT, enchufa directo el cable."},
-        {"position": 2, "name": "Verificar dirección I2C", "text": "Corre un i2c.scan(). Debe aparecer 0x4A (por defecto) o 0x4B si moviste el jumper en el módulo."},
-        {"position": 3, "name": "Instalar librería", "text": "Copia adafruit_max44009.mpy a la carpeta lib/ de CircuitPython, o instala Adafruit_MAX44009 desde el Library Manager de Arduino."},
-        {"position": 4, "name": "Lectura básica", "text": "Carga el ejemplo. Cubre el sensor con la mano: el valor cae bajo 5 lux. Apunta a una ventana: sube a miles. Confirma que funciona el auto-range."},
-        {"position": 5, "name": "Integrar a tu proyecto", "text": "Usa los lux como input de un termostato, brillo adaptativo de pantalla, o trigger de actuadores."}
+        {
+          "position": 1,
+          "name": "Soldar headers del breakout TCA9548A",
+          "text": "Mete los headers en protoboard primero (alineación), apoya la PCB encima, suelda dos esquinas opuestas, verifica plano y suelda el resto."
+        },
+        {
+          "position": 2,
+          "name": "Cablear TCA9548A al Arduino",
+          "text": "Vin→5V, GND→GND, A0/A1/A2→GND (dirección 0x70), SDA→A4 (Uno), SCL→A5 (Uno)."
+        },
+        {
+          "position": 3,
+          "name": "Cambiar dirección base si hay conflicto",
+          "text": "Conecta A0/A1/A2 a 5V o GND según tabla de direcciones (0x70-0x77). Solo necesario si otro dispositivo I2C ya usa 0x70."
+        },
+        {
+          "position": 4,
+          "name": "Verificar con I2C scanner",
+          "text": "Subí el sketch i2cscanner.ino, abrí Serial Monitor a 115200 baudios y confirmá que aparece 'I2C device found at address 0x70'."
+        },
+        {
+          "position": 5,
+          "name": "Implementar función TCA9548A(bus)",
+          "text": "Wire.beginTransmission(0x70), Wire.write(1 << bus), Wire.endTransmission(). Llamarla antes de hablar con dispositivos en canales específicos."
+        },
+        {
+          "position": 6,
+          "name": "Cablear OLED en canal 0 y mostrar contador",
+          "text": "GND→GND, Vcc→3.3V, CL→SC0, DA→SD0. En el sketch: TCA9548A(0) antes de cada u8g2.* call, muestra contador decreciente 999→0."
+        },
+        {
+          "position": 7,
+          "name": "Agregar BMP180 en canal 7",
+          "text": "GND→GND, Vcc→3.3V, CL→SC7, DA→SD7. En setup() llamar TCA9548A(7) antes de bmp.begin(). En loop alternar TCA9548A(7) para leer y TCA9548A(0) para mostrar en OLED."
+        },
+        {
+          "position": 8,
+          "name": "Probar con dedo en BMP180",
+          "text": "El sensor sube la temperatura al contacto, el OLED muestra el cambio en tiempo real sin parpadeos visibles."
+        }
       ],
       "code_blocks": [
-        {"lang": "python", "caption": "Lectura simple del MAX44009 en CircuitPython", "code": "import time\nimport board\nimport busio\nimport adafruit_max44009\n\ni2c = busio.I2C(board.SCL, board.SDA)\nsensor = adafruit_max44009.MAX44009(i2c)\n\nwhile True:\n    print(f\"Iluminancia: {sensor.lux:.2f} lux\")\n    time.sleep(1)"},
-        {"lang": "cpp", "caption": "Lectura simple del MAX44009 en Arduino", "code": "#include <Wire.h>\n#include <Adafruit_MAX44009.h>\n\nAdafruit_MAX44009 sensor;\n\nvoid setup() {\n  Serial.begin(115200);\n  if (!sensor.begin()) {\n    Serial.println(\"No se detecta el MAX44009. Verifica cableado.\");\n    while (1) delay(10);\n  }\n}\n\nvoid loop() {\n  float lux = sensor.readLuminosity();\n  Serial.print(\"Iluminancia: \");\n  Serial.print(lux);\n  Serial.println(\" lux\");\n  delay(1000);\n}"},
-        {"lang": "python", "caption": "Scanner I2C para verificar la conexión", "code": "import board, busio\ni2c = busio.I2C(board.SCL, board.SDA)\nwhile not i2c.try_lock(): pass\nprint([hex(x) for x in i2c.scan()])\ni2c.unlock()"}
+        {
+          "lang": "cpp",
+          "caption": "I2C Scanner para verificar el TCA9548A",
+          "code": "#include <Wire.h>\n\nvoid setup() {\n  Wire.begin();\n  Serial.begin(115200);\n  Serial.println(\"\\nI2C Scanner\");\n}\n\nvoid loop() {\n  byte error, address;\n  int nDevices = 0;\n  Serial.println(\"Scanning...\");\n\n  for (address = 1; address < 127; address++) {\n    Wire.beginTransmission(address);\n    error = Wire.endTransmission();\n    if (error == 0) {\n      Serial.print(\"I2C device found at address 0x\");\n      if (address < 16) Serial.print(\"0\");\n      Serial.println(address, HEX);\n      nDevices++;\n    }\n  }\n  if (nDevices == 0) Serial.println(\"No I2C devices found\");\n  delay(5000);\n}"
+        },
+        {
+          "lang": "cpp",
+          "caption": "Función helper para seleccionar canal",
+          "code": "void TCA9548A(uint8_t bus) {\n  Wire.beginTransmission(0x70);   // Direccion del multiplexor\n  Wire.write(1 << bus);            // Bit-shift: canal N = 1 << N\n  Wire.endTransmission();\n}\n\n// Uso:\nTCA9548A(0);   // Conecta al canal 0\nTCA9548A(7);   // Conecta al canal 7"
+        },
+        {
+          "lang": "cpp",
+          "caption": "OLED + BMP180 leyendo simultaneamente",
+          "code": "#include <Arduino.h>\n#include <U8g2lib.h>\n#include <Adafruit_BMP085.h>\n#include <Wire.h>\n\nU8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);\nAdafruit_BMP085 bmp;\nint temperature;\n\nvoid TCA9548A(uint8_t bus) {\n  Wire.beginTransmission(0x70);\n  Wire.write(1 << bus);\n  Wire.endTransmission();\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin();\n  u8g2.begin();\n  TCA9548A(7);\n  if (!bmp.begin()) {\n    Serial.println(\"BMP180 no encontrado\");\n    while (1) {}\n  }\n}\n\nvoid loop() {\n  TCA9548A(7);\n  temperature = int(bmp.readTemperature());\n  TCA9548A(0);\n  u8g2.clearBuffer();\n  u8g2.setFont(u8g2_font_inb24_mr);\n  u8g2.setCursor(0, 24);\n  u8g2.print(temperature);\n  u8g2.sendBuffer();\n  delay(500);\n}"
+        }
       ],
       "linked_products": [
         {
-          "name_original": "Sensor de luz lux GY-302 BH1750 (alternativa al MAX44009)",
-          "product_id": "GN1-6",
-          "product_url": "https://www.mechatronicstore.cl/modulo-sensor-de-intensidad-luminosa-gy-302/?utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=GN1-6",
-          "price_clp": 3990,
+          "name_original": "Arduino Uno R3",
+          "product_id": "X4-8",
+          "product_url": "https://www.mechatronicstore.cl/arduino-uno-r3/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=X4-8",
+          "price_clp": 9990,
           "stock_available": true,
-          "match_score": 0.78
+          "match_score": 0.97
         },
         {
-          "name_original": "Sensor de luz TEMT6000",
-          "product_id": "GO1-5",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-luz-temt-6000/?utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=GO1-5",
-          "price_clp": 2190,
+          "name_original": "Multiplexor I2C 1 a 8 canales TCA9548A",
+          "product_id": "GN1-7",
+          "product_url": "https://www.mechatronicstore.cl/multiplexor-i2c-1-a-8-canales-tca9548a/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=GN1-7",
+          "price_clp": 7800,
+          "stock_available": true,
+          "match_score": 0.98
+        },
+        {
+          "name_original": "Pantalla OLED 128x32 I2C 0.91\" SSD1306",
+          "product_id": "D-112",
+          "product_url": "https://www.mechatronicstore.cl/pantalla-oled-128x32-i2c-0-91-ssd1306/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=D-112",
+          "price_clp": 3990,
+          "stock_available": true,
+          "match_score": 0.86
+        },
+        {
+          "name_original": "Sensor de Presión Barométrica BMP180 Digital GY-68",
+          "product_id": "GE1-10",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-presion-barometrica-bmp180-digital-gy-68/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=GE1-10",
+          "price_clp": 2490,
+          "stock_available": true,
+          "match_score": 0.97
+        },
+        {
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.96
+        },
+        {
+          "name_original": "Cables macho-macho 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Cable USB a Micro USB",
+          "product_id": "X3-10",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=multiplexor-i2c-tca9548a-8-dispositivos-arduino&utm_content=X3-10",
+          "price_clp": 1290,
+          "stock_available": true,
+          "match_score": 0.88
+        }
+      ],
+      "github_url": null,
+      "download_urls": [
+        {
+          "label": "Datasheet TCA9548A (Texas Instruments)",
+          "url": "https://www.ti.com/lit/ds/symlink/tca9548a.pdf",
+          "kind": "pdf"
+        },
+        {
+          "label": "Librería U8g2 (OLED)",
+          "url": "https://github.com/olikraus/u8g2",
+          "kind": "repo"
+        },
+        {
+          "label": "Librería Adafruit BMP085/180",
+          "url": "https://github.com/adafruit/Adafruit-BMP085-Library",
+          "kind": "repo"
+        }
+      ],
+      "category": "arduino",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 60,
+      "estimated_cost_clp": 32340,
+      "tags": [
+        "arduino",
+        "i2c",
+        "tca9548a",
+        "multiplexor",
+        "oled",
+        "bmp180",
+        "tutorial"
+      ],
+      "source_language": "en",
+      "re_angulation_applied": "Reorganizado en 8 pasos numerados con tabla de direcciones explícita; agregada explicación detallada del bit-shift (1 << bus), troubleshooting pull-ups internos vs externos, pin RESET, sección Variantes (multi-OLED dashboards, DS18B20+DS28E17 cascadeado, integración ESP32+MQTT) y kit completo CLP.",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.4,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
+    },
+    {
+      "id": "1a6559cb5b5a",
+      "slug": "comparativa-pantallas-e-paper-waveshare-raspberry-pi",
+      "title_es": "Comparativa de pantallas e-Paper Waveshare para Raspberry Pi: 2.13″, 4.2″ y 7.5″",
+      "subtitle_es": "Guía técnica chilena para elegir el e-paper correcto para tu Pi: resolución, refresh, casos de uso e instalación con código Pillow.",
+      "hero_image_url": "https://cdn.raspberry.tips/2026/05/waveshare-eink-raspberry-pi-hero.jpg",
+      "body_es": "## E-paper para Raspberry Pi: cuándo conviene y cuál elegir\n\nLas pantallas e-paper (e-ink) tienen tres virtudes que ningún LCD ni OLED puede igualar: el contenido se mantiene visible **sin consumir corriente**, se leen perfecto bajo luz directa del sol, y se ven elegantes — parecen tinta sobre papel real, no píxeles iluminados. Para un dashboard que cambia cada hora, un calendario de pared o un cartel de habitación, son la elección natural.\n\nWaveshare es el fabricante con mayor oferta de e-paper compatible con Raspberry Pi. En esta guía revisamos los 4 modelos más usados (2.13\", 4.2\", 7.5\" S/W y 7.5\" Tricolor), explicamos cómo conectarlos via SPI y compartimos un ejemplo Python mínimo para dibujar tu propio layout con Pillow.\n\n**Honestidad de inicio**: las pantallas Waveshare e-paper **no se venden actualmente en MechatronicStore**. Esta guía sirve para que elijas modelo correctamente cuando importes una, y para alternativas locales en stock si tu proyecto puede vivir con OLED de bajo consumo en vez de e-paper.\n\n## Lo que vas a aprender\n\n- Cuándo e-paper supera a LCD/OLED y cuándo no.\n- Las diferencias prácticas entre los 4 modelos Waveshare más populares.\n- Cómo activar SPI en Raspberry Pi y verificar la conexión.\n- Instalar los drivers de Waveshare con virtualenv (necesario en Bookworm).\n- Dibujar texto, líneas y formas con la librería Pillow.\n\n## Concepto: por qué e-paper es lento (y por qué no importa para muchos proyectos)\n\nUn píxel e-paper contiene microcápsulas con partículas blancas y negras (o blancas, negras y rojas en versiones Tricolor) suspendidas en un fluido. Aplicar voltaje las migra a la cara visible, y **se quedan ahí cuando cortas la corriente**. Eso explica todo:\n\n- **Refresh \"completo\"**: para evitar fantasmas (ghosting), el driver alterna polaridad varias veces. Demora 2-15 segundos según modelo.\n- **Refresh \"parcial\"**: solo en algunos modelos (2.13\" V4, por ejemplo). Actualiza una sub-región sin parpadear el resto. ~0.3 s.\n- **No sirve para video**: no hay manera de superar ~1-2 Hz sin destruir el panel.\n- **Consumo cero en standby**: una vez dibujado el frame, podés cortar la energía del Pi y la pantalla queda exactamente igual.\n\nSi tu proyecto cambia contenido cada segundo, e-paper no es la elección. Si cambia cada hora o cada día, e-paper te ahorra ~95% de energía vs LCD.\n\n## Los 4 modelos Waveshare más usados\n\n### 2.13\" e-Paper HAT — el compacto\n\n| Característica | Valor |\n|---|---|\n| Resolución | 250 × 122 px |\n| Colores | Blanco / Negro |\n| Refresh completo | ~2 s |\n| Refresh parcial | ~0.3 s |\n| Interfaz | SPI sobre GPIO directo (HAT) |\n| Compatibilidad | Pi Zero, Pi 3/4/5 |\n\n**Ideal para**: cartel de puerta con número de oficina, badge con QR de acceso, indicador de estado de servicio. El refresh parcial es la gran ventaja — podés actualizar la hora cada minuto sin parpadeo molesto.\n\n### 4.2\" e-Paper Module — texto y detalle\n\n| Característica | Valor |\n|---|---|\n| Resolución | 400 × 300 px |\n| Colores | Blanco / Negro |\n| Refresh completo | ~4 s |\n| Interfaz | SPI con cable FPC |\n| Compatibilidad | Pi Zero, Pi 3/4/5, Arduino |\n\n**Ideal para**: calendario de escritorio con próximos 3 eventos, indicador del clima en la ventana de la cocina, panel pequeño de estadísticas de red. El módulo (vs HAT) viene **sin header GPIO** integrado: requiere SPI por cable, lo que da flexibilidad para montar en gabinetes.\n\n### 7.5\" e-Paper HAT (S/W) — el clásico de dashboards\n\n| Característica | Valor |\n|---|---|\n| Resolución | 800 × 480 px |\n| Colores | Blanco / Negro |\n| Refresh completo | ~5 s |\n| Interfaz | SPI sobre GPIO directo (HAT) |\n| Compatibilidad | Pi Zero, Pi 3/4/5 |\n\n**Ideal para**: calendario semanal de pared, dashboard de Home Assistant en el pasillo, estadísticas Pi-hole en el rack, recetas en la cocina. La resolución 800×480 es la que asumen la mayoría de proyectos open-source (MagicMirror², DAKboard, eInk-Calendar), así que tenés tutoriales abundantes sin adaptar nada.\n\n### 7.5\" e-Paper HAT (B) Tricolor — con rojo\n\n| Característica | Valor |\n|---|---|\n| Resolución | 800 × 480 px |\n| Colores | Blanco / Negro / Rojo |\n| Refresh completo | ~15 s |\n| Interfaz | SPI sobre GPIO directo (HAT) |\n| Compatibilidad | Pi Zero, Pi 3/4/5 |\n\n**Ideal para**: calendario con feriados destacados en rojo, dashboards de alarmas (umbrales superados en rojo), carteles de precio con destacado, fichas con header de nombre en color. **Caveat importante**: el refresh tricolor tarda 15 s — el triple que la versión S/W. Si tu contenido cambia cada minuto, andate al S/W; si cambia una vez al día, no se nota.\n\n## Comparativa rápida\n\n| Display | Resolución | Colores | Refresh | Mejor uso |\n|---|---|---|---|---|\n| 2.13\" HAT | 250×122 | S/W | 2s / 0.3s | Badges, carteles, estado de servicio |\n| 4.2\" Módulo | 400×300 | S/W | 4s | Calendario escritorio, clima ventana |\n| 7.5\" S/W HAT | 800×480 | S/W | 5s | Dashboard pared, calendario, Pi-hole |\n| 7.5\" Tricolor | 800×480 | S/W/Rojo | 15s | Calendario con feriados, alarmas |\n\n## Paso 1: activar SPI en el Raspberry Pi\n\nTodas las pantallas Waveshare e-paper usan SPI. Hay que habilitarlo (viene apagado por defecto):\n\n```bash\nsudo raspi-config\n# Interface Options → SPI → Enable → Finish\n```\n\nO, equivalente, editando el config directamente:\n\n```bash\necho \"dtparam=spi=on\" | sudo tee -a /boot/firmware/config.txt\nsudo reboot\n```\n\n## Paso 2: cableado (solo para módulos sin header GPIO)\n\nLos HAT se conectan directo a los 40 pines del Pi y no requieren cable. Para módulos (4.2\", versiones con cable FPC), conectá así:\n\n| Pin display | GPIO Pi | Pin BCM |\n|---|---|---|\n| VCC | 3.3 V | Pin 1 |\n| GND | GND | Pin 6 |\n| DIN (MOSI) | GPIO 10 | Pin 19 |\n| CLK (SCLK) | GPIO 11 | Pin 23 |\n| CS | GPIO 8 | Pin 24 |\n| DC | GPIO 25 | Pin 22 |\n| RST | GPIO 17 | Pin 11 |\n| BUSY | GPIO 24 | Pin 18 |\n\n## Paso 3: instalar la librería Waveshare\n\nWaveshare publica drivers Python y scripts de ejemplo en GitHub. En Raspberry Pi OS **Bookworm** (Pi 4/5 desde fines de 2023), el sistema bloquea instalar paquetes pip globalmente — hay que crear un entorno virtual:\n\n```bash\ngit clone https://github.com/waveshare/e-Paper.git\ncd e-Paper/RaspberryPi_JetsonNano/python\n\n# Entorno virtual (obligatorio en Bookworm)\npython3 -m venv eink-env\nsource eink-env/bin/activate\n\npip install -r requirements.txt\n```\n\nEn Raspberry Pi OS Bullseye (versiones anteriores) basta:\n\n```bash\npip3 install RPi.GPIO spidev Pillow\n```\n\n## Paso 4: ejecutar un test\n\nEn la carpeta `examples/` Waveshare incluye scripts de test por modelo:\n\n| Display | Script |\n|---|---|\n| 2.13\" HAT | `epd2in13_V4_test.py` |\n| 4.2\" Módulo | `epd4in2_test.py` |\n| 7.5\" S/W HAT | `epd7in5_V2_test.py` |\n| 7.5\" Tricolor | `epd7in5b_V2_test.py` |\n\n```bash\ncd examples\npython3 epd7in5_V2_test.py\n```\n\nSi la pantalla muestra el patrón de test (líneas, texto, logo Waveshare), tu cableado y drivers funcionan.\n\n## Paso 5: dibujar tu propio layout con Pillow\n\nPillow es la librería estándar de Python para manipular imágenes. Acá un ejemplo mínimo para una 7.5\" S/W:\n\n```python\nfrom waveshare_epd import epd7in5_V2\nfrom PIL import Image, ImageDraw, ImageFont\nimport time\n\nepd = epd7in5_V2.EPD()\nepd.init()\nepd.Clear()\n\n# Bitmap monocromática (modo '1'), fondo blanco (255)\nimage = Image.new('1', (epd.width, epd.height), 255)\ndraw = ImageDraw.Draw(image)\n\n# Texto + rectángulo de borde\ndraw.text((20, 20), '¡Hola Chile!', font=ImageFont.load_default(), fill=0)\ndraw.rectangle([(10, 10), (790, 470)], outline=0)\n\nepd.display(epd.getbuffer(image))\ntime.sleep(3)\nepd.sleep()   # IMPORTANTE: poner el display en sleep para conservar el panel\n```\n\n**Crítico**: siempre llamá a `epd.sleep()` al final. Si dejás el panel \"encendido\" por horas, podés dañar las microcápsulas (ghosting permanente).\n\n## FAQ honesta\n\n**¿Funcionan con Raspberry Pi Zero 2 W?** Sí, todas las variantes HAT se enchufan directo a los 40 pines GPIO del Zero 2 W. Los módulos con cable FPC también funcionan via SPI. Python y la librería Waveshare corren sin problema en el Zero 2 W (que es lo que ahorra más energía).\n\n**¿Cuántos refresh resiste el panel?** Waveshare especifica al menos 1.000.000 ciclos por panel. A 1 refresh por hora, son ~114 años. La práctica indica que **no refrescar al segundo** prolonga la vida útil del panel — los proyectos serios actualizan cada 1-15 minutos.\n\n**¿HAT vs Módulo?** HAT se monta directo sobre el Pi sin cable. Módulo (con cable FPC) permite montar la pantalla en cualquier posición del gabinete, lejos del Pi. Para empezar, HAT es más simple.\n\n**¿Hay e-paper a color que no sea solo Tricolor?** Sí, Waveshare tiene modelos de 4-7 colores (e-paper \"ACeP\", panel hexacolor), pero los refresh tardan 30+ segundos y los precios son altos. Para empezar, recomendamos S/W o Tricolor.\n\n## Variantes y mejoras\n\n- **MagicMirror² adaptado a e-paper**: el framework MagicMirror² está pensado para LCD. Existen forks (busca \"MagicMirror epaper\" en GitHub) que reescriben los módulos para refrescar a baja frecuencia, ideal para un espejo \"inteligente\" que solo muestra hora + clima + calendario sin consumir corriente continuamente.\n- **Alimentación con panel solar pequeño**: un Raspberry Pi Zero 2 W consume ~70 mA en idle. Combinado con e-paper (consumo cero excepto refresh) y un panel solar de 5W con batería LiFePO4, podés montar un cartel de información solar autónomo, sin conexión a la red eléctrica.\n- **Recepción de calendario vía CalDAV**: con la librería `caldav` de Python, podés conectarte a un servidor Nextcloud o Google Calendar y mostrar los próximos eventos en el 7.5\" cada hora. Es la receta más popular para \"calendario familiar de pared\".\n\n## Personalización para Chile\n\n**Importante**: las pantallas Waveshare e-paper **no están en stock actualmente en MechatronicStore**. Hay que importarlas (Aliexpress, Mouser, Welectron). Si tu proyecto puede vivir con una alternativa local en stock, considera estas opciones:\n\n- **Pantalla OLED 128x32 I2C 0.91\" SSD1306** (SKU D-112) — $3.990 CLP. Bajo consumo (no tanto como e-paper, pero del orden de mA), buena legibilidad en interiores. Sirve para badges pequeños y status displays simples.\n- **Pantalla LCD 16x2 con I2C** (SKU D-313V1) — $5.990 CLP. Si solo necesitás texto plano (2 líneas, 16 caracteres), es la opción más simple y barata.\n- **Pantalla LCD 20x4 con I2C** (SKU D-301V1) — $11.990 CLP. Más texto, mismo principio. Útil para dashboards de texto puro.\n- **Raspberry Pi Pico 2 W** (SKU GS3-4) — $15.990 CLP. Si tu proyecto no necesita Linux (solo dibujar contenido en una pantalla), un Pico 2 W con Wi-Fi sale más barato que un Pi Zero 2 W y consume menos.\n- **Pantalla TFT LCD 1.8\"** (SKU D-316) — $6.590 CLP. SPI, color, baja resolución. Sirve para dashboards de baja resolución a color (no tiene la legibilidad bajo sol del e-paper).\n\nSi tu proyecto **necesita estrictamente e-paper** (legibilidad bajo sol, refresh raros con consumo cero), tendrás que importar la Waveshare. La 7.5\" S/W ronda US$45-60 en Welectron + envío. Si conviene a tu proyecto, MechatronicStore podría considerar traer este componente en futuras compras: contáctennos.\n\n## Recursos\n\n- Repo Waveshare e-Paper: https://github.com/waveshare/e-Paper\n- Wiki Waveshare: https://www.waveshare.com/wiki/Main_Page\n- Librería Pillow: https://pillow.readthedocs.io/\n- Artículo original (alemán): https://raspberry.tips/raspberrypi-einsteiger/waveshare-eink-display-raspberry-pi\n",
+      "materials_list": [
+        {
+          "name": "Raspberry Pi (Zero 2 W, 3, 4 o 5)",
+          "qty": 1,
+          "role": "computador host"
+        },
+        {
+          "name": "Pantalla Waveshare e-Paper HAT (2.13\", 4.2\", 7.5\" S/W o Tricolor)",
+          "qty": 1,
+          "role": "display principal"
+        },
+        {
+          "name": "Tarjeta microSD con Raspberry Pi OS Bookworm",
+          "qty": 1,
+          "role": "sistema operativo"
+        },
+        {
+          "name": "Cable USB-C (para Pi 5) o Micro USB (Zero/3/4)",
+          "qty": 1,
+          "role": "alimentación"
+        },
+        {
+          "name": "Cables jumper hembra-hembra (solo para módulos con FPC)",
+          "qty": 8,
+          "role": "conexión SPI módulo"
+        }
+      ],
+      "steps": [
+        {
+          "position": 1,
+          "name": "Elegir modelo según uso",
+          "text": "2.13\" para badges (refresh parcial 0.3s), 4.2\" para calendarios escritorio, 7.5\" S/W para dashboards pared (recomendado para empezar), 7.5\" Tricolor si necesitas rojo."
+        },
+        {
+          "position": 2,
+          "name": "Activar SPI en el Pi",
+          "text": "sudo raspi-config → Interface Options → SPI → Enable. O directo: echo 'dtparam=spi=on' >> /boot/firmware/config.txt && sudo reboot."
+        },
+        {
+          "position": 3,
+          "name": "Conectar el HAT o cablear módulo",
+          "text": "HAT: enchúfalo directo a los 40 pines. Módulo: VCC→Pin1 3.3V, GND→Pin6, DIN→GPIO10, CLK→GPIO11, CS→GPIO8, DC→GPIO25, RST→GPIO17, BUSY→GPIO24."
+        },
+        {
+          "position": 4,
+          "name": "Clonar repo Waveshare y crear virtualenv",
+          "text": "git clone https://github.com/waveshare/e-Paper.git. En Bookworm (obligatorio): python3 -m venv eink-env && source eink-env/bin/activate && pip install -r requirements.txt."
+        },
+        {
+          "position": 5,
+          "name": "Ejecutar script de test",
+          "text": "cd examples && python3 epd7in5_V2_test.py (ajusta el script al modelo correcto). Si aparece el patrón de test, drivers OK."
+        },
+        {
+          "position": 6,
+          "name": "Dibujar layout propio con Pillow",
+          "text": "Crear Image.new('1', (epd.width, epd.height), 255), usar ImageDraw para texto/rectángulos/líneas, llamar epd.display(epd.getbuffer(image))."
+        },
+        {
+          "position": 7,
+          "name": "Apagar correctamente con epd.sleep()",
+          "text": "Siempre terminar con epd.sleep() para evitar ghosting permanente. No dejar el panel 'encendido' por horas."
+        }
+      ],
+      "code_blocks": [
+        {
+          "lang": "bash",
+          "caption": "Habilitar SPI e instalar librería Waveshare",
+          "code": "# Activar SPI\nsudo raspi-config\n# Interface Options -> SPI -> Enable -> Finish\n\n# Clonar repo\ngit clone https://github.com/waveshare/e-Paper.git\ncd e-Paper/RaspberryPi_JetsonNano/python\n\n# Bookworm: virtualenv obligatorio\npython3 -m venv eink-env\nsource eink-env/bin/activate\npip install -r requirements.txt\n\n# Bullseye: instalacion directa\n# pip3 install RPi.GPIO spidev Pillow"
+        },
+        {
+          "lang": "python",
+          "caption": "Dibujar layout simple con Pillow (7.5\" S/W)",
+          "code": "from waveshare_epd import epd7in5_V2\nfrom PIL import Image, ImageDraw, ImageFont\nimport time\n\nepd = epd7in5_V2.EPD()\nepd.init()\nepd.Clear()\n\n# Bitmap 1-bit, 800x480, fondo blanco\nimage = Image.new('1', (epd.width, epd.height), 255)\ndraw = ImageDraw.Draw(image)\n\n# Texto\ndraw.text((20, 20), '¡Hola Chile!',\n          font=ImageFont.load_default(), fill=0)\n\n# Rectangulo de borde\ndraw.rectangle([(10, 10), (790, 470)], outline=0)\n\nepd.display(epd.getbuffer(image))\ntime.sleep(3)\nepd.sleep()   # IMPORTANTE: evitar ghosting"
+        }
+      ],
+      "linked_products": [
+        {
+          "name_original": "Raspberry Pi Pico 2 W (alternativa de bajo consumo)",
+          "product_id": "GS3-4",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico-2-w-raspberry-pi-rp2350-chip/?utm_source=blog&utm_medium=tutorial&utm_campaign=comparativa-pantallas-e-paper-waveshare-raspberry-pi&utm_content=GS3-4",
+          "price_clp": 15990,
           "stock_available": true,
           "match_score": 0.72
         },
         {
-          "name_original": "Sensor luz RGB APDS-9930",
-          "product_id": "GC3-7",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-postura-rgb-apds-9930/?utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=GC3-7",
-          "price_clp": 3690,
+          "name_original": "Pantalla OLED 128x32 I2C 0.91\" SSD1306 (alternativa a e-paper)",
+          "product_id": "D-112",
+          "product_url": "https://www.mechatronicstore.cl/pantalla-oled-128x32-i2c-0-91-ssd1306/?utm_source=blog&utm_medium=tutorial&utm_campaign=comparativa-pantallas-e-paper-waveshare-raspberry-pi&utm_content=D-112",
+          "price_clp": 3990,
           "stock_available": true,
-          "match_score": 0.70
+          "match_score": 0.7
         },
         {
-          "name_original": "Placa ESP32 microcontrolador I2C",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=sensor-luz-lux-max44009-i2c-arduino-circuitpython&utm_content=X2-10V2",
-          "price_clp": 7990,
+          "name_original": "Pantalla LCD 20x4 I2C (alternativa texto plano)",
+          "product_id": "D-301V1",
+          "product_url": "https://www.mechatronicstore.cl/pantalla-lcd2004-con-i2c/?utm_source=blog&utm_medium=tutorial&utm_campaign=comparativa-pantallas-e-paper-waveshare-raspberry-pi&utm_content=D-301V1",
+          "price_clp": 11990,
           "stock_available": true,
-          "match_score": 0.75
+          "match_score": 0.7
+        },
+        {
+          "name_original": "Pantalla TFT LCD 1.8\" SPI (alternativa color SPI)",
+          "product_id": "D-316",
+          "product_url": "https://www.mechatronicstore.cl/pantalla-tft-lcd-de-1-8/?utm_source=blog&utm_medium=tutorial&utm_campaign=comparativa-pantallas-e-paper-waveshare-raspberry-pi&utm_content=D-316",
+          "price_clp": 6590,
+          "stock_available": true,
+          "match_score": 0.71
         }
       ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "sensores",
+      "github_url": "https://github.com/waveshare/e-Paper",
+      "download_urls": [
+        {
+          "label": "Waveshare e-Paper drivers + ejemplos",
+          "url": "https://github.com/waveshare/e-Paper",
+          "kind": "repo"
+        },
+        {
+          "label": "Documentación Pillow",
+          "url": "https://pillow.readthedocs.io/",
+          "kind": "docs"
+        },
+        {
+          "label": "Wiki Waveshare",
+          "url": "https://www.waveshare.com/wiki/Main_Page",
+          "kind": "wiki"
+        },
+        {
+          "label": "Artículo original (alemán)",
+          "url": "https://raspberry.tips/raspberrypi-einsteiger/waveshare-eink-display-raspberry-pi",
+          "kind": "article"
+        }
+      ],
+      "category": "rpi",
       "difficulty": "beginner",
-      "estimated_time_minutes": 30,
-      "estimated_cost_clp": 11980,
-      "tags": ["sensor", "luz", "lux", "i2c", "max44009", "bh1750"]
+      "estimated_time_minutes": 60,
+      "estimated_cost_clp": 0,
+      "tags": [
+        "raspberry-pi",
+        "e-paper",
+        "e-ink",
+        "waveshare",
+        "spi",
+        "pillow",
+        "tutorial"
+      ],
+      "source_language": "de",
+      "re_angulation_applied": "Traducido del alemán (raspberry.tips) al español chileno; agregada sección 'Honestidad de inicio' indicando que Waveshare no está en stock MS; sección Variantes (MagicMirror², solar autónomo, CalDAV) ausentes en el original; Personalización Chile honesta con alternativas LCD/OLED en stock y nota sobre importación.",
+      "editorial_checklist": {
+        "title_distinct": true,
+        "has_unique_section": true,
+        "has_downloadable": true,
+        "body_word_ratio": 1.45,
+        "tone_or_structure_changed": true
+      },
+      "editorial_quality_warning": false
     }
   ]
 }
