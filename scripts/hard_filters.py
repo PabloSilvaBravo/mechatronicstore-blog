@@ -174,47 +174,94 @@ def detect_downloadables(body: str) -> dict:
     }
 
 
-def detect_language(body: str, sample_chars: int = 500) -> str:
-    """Heurística simple para detectar idioma del body. Devuelve uno de:
+def detect_language(body: str, sample_chars: int = 2000) -> str:
+    """Heurística para detectar idioma del body. Devuelve uno de:
     'es', 'en', 'de', 'fr', 'pt', 'it', 'other'.
 
-    Pablo 20-may-2026: necesitamos saber el idioma para aplicar threshold
-    diferenciado (es=0.75 estricto, otros=0.68 estándar) y editorial rules.
+    Pablo 20-may-2026 v2: heurística mejorada — sample 2000 chars (era 500),
+    threshold mínimo 2 markers (era 3), markers expandidos especialmente EN
+    (palabras frecuentes en títulos cortos), bonus por características
+    ortográficas (ñ/acentos español, ß/umlaut alemán, accents franceses).
     """
     if not body:
         return "other"
     sample = body[:sample_chars].lower()
     # Quitar HTML tags básico para no confundir palabras técnicas
     sample = re.sub(r"<[^>]+>", " ", sample)
-    sample = re.sub(r"[^\w\sáéíóúñç\-]", " ", sample)
+    sample = re.sub(r"[^\w\sáéíóúñçàèìòùâêîôûäöüßãõ\-]", " ", sample)
     words = set(sample.split())
 
-    # Keywords markers por idioma (palabras comunes que NO suelen ser código)
+    # Keywords markers por idioma (expandidos — palabras de alta frecuencia)
     markers = {
-        "es": {"el", "la", "que", "para", "con", "este", "como", "una",
-               "los", "las", "más", "pero", "tutorial", "código", "puedes",
-               "tienes", "vamos", "necesitas", "después"},
-        "en": {"the", "and", "you", "for", "with", "this", "how", "code",
-               "tutorial", "step", "will", "need", "use", "from", "your",
-               "have", "make", "into", "what"},
-        "de": {"der", "die", "und", "ist", "den", "mit", "für", "ein",
-               "auf", "wir", "sie", "wird", "auch", "ihre", "nicht",
-               "wenn", "dann", "kann", "schritt"},
-        "fr": {"le", "la", "les", "des", "pour", "avec", "vous", "cette",
-               "comment", "code", "tutoriel", "étape", "votre", "est",
-               "dans", "sur", "que", "pas"},
-        "pt": {"para", "com", "este", "como", "uma", "que", "você", "não",
-               "mas", "pelo", "isso", "tutorial", "código", "passo"},
-        "it": {"per", "con", "questo", "come", "una", "che", "tu", "non",
-               "ma", "del", "tutorial", "codice", "passo", "primo"},
+        "es": {
+            # function words
+            "el", "la", "que", "para", "con", "este", "esta", "como", "una", "un",
+            "los", "las", "más", "pero", "sin", "sobre", "entre", "todo",
+            "donde", "cuando", "porque", "aunque", "mientras",
+            # pronouns/verbs
+            "puedes", "tienes", "vamos", "necesitas", "después", "antes", "ahora",
+            "hacer", "tener", "ser", "estar", "decir", "usar", "puede",
+            # technical context ES
+            "tutorial", "código", "proyecto", "paso", "guía", "ejemplo",
+        },
+        "en": {
+            # function words (high freq)
+            "the", "and", "you", "for", "with", "this", "that", "how", "from",
+            "your", "have", "make", "into", "what", "all", "but", "not", "are",
+            "was", "were", "been", "they", "their", "will", "would", "should",
+            # technical
+            "tutorial", "step", "code", "use", "using", "need", "build", "setup",
+            "guide", "example", "project", "create", "connect", "install",
+            # very common short
+            "to", "of", "in", "on", "is", "it", "be", "as", "or", "if",
+        },
+        "de": {
+            "der", "die", "das", "und", "ist", "den", "mit", "für", "ein", "eine",
+            "auf", "wir", "sie", "wird", "auch", "ihre", "nicht", "wenn", "dann",
+            "kann", "schritt", "anleitung", "projekt", "verwenden", "müssen",
+            "haben", "sind", "werden", "über",
+        },
+        "fr": {
+            "le", "la", "les", "des", "pour", "avec", "vous", "cette", "comment",
+            "code", "tutoriel", "étape", "votre", "est", "dans", "sur", "que",
+            "pas", "nous", "ils", "elles", "tout", "leur", "guide", "projet",
+            "exemple", "créer", "utiliser",
+        },
+        "pt": {
+            "para", "com", "este", "esta", "como", "uma", "um", "que", "você",
+            "não", "mas", "pelo", "pela", "isso", "tutorial", "código", "passo",
+            "exemplo", "projeto", "guia", "fazer", "ter", "ser", "estar",
+        },
+        "it": {
+            "per", "con", "questo", "questa", "come", "una", "uno", "che", "tu",
+            "non", "ma", "del", "della", "tutorial", "codice", "passo", "primo",
+            "esempio", "progetto", "guida", "fare", "essere", "avere",
+        },
     }
     counts = {lang: len(words & kw) for lang, kw in markers.items()}
-    # Bonus español si hay vocales acentuadas
+
+    # Bonus ortográficos por idioma
     if any(c in sample for c in "áéíóúñ"):
-        counts["es"] += 3
+        counts["es"] += 5
+    if "ß" in sample or any(c in sample for c in "äöü"):
+        counts["de"] += 3
+    if any(c in sample for c in "àèìòùâêîôûœ"):
+        counts["fr"] += 3
+    if any(c in sample for c in "ãõçà") and "you" not in words:
+        counts["pt"] += 3
 
     best_lang = max(counts, key=counts.get)
-    if counts[best_lang] < 3:
+    # Threshold mínimo 2 markers (antes 3) — pero requiere margen sobre el
+    # segundo idioma para confianza
+    second_best = sorted(counts.values(), reverse=True)[1] if len(counts) > 1 else 0
+    if counts[best_lang] < 2:
+        return "other"
+    # Si el mejor tiene poco margen sobre el segundo Y es <4, dudoso → other
+    if counts[best_lang] < 4 and (counts[best_lang] - second_best) < 2:
+        # Caso típico: título corto inglés tipo "ESP32 Pro Tip" — pocos markers EN.
+        # Si solo EN tiene match y los otros 0, igualmente devolver EN.
+        if best_lang == "en" and second_best == 0:
+            return "en"
         return "other"
     return best_lang
 
