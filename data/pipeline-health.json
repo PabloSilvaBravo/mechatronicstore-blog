@@ -1,51 +1,83 @@
 {
-  "checked_at": "2026-05-21T04:09:03.554666+00:00",
+  "checked_at": "2026-05-21T09:51:24.388109+00:00",
   "metrics": {
-    "drafts_pending": 0,
-    "published_24h": 6,
+    "drafts_pending": 44,
+    "published_24h": 0,
     "ranked_stuck": 9,
-    "rejected_ratio_48h": 0.91,
-    "published_48h": 19,
-    "rejected_48h": 191,
+    "rejected_ratio_48h": 0.937,
+    "published_48h": 23,
+    "rejected_48h": 341,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
     "editorial_rejected_48h": 0,
     "editorial_rejected_ratio": 0.0,
     "heros_checked": 18,
-    "heros_broken": 4,
+    "heros_broken": 18,
     "heros_broken_urls": [
       {
-        "status": 404,
-        "url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/04/ESP32-Web-Server-Set-Timer-Schedule-Arduino-IDE-Core.jpg"
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
       },
       {
-        "status": 404,
-        "url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Web-Server-Basic-HTTP-Authentication.jpg"
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/bda956a198aa/038aadb094d4f4d5.webp"
       },
       {
-        "status": 404,
-        "url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/03/ESP-IDF-ESP32-Simple-Web-Server-Serve-HTML-Page.jpg"
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
       },
       {
-        "status": 404,
-        "url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/01/Raspberry-Pi-Pico-TM1637-Micropython-Tutorial.jpg"
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/866a587ce24a/00a427b93e13ecb1.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/7aa0c097827a/b7df191d893c46dd.webp"
       }
     ],
     "counts_by_status": {
+      "draft": 44,
       "published": 23,
       "ranked": 9,
-      "rejected": 234
+      "rejected": 384
     }
   },
   "alerts": [
     {
+      "severity": "critical",
+      "metric": "published_24h",
+      "value": 0,
+      "threshold": 1,
+      "message": "Cero publicaciones en últimas 24h. Pipeline congelado — revisar Routine C + workflow translate-persist."
+    },
+    {
       "severity": "warning",
       "metric": "heros_broken",
-      "value": 4,
+      "value": 18,
       "threshold": 0,
-      "message": "4/18 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+      "message": "18/18 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
     }
   ],
-  "status": "warning"
+  "status": "critical"
 }
