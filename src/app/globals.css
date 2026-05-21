@@ -23,6 +23,10 @@
   --bg-hover: #1d1e25;
   --bg-card: rgba(22, 23, 29, 0.9);
   --bg-overlay: rgba(14, 15, 20, 0.88);
+  /* Nav row del header — match con store. Gris claro en light, gris
+     oscuro coherente en dark. Pablo 21-may-2026: el store usa #f1f1f1
+     en la fila de categorías para diferenciarla del main bar blanco. */
+  --nav-row-bg: #1a1b22;
 
   --text: #ececee;
   --text-muted: #a8a9b1;
@@ -80,6 +84,8 @@
   --text-accent: #6017b1;
   --text-on-purple: #ffffff;
   --text-on-yellow: #000000;
+  /* Nav row del header — light mode match con store mechatronicstore.cl */
+  --nav-row-bg: #f1f1f1;
 
   --background: var(--bg);
   --foreground: var(--text);
@@ -468,19 +474,39 @@ input, textarea, select {
 }
 
 /* ───────────────────────────────────────────────────────────────
- * Search bar header — rediseño Pablo 21-may-2026
- * Estilo Stripe/Linear/Algolia DocSearch: neutro en idle, glow púrpura
- * en focus. Reemplaza el sólido púrpura grueso anterior.
+ * Search bar header — Pablo 21-may-2026 (header alignment con store)
+ *
+ * El store mechatronicstore.cl usa una barra con BG PÚRPURA SÓLIDO y
+ * texto/placeholder BLANCO. Replicamos ese estilo aquí — la barra ya
+ * está visualmente saturada con el púrpura sólido, no necesita ring de
+ * focus extra. Solo mejoramos el placeholder en blanco translúcido.
  * ─────────────────────────────────────────────────────────────── */
-.group:has(input[type="search"]):focus-within,
-.search-bar-focus {
-  border-color: var(--brand-purple) !important;
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--brand-purple) 18%, transparent),
-    0 4px 16px -4px color-mix(in srgb, var(--brand-purple) 25%, transparent);
+.search-input-white::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+  opacity: 1; /* Firefox aplica opacity .54 por defecto */
 }
-.group:has(input[type="search"]):hover:not(:focus-within) {
-  border-color: color-mix(in srgb, var(--brand-purple) 50%, var(--border)) !important;
+.search-input-white::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+.search-input-white::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.75);
+  opacity: 1;
+}
+/* search cancel button (la X que aparece en input type=search) en blanco */
+.search-input-white::-webkit-search-cancel-button {
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * Header icon buttons — Pablo 21-may-2026 (alignment con store)
+ *
+ * Los iconos de cart + user del store tienen bg púrpura sólido y se
+ * oscurecen sutilmente en hover (no se vuelven transparentes). Replicamos
+ * con un hover hacia un púrpura más oscuro (#4f129a ≈ purple-dark).
+ * ─────────────────────────────────────────────────────────────── */
+.header-icon-btn:hover {
+  background: #4f129a !important;
 }
 
 .card-luis:hover {

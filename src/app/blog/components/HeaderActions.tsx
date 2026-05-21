@@ -4,15 +4,16 @@
  * HeaderActions — cluster derecho del main bar del header del blog,
  * replica las acciones del header de mechatronicstore.cl.
  *
- * Pablo 21-may-2026: ajustes para mimic exacto del store:
- *   1. SUSCRÍBETE — yellow dot + texto. ANTES apuntaba a /suscribete/
- *      (404). AHORA hace scroll smooth al newsletter signup del footer
- *      + focus al input. Sin recargar página.
- *   2. 🛒 Cart — SVG "shopping bag" (Tabler-style) replica visual del
- *      icon-shopping-bag de Flatsome (bolsa con asas, NO caja).
- *      Linkea al cart del store con UTM.
- *   3. 👤 Cuenta — SVG silhouette + circle head, equivalente al
- *      icon-user de Flatsome.
+ * Pablo 21-may-2026 (alignment con store v2):
+ *   1. SUSCRÍBETE — yellow dot + texto, scroll smooth al newsletter.
+ *   2. COTIZAR + badge NUEVO — nuevo botón prominente con bg púrpura
+ *      sólido + label "NUEVO" amarillo. Solo desktop (lg+). Match con
+ *      el botón "Cotizar" + badge del store.
+ *   3. 🛒 Cart — SVG shopping bag dentro de cuadrado púrpura sólido
+ *      36×36 con icono BLANCO (no ghost transparente). Match exacto
+ *      con los rectángulos púrpura del store.
+ *   4. 👤 Cuenta — Misma estética que cart: cuadrado púrpura sólido +
+ *      icono blanco.
  *
  * Cada link externo lleva utm_source=blog para tracking en el store.
  */
@@ -30,6 +31,19 @@ function handleScrollToNewsletter(e: React.MouseEvent<HTMLAnchorElement>) {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }
 }
+
+/**
+ * Estilo compartido para los iconos de acción del header (cart, user).
+ * Bg púrpura sólido + icono blanco — match exacto con el header del
+ * store mechatronicstore.cl. NO usar bg ghost transparente.
+ */
+const ICON_BUTTON_STYLE: React.CSSProperties = {
+  width: "36px",
+  height: "36px",
+  background: "var(--brand-purple)",
+  color: "#ffffff",
+  borderRadius: "4px",
+};
 
 export default function HeaderActions() {
   return (
@@ -53,24 +67,47 @@ export default function HeaderActions() {
         Suscríbete
       </a>
 
-      {/* Divider sutil entre suscribete y los icons */}
+      {/* Divider sutil entre suscribete y COTIZAR */}
       <span
         className="hidden lg:inline-block w-px h-5"
         style={{ background: "var(--border-subtle)" }}
         aria-hidden
       />
 
-      {/* Cart icon — shopping bag style (Flatsome icon-shopping-bag equivalent) */}
+      {/* COTIZAR — botón prominente desktop-only, badge "NUEVO" amarillo
+          arriba a la derecha. Replica el botón "Cotizar" del store que
+          pasamos a destacar como nueva feature B2B. */}
+      <a
+        href="https://www.mechatronicstore.cl/cotizacion/?utm_source=blog&utm_medium=header&utm_campaign=cotizar"
+        className="relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:opacity-90"
+        style={{ background: "var(--brand-purple)", height: "36px" }}
+        aria-label="Pedir cotización en MechatronicStore"
+        title="Cotizar en MechatronicStore"
+      >
+        Cotizar
+        <span
+          className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded text-[9px] font-bold leading-none uppercase tracking-wide"
+          style={{
+            background: "var(--brand-yellow)",
+            color: "#1a0640",
+          }}
+          aria-hidden
+        >
+          Nuevo
+        </span>
+      </a>
+
+      {/* Cart icon — shopping bag style en cuadrado púrpura sólido */}
       <a
         href="https://www.mechatronicstore.cl/cart/?utm_source=blog&utm_medium=header&utm_campaign=cart"
-        className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-[color:var(--bg-hover)]"
-        style={{ color: "var(--text)" }}
+        className="header-icon-btn flex items-center justify-center transition-colors"
+        style={ICON_BUTTON_STYLE}
         aria-label="Ver carrito"
         title="Carrito en MechatronicStore"
       >
         <svg
-          width="22"
-          height="22"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -86,17 +123,17 @@ export default function HeaderActions() {
         </svg>
       </a>
 
-      {/* Account icon — user silhouette (Flatsome icon-user equivalent) */}
+      {/* Account icon — user silhouette en cuadrado púrpura sólido */}
       <a
         href="https://www.mechatronicstore.cl/mi-cuenta/?utm_source=blog&utm_medium=header&utm_campaign=cuenta"
-        className="hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-[color:var(--bg-hover)]"
-        style={{ color: "var(--text)" }}
+        className="header-icon-btn hidden sm:flex items-center justify-center transition-colors"
+        style={ICON_BUTTON_STYLE}
         aria-label="Mi cuenta"
         title="Mi cuenta en MechatronicStore"
       >
         <svg
-          width="22"
-          height="22"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

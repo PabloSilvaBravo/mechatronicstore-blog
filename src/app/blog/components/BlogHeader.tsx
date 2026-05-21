@@ -11,6 +11,10 @@ import CategoryIcon from "./CategoryIcon";
 /**
  * Placeholder visual de SearchBar mientras Suspense resuelve. Mismo
  * tamaño que el campo real para evitar layout shift.
+ *
+ * Pablo 21-may-2026 (header alignment con store): la barra real es
+ * h=38px bg púrpura sólido radius 6px max 477px. El fallback replica
+ * esas dimensiones para evitar layout shift.
  */
 function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   if (variant === "icon") {
@@ -24,8 +28,13 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   }
   return (
     <div
-      className="h-10 rounded-lg"
-      style={{ background: "var(--brand-purple)", opacity: 0.85 }}
+      style={{
+        background: "var(--brand-purple)",
+        opacity: 0.85,
+        height: "38px",
+        borderRadius: "6px",
+        maxWidth: "477px",
+      }}
       aria-hidden
     />
   );
@@ -229,10 +238,16 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
 
       {/* ─── Row 3: Nav menu ─────────────────────────────────────
           Desktop only. Replica el nav menu del store: items
-          horizontales con dropdowns. */}
+          horizontales con dropdowns sobre un FONDO GRIS CLARO
+          (#f1f1f1 light / #1a1b22 dark) — match exacto con la nav
+          row del header del store mechatronicstore.cl. Pablo 21-may-2026
+          (header alignment). */}
       <div
         className="hidden md:block border-t"
-        style={{ borderColor: "var(--border-subtle)" }}
+        style={{
+          borderColor: "var(--border-subtle)",
+          background: "var(--nav-row-bg)",
+        }}
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <ul className="flex items-center gap-6 text-xs font-bold uppercase tracking-[0.08em] py-2.5">

@@ -334,25 +334,31 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   }
 
   // ─── variant "full" (desktop) ──────────────────────────────
-  // Pablo 21-may-2026: rediseño estética — pasamos de bloque sólido púrpura
-  // (672px x 43px) a estilo Stripe/Linear/Algolia DocSearch:
-  //   - fondo neutro elevado (var(--bg-elevated)) + borde sutil
-  //   - lupa a la izquierda en gris muted (no botón fucsia a la derecha)
-  //   - foco con ring púrpura + leve glow (sin manchar la barra entera)
-  //   - hint "/" o "⌘K" a la derecha (look-and-feel app moderna)
-  //   - radio 10px alineado con cards
+  // Pablo 21-may-2026 (header alignment con store): el store de
+  // mechatronicstore.cl usa una barra de búsqueda PÚRPURA SÓLIDA
+  // (#6017b1) con texto blanco. Para que el usuario sienta que blog y
+  // tienda son un solo sitio, replicamos ese estilo:
+  //   - bg purple sólido var(--brand-purple)
+  //   - placeholder + texto blanco (rgba(255,255,255,0.75) placeholder)
+  //   - lupa a la izquierda en blanco
+  //   - radius 6px (no 10px pill — match con store)
+  //   - height 38px
+  //   - max-width ~477px (constraint visual del store)
+  //   - kbd hint blanco translúcido (legible sobre el púrpura)
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative ${className}`}
+      style={{ maxWidth: "477px" }}
+    >
       <form
         onSubmit={handleSubmit}
-        className={`group flex items-center gap-2.5 px-3.5 transition-all ${
-          dropdownOpen || query ? "search-bar-focus" : ""
-        }`}
+        className="group flex items-center gap-2.5 px-3.5 transition-all"
         style={{
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-          borderRadius: "10px",
-          height: "42px",
+          background: "var(--brand-purple)",
+          border: "none",
+          borderRadius: "6px",
+          height: "38px",
         }}
       >
         <svg
@@ -365,7 +371,7 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden
-          style={{ color: "var(--text-dim)", flexShrink: 0 }}
+          style={{ color: "#ffffff", flexShrink: 0, opacity: 0.9 }}
         >
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3-3" />
@@ -395,10 +401,10 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
               overlay.setOpen(true);
             }
           }}
-          placeholder="Buscar tutoriales, ej. ESP32, Arduino…"
-          className="flex-1 text-sm outline-none bg-transparent placeholder:opacity-70"
+          placeholder="Buscar..."
+          className="flex-1 text-sm outline-none bg-transparent search-input-white"
           style={{
-            color: "var(--text)",
+            color: "#ffffff",
             border: "none",
             minWidth: 0,
             fontWeight: 500,
@@ -407,18 +413,20 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           autoComplete="off"
           readOnly={overlay !== null}
         />
-        {/* Hint visual — Pablo 21-may-2026:
+        {/* Hint visual — Pablo 21-may-2026 (alignment con store):
+            Sobre fondo púrpura sólido. El kbd queda translúcido blanco
+            para no romper la jerarquía visual (la lupa + placeholder ya
+            indican que es input de búsqueda).
             Si el provider del SearchOverlay está montado, mostramos
-            ⌘K (Mac) / Ctrl K (otros) — el shortcut que abre el
-            command palette. Si no, fallback a ↵ (Enter para submit). */}
+            ⌘K (Mac) / Ctrl K (otros). Si no, fallback a ↵. */}
         <kbd
           className="hidden md:inline-flex items-center justify-center text-[10px] font-bold tabular-nums gap-0.5"
           aria-hidden
           style={{
-            color: "var(--text-dim)",
-            background: "var(--bg)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "5px",
+            color: "#ffffff",
+            background: "rgba(255, 255, 255, 0.18)",
+            border: "1px solid rgba(255, 255, 255, 0.25)",
+            borderRadius: "4px",
             padding: "2px 6px",
             minWidth: "22px",
             height: "20px",

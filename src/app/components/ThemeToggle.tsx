@@ -14,6 +14,10 @@ export default function ThemeToggle() {
     toggleTheme();
   };
 
+  // Pablo 21-may-2026 (header alignment con store): el theme toggle vive
+  // junto a los iconos cart/user/cotizar del cluster derecho del header.
+  // Para que se vea coherente con esos botones, le damos la misma
+  // estética — cuadrado púrpura sólido 36×36 con icono blanco.
   return (
     <button
       type="button"
@@ -21,15 +25,16 @@ export default function ThemeToggle() {
       aria-label={label}
       aria-pressed={isDark}
       title={label}
-      className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border transition-all hover:scale-105"
+      className="header-icon-btn relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors"
       style={{
-        borderColor: "var(--border)",
-        backgroundColor: "var(--bg-elevated)",
+        background: "var(--brand-purple)",
+        color: "#ffffff",
+        borderRadius: "4px",
         touchAction: "manipulation",
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      {/* Moon (dark mode) */}
+      {/* Moon (dark mode) — stroke blanco para contraste sobre púrpura */}
       <svg
         className={`absolute h-5 w-5 transition-all duration-300 ${
           isDark
@@ -39,7 +44,7 @@ export default function ThemeToggle() {
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={2}
-        stroke="#FFD700"
+        stroke="#ffffff"
         aria-hidden
       >
         <path
@@ -49,7 +54,7 @@ export default function ThemeToggle() {
         />
       </svg>
 
-      {/* Sun (light mode) */}
+      {/* Sun (light mode) — stroke blanco para contraste sobre púrpura */}
       <svg
         className={`absolute h-5 w-5 transition-all duration-300 ${
           !isDark
@@ -59,7 +64,7 @@ export default function ThemeToggle() {
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={2}
-        stroke="#b45309"
+        stroke="#ffffff"
         aria-hidden
       >
         <path
