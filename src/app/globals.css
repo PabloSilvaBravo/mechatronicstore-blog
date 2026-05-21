@@ -52,11 +52,14 @@
 }
 
 [data-theme="light"] {
-  --bg: #fafafa;
+  /* Pablo 21-may-2026: bg #fafafa → #ffffff para match exacto con store
+     mechatronicstore.cl (Flatsome usa blanco puro). Usuario no debe
+     notar cambio de sitio al pasar de tienda a blog. */
+  --bg: #ffffff;
   --bg-elevated: #ffffff;
   --bg-hover: #f4f4f5;
   --bg-card: rgba(255, 255, 255, 0.95);
-  --bg-overlay: rgba(250, 250, 250, 0.88);
+  --bg-overlay: rgba(255, 255, 255, 0.92);
 
   --text: #09090b;
   --text-muted: #52525b;
