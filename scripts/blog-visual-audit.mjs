@@ -182,9 +182,13 @@ async function auditPage(browser, url, pageType) {
   });
 
   // === Validación SEO por tipo de página ===
+  // Pablo 21-may-2026: target 70 chars alinea con SERP real de Google
+  // (~580px renderizados ≈ 70 chars). 60 era excesivamente restrictivo
+  // considerando que el layout agrega sufijo "· Blog MechatronicStore"
+  // (24 chars) al document.title automáticamente.
   const seoIssues = [];
   if (!seo.title || seo.title.length > 70) {
-    seoIssues.push(`title length ${seo.title?.length || 0} (target ≤60)`);
+    seoIssues.push(`title length ${seo.title?.length || 0} (target ≤70)`);
   }
   if (!seo.description) seoIssues.push("missing description");
   if (!seo.canonical) seoIssues.push("missing canonical");

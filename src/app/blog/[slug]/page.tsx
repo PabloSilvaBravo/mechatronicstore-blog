@@ -33,7 +33,11 @@ const FALLBACK_OG_IMAGE = `${BASE_URL}/blog/logo-mechastore-blog.svg`;
 // pasan 70+ chars (ej. "ota-firmadas-esp32-lifecycle-manager-firma-ecdsa"
 // → 124 chars). Truncamos SOLO para metadata (title del browser, OG, Twitter)
 // preservando el title_es original en el H1 del cuerpo.
-function truncateForMeta(s: string, max: number = 60): string {
+//
+// Target 46 chars: el layout aplica template "%s · Blog MechatronicStore"
+// (sufijo 24 chars) al document.title, así que 46 + 24 = 70 chars finales,
+// alineado con el límite SERP de Google (~70 chars / 580px).
+function truncateForMeta(s: string, max: number = 46): string {
   if (!s || s.length <= max) return s;
   const cut = s.slice(0, max - 1).trimEnd();
   // Cortar en última palabra completa cuando se pueda
@@ -51,7 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const canonical = `${BASE_URL}/blog/${tutorial.slug}`;
   const ogImage = tutorial.hero_image_url || FALLBACK_OG_IMAGE;
-  const metaTitle = truncateForMeta(tutorial.title_es, 60);
+  const metaTitle = truncateForMeta(tutorial.title_es, 46);
   return {
     title: metaTitle,
     description: tutorial.subtitle_es,
