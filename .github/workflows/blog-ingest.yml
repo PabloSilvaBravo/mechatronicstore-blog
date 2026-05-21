@@ -35,6 +35,11 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          # Pablo 21-may-2026: heros se rehostean a R2 (mechanoticias-images
+          # bucket compartido) durante el ingest. Inmuniza contra hotlink/WAF.
+          CLOUDFLARE_API_TOKEN_R2: ${{ secrets.CLOUDFLARE_API_TOKEN_R2 }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_REHOST_ENABLED: ${{ secrets.R2_REHOST_ENABLED }}
         run: python3 scripts/ingest_blog.py
 
       - name: Dump ranking input

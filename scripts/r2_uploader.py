@@ -47,7 +47,14 @@ log = logging.getLogger(__name__)
 
 
 CF_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID") or ""
-CF_API_TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN") or ""
+# Pablo 21-may-2026: token DEDICADO R2 Edit. Si está, lo usamos. Sino
+# fallback al token general (que puede no tener R2 Edit, en cuyo caso
+# los PUT van a fallar 403 — ese es el caso que motivó el split).
+CF_API_TOKEN = (
+    os.environ.get("CLOUDFLARE_API_TOKEN_R2")
+    or os.environ.get("CLOUDFLARE_API_TOKEN")
+    or ""
+)
 R2_BUCKET = os.environ.get("R2_BUCKET", "mechanoticias-images")
 R2_PUBLIC_HOST = os.environ.get(
     "R2_PUBLIC_HOST", "https://images.mechatronicstore.cl"
