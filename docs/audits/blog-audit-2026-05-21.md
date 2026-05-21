@@ -1,4 +1,4 @@
-# Blog visual audit — 2026-05-21 06:05 UTC
+# Blog visual audit — 2026-05-21 19:59 UTC
 
 ## Summary
 - Pages audited: 6
@@ -12,31 +12,31 @@
 
 - Title: `Inicio · Blog MechatronicStore` (30 chars)
 - Canonical: https://www.mechatronicstore.cl/blog
-- og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
+- og:image: https://components101.com/sites/default/files/components/Max30102-Sensor.jpg
 - JSON-LD types: Blog
-- Images: 20 total, 0 broken
+- Images: 17 total, 0 broken
 
 ### CATALOGO — https://mechatronicstore-blog.vercel.app/blog/tutoriales
 
 - Title: `Todos los tutoriales · Blog MechatronicStore` (44 chars)
 - Canonical: https://www.mechatronicstore.cl/blog/tutoriales
-- og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
+- og:image: https://components101.com/sites/default/files/components/Max30102-Sensor.jpg
 - JSON-LD types: _none_
-- Images: 20 total, 0 broken
+- Images: 25 total, 0 broken
 
-### DETAIL — https://mechatronicstore-blog.vercel.app/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa
+### DETAIL — https://mechatronicstore-blog.vercel.app/blog/max30102-pinout-arduino-libreria-sparkfun-fix-pullup
 
-- Title: `OTA firmadas en ESP32: instala Lifecycle… · Blog MechatronicStore` (65 chars)
-- Canonical: https://www.mechatronicstore.cl/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa
-- og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
+- Title: `MAX30102 con Arduino: pinout, librería… · Blog MechatronicStore` (63 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/max30102-pinout-arduino-libreria-sparkfun-fix-pullup
+- og:image: https://components101.com/sites/default/files/components/Max30102-Sensor.jpg
 - JSON-LD types: HowTo, LearningResource, BreadcrumbList
 - Images: 4 total, 0 broken
 
-### DETAIL — https://mechatronicstore-blog.vercel.app/blog/convertir-enchufe-aubess-medidor-energia-local-esp32-homekit
+### DETAIL — https://mechatronicstore-blog.vercel.app/blog/grabadora-voz-esp32-s3-agitar-grabar-wav-imu
 
-- Title: `Convierte un enchufe Aubess en medidor de… · Blog MechatronicStore` (66 chars)
-- Canonical: https://www.mechatronicstore.cl/blog/convertir-enchufe-aubess-medidor-energia-local-esp32-homekit
-- og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
+- Title: `Grabadora de voz ESP32-S3 sin botones:… · Blog MechatronicStore` (63 chars)
+- Canonical: https://www.mechatronicstore.cl/blog/grabadora-voz-esp32-s3-agitar-grabar-wav-imu
+- og:image: https://www.electroniclinic.com/wp-content/uploads/2026/05/ESP32-Voice-Recorder-No-Buttons-No-Touch.webp
 - JSON-LD types: HowTo, LearningResource, BreadcrumbList
 - Images: 4 total, 0 broken
 
@@ -44,14 +44,14 @@
 
 - Title: `Tutoriales de ESP32 · Blog MechatronicStore` (43 chars)
 - Canonical: https://www.mechatronicstore.cl/blog/categoria/esp32
-- og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
+- og:image: https://www.electroniclinic.com/wp-content/uploads/2026/05/ESP32-Voice-Recorder-No-Buttons-No-Touch.webp
 - JSON-LD types: CollectionPage, BreadcrumbList
-- Images: 13 total, 0 broken
+- Images: 15 total, 0 broken
 
 ### TAG — https://mechatronicstore-blog.vercel.app/blog/tag/arduino
 
 - Title: `#arduino · Blog MechatronicStore` (32 chars)
 - Canonical: https://www.mechatronicstore.cl/blog/tag/arduino
-- og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
+- og:image: https://components101.com/sites/default/files/components/Max30102-Sensor.jpg
 - JSON-LD types: CollectionPage, BreadcrumbList
-- Images: 3 total, 0 broken
+- Images: 4 total, 0 broken
