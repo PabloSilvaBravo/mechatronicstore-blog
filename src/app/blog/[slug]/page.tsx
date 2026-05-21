@@ -23,6 +23,24 @@ interface Props {
 
 const BASE_URL = "https://www.mechatronicstore.cl";
 
+// Pablo 21-may-2026 audit-fix: fallback hero cuando tutorial.hero_image_url
+// es NULL (los 5 tutoriales con heros bloqueados por hotlink fueron limpios
+// a NULL y quedaban sin og:image). Usamos el logo del blog para que la
+// previsualización en redes/buscadores no quede vacía.
+const FALLBACK_OG_IMAGE = `${BASE_URL}/blog/logo-mechastore-blog.svg`;
+
+// Pablo 21-may-2026 audit-fix: titles generados por Routine C a veces
+// pasan 70+ chars (ej. "ota-firmadas-esp32-lifecycle-manager-firma-ecdsa"
+// → 124 chars). Truncamos SOLO para metadata (title del browser, OG, Twitter)
+// preservando el title_es original en el H1 del cuerpo.
+function truncateForMeta(s: string, max: number = 60): string {
+  if (!s || s.length <= max) return s;
+  const cut = s.slice(0, max - 1).trimEnd();
+  // Cortar en última palabra completa cuando se pueda
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut) + "…";
+}
+
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,8 +50,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tutorial no encontrado" };
   }
   const canonical = `${BASE_URL}/blog/${tutorial.slug}`;
+  const ogImage = tutorial.hero_image_url || FALLBACK_OG_IMAGE;
+  const metaTitle = truncateForMeta(tutorial.title_es, 60);
   return {
-    title: tutorial.title_es,
+    title: metaTitle,
     description: tutorial.subtitle_es,
     alternates: {
       canonical,
@@ -45,23 +65,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: tutorial.title_es,
+      title: metaTitle,
       description: tutorial.subtitle_es,
       url: canonical,
       type: "article",
       siteName: "MechatronicStore Blog",
       locale: "es_CL",
-      images: tutorial.hero_image_url
-        ? [{ url: tutorial.hero_image_url, width: 1200, height: 630 }]
-        : undefined,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
       publishedTime: tutorial.published_at,
       tags: tutorial.tags,
     },
     twitter: {
       card: "summary_large_image",
-      title: tutorial.title_es,
+      title: metaTitle,
       description: tutorial.subtitle_es,
-      images: tutorial.hero_image_url ? [tutorial.hero_image_url] : undefined,
+      images: [ogImage],
     },
   };
 }

@@ -52,20 +52,32 @@ function isAcceptable(msg) {
 async function discoverUrls(page) {
   await page.goto(`${BASE_URL}/blog`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("a[href^='/blog/']", { timeout: 10000 }).catch(() => {});
-  const slugs = await page.evaluate(() => {
+  // Pablo 21-may-2026 audit-fix: la regex anterior matcheaba "tutoriales"
+  // (página de catálogo) como slug, generando falsos positivos "missing
+  // HowTo" en el audit. Blocklist reservadas conocidas.
+  const RESERVED = new Set([
+    "tutoriales",
+    "tag",
+    "categoria",
+    "buscar",
+    "rss",
+    "sitemap",
+  ]);
+  const slugs = await page.evaluate((reserved) => {
+    const set = new Set(reserved);
     const seen = new Set();
     const out = [];
     document.querySelectorAll("a[href^='/blog/']").forEach((a) => {
       const href = a.getAttribute("href");
-      // /blog/<slug> sólo, sin /tag/ ni /categoria/ ni /tutoriales
+      // /blog/<slug> sólo (un solo segmento), excluyendo paths reservados
       const m = href.match(/^\/blog\/([a-z0-9-]+)$/);
-      if (m && !seen.has(m[1])) {
+      if (m && !set.has(m[1]) && !seen.has(m[1])) {
         seen.add(m[1]);
         out.push(m[1]);
       }
     });
     return out.slice(0, 3); // muestreamos 3 tutoriales
-  });
+  }, Array.from(RESERVED));
   return slugs;
 }
 
@@ -180,12 +192,17 @@ async function auditPage(browser, url, pageType) {
   if (!seo.ogImage) seoIssues.push("missing og:image");
   if (!seo.twitterCard) seoIssues.push("missing twitter:card");
 
+  // Pablo 21-may-2026 audit-fix: catalogo (/blog/tutoriales) NO debería
+  // esperar HowTo/LearningResource — es una grid de tutoriales, no un
+  // tutorial individual. Tampoco BreadcrumbList porque la nav superior ya
+  // tiene texto crumb sin schema. Si querés ItemList ahí, agregalo a la
+  // página primero y después al expected.
   const expectedSchemas = {
     home: ["Blog"],
     detail: ["HowTo", "LearningResource", "BreadcrumbList"],
     categoria: ["CollectionPage", "BreadcrumbList"],
     tag: ["CollectionPage", "BreadcrumbList"],
-    catalogo: [],
+    catalogo: [], // intencionalmente vacío — solo meta básica
   };
   const flatTypes = seo.jsonLdTypes.flat();
   for (const s of expectedSchemas[pageType] || []) {
