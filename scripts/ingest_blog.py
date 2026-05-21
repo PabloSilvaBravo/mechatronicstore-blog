@@ -11,6 +11,7 @@ Flujo:
 Idempotente: usa INSERT OR IGNORE basado en source_url (dedup natural).
 """
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,19 @@ from scraper import fetch_full_page, fetch_adafruit_multipage, slugify, short_ha
 from sources import get as get_parser
 from hard_filters import apply_all
 from hero_picker import select_best_hero
+
+# Pablo 21-may-2026: rehost opcional a Cloudflare R2 para inmunizar contra
+# hotlink/WAF. Se activa con R2_REHOST_ENABLED=1 en env. Si no está, sigue
+# usando URL externa (hero_picker + blocklist como red de seguridad).
+_R2_ENABLED = os.environ.get("R2_REHOST_ENABLED", "").lower() in ("1", "true", "yes")
+if _R2_ENABLED:
+    try:
+        from r2_uploader import rehost_hero as _r2_rehost_hero
+    except ImportError:
+        _R2_ENABLED = False
+        _r2_rehost_hero = None
+else:
+    _r2_rehost_hero = None
 
 
 def gen_id(source_url: str) -> str:
@@ -112,6 +126,14 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
         # hotlink-protection severa (studiopieters.nl, tronixstuff.com),
         # fallback a primera img del body. Ver scripts/hero_picker.py.
         hero_url = select_best_hero(page.main_image_url, page.extra_images)
+
+        # Si R2_REHOST_ENABLED=1, mirroreamos a Cloudflare R2 (CDN propio).
+        # Inmuniza contra hotlink/WAF futuro porque la img vive en nuestro
+        # dominio. Si el rehost falla, dejamos la URL externa como fallback.
+        if hero_url and _R2_ENABLED and _r2_rehost_hero is not None:
+            r2_url = _r2_rehost_hero(hero_url, tutorial_id=tid)
+            if r2_url:
+                hero_url = r2_url
 
         db.execute(
             """INSERT INTO tutorials
