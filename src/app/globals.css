@@ -451,6 +451,22 @@ input, textarea, select {
   will-change: border, box-shadow;
 }
 
+/* ───────────────────────────────────────────────────────────────
+ * Search bar header — rediseño Pablo 21-may-2026
+ * Estilo Stripe/Linear/Algolia DocSearch: neutro en idle, glow púrpura
+ * en focus. Reemplaza el sólido púrpura grueso anterior.
+ * ─────────────────────────────────────────────────────────────── */
+.group:has(input[type="search"]):focus-within,
+.search-bar-focus {
+  border-color: var(--brand-purple) !important;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--brand-purple) 18%, transparent),
+    0 4px 16px -4px color-mix(in srgb, var(--brand-purple) 25%, transparent);
+}
+.group:has(input[type="search"]):hover:not(:focus-within) {
+  border-color: color-mix(in srgb, var(--brand-purple) 50%, var(--border)) !important;
+}
+
 .card-luis:hover {
   border: 1px solid transparent;
   /* Single-layer shadow grande y muy blureada — receta exacta de
