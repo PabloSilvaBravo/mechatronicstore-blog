@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-21T12:36:09.549780+00:00",
+  "checked_at": "2026-05-21T12:48:05.974198+00:00",
   "metrics": {
-    "drafts_pending": 44,
+    "drafts_pending": 14,
     "published_24h": 0,
-    "ranked_stuck": 9,
-    "rejected_ratio_48h": 0.937,
+    "ranked_stuck": 11,
+    "rejected_ratio_48h": 0.941,
     "published_48h": 23,
-    "rejected_48h": 341,
+    "rejected_48h": 369,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,27 +17,7 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/866a587ce24a/00a427b93e13ecb1.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
       },
       {
         "status": 403,
@@ -49,7 +29,27 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/866a587ce24a/00a427b93e13ecb1.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/4fbf4752fcf4/fa5155d0bbfffa25.webp"
       },
       {
         "status": 403,
@@ -57,10 +57,10 @@
       }
     ],
     "counts_by_status": {
-      "draft": 44,
+      "draft": 14,
       "published": 23,
-      "ranked": 9,
-      "rejected": 384
+      "ranked": 11,
+      "rejected": 412
     }
   },
   "alerts": [
@@ -70,6 +70,13 @@
       "value": 0,
       "threshold": 1,
       "message": "Cero publicaciones en últimas 24h. Pipeline congelado — revisar Routine C + workflow translate-persist."
+    },
+    {
+      "severity": "warning",
+      "metric": "ranked_stuck",
+      "value": 11,
+      "threshold": 10,
+      "message": "11 tutoriales ranked esperando traducción. Routine C lenta o atascada."
     },
     {
       "severity": "warning",
