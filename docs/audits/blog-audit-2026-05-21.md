@@ -1,15 +1,11 @@
-# Blog visual audit — 2026-05-21 04:17 UTC
+# Blog visual audit — 2026-05-21 04:20 UTC
 
 ## Summary
 - Pages audited: 6
 - Broken images: **0**
 - Console errors (non-acceptable): 0
-- SEO gaps: 2
+- SEO gaps: 0
 - Network 4xx/5xx: 0
-
-## High (fix this week)
-- [ ] SEO https://mechatronicstore-blog.vercel.app/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa: title length 81 (target ≤60)
-- [ ] SEO https://mechatronicstore-blog.vercel.app/blog/convertir-enchufe-aubess-medidor-energia-local-esp32-homekit: title length 79 (target ≤60)
 
 ## Per-page detail
 ### HOME — https://mechatronicstore-blog.vercel.app/blog
@@ -30,7 +26,7 @@
 
 ### DETAIL — https://mechatronicstore-blog.vercel.app/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa
 
-- Title: `OTA firmadas en ESP32: instala Lifecycle Manager V2 para… · Blog MechatronicStore` (81 chars)
+- Title: `OTA firmadas en ESP32: instala Lifecycle… · Blog MechatronicStore` (65 chars)
 - Canonical: https://www.mechatronicstore.cl/blog/ota-firmadas-esp32-lifecycle-manager-firma-ecdsa
 - og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
 - JSON-LD types: HowTo, LearningResource, BreadcrumbList
@@ -38,7 +34,7 @@
 
 ### DETAIL — https://mechatronicstore-blog.vercel.app/blog/convertir-enchufe-aubess-medidor-energia-local-esp32-homekit
 
-- Title: `Convierte un enchufe Aubess en medidor de energía 100%… · Blog MechatronicStore` (79 chars)
+- Title: `Convierte un enchufe Aubess en medidor de… · Blog MechatronicStore` (66 chars)
 - Canonical: https://www.mechatronicstore.cl/blog/convertir-enchufe-aubess-medidor-energia-local-esp32-homekit
 - og:image: https://www.mechatronicstore.cl/blog/logo-mechastore-blog.svg
 - JSON-LD types: HowTo, LearningResource, BreadcrumbList
