@@ -33,15 +33,34 @@ const BASE_URL = process.argv.includes("--base-url")
   ? process.argv[process.argv.indexOf("--base-url") + 1]
   : "https://www.mechatronicstore.cl";
 
-// Console errors que sabemos benignos (Pablo 20-may-2026)
-const ACCEPTABLE_CONSOLE_PATTERNS = [
-  /giscus/i,                  // hasta que Pablo instale Giscus en repo
-  /sitemap\.xml\?_rsc/i,      // Next.js prefetch quirk
-  /favicon\.ico/i,            // no impacta render
+// Patrones de URL/mensajes que sabemos benignos (no cuentan como issues).
+// Aplica tanto a console errors (match contra texto) como a network 4xx
+// (match contra URL).
+const ACCEPTABLE_PATTERNS = [
+  /giscus\.app/i,                // Giscus comments — hasta que Pablo lo instale en el repo
+  /api\.github\.com\/repos\/.*\/discussions/i, // Giscus-related GitHub discussions API
+  /sitemap\.xml\?_rsc/i,         // Next.js prefetch quirk
+  /favicon\.ico/i,               // no impacta render
 ];
 
 function isAcceptable(msg) {
-  return ACCEPTABLE_CONSOLE_PATTERNS.some((re) => re.test(msg));
+  return ACCEPTABLE_PATTERNS.some((re) => re.test(msg));
+}
+
+// Console errors típicamente vienen como "Failed to load resource: the
+// server responded with a status of XXX" SIN URL. Para distinguir aceptables
+// (giscus, sitemap _rsc) de reales, cruzamos con network errors capturados
+// — si todos los network errors del mismo status son aceptables, descartamos
+// el console error genérico también.
+function isGenericConsoleErrorMatchedByNetwork(consoleText, networkErrors) {
+  const m = consoleText.match(/status of (\d{3})/i);
+  if (!m) return false;
+  const status = parseInt(m[1], 10);
+  const sameStatus = networkErrors.filter((n) => n.status === status);
+  if (sameStatus.length === 0) return false;
+  // Si TODOS los network errors de ese status son aceptables, el console
+  // genérico también lo es (no hay error "real" detrás).
+  return sameStatus.every((n) => isAcceptable(n.url));
 }
 
 /**
@@ -89,21 +108,17 @@ async function auditPage(browser, url, pageType) {
     viewport: { width: 1440, height: 900 },
   });
   const page = await ctx.newPage();
-  const consoleErrors = [];
-  const networkErrors = [];
+  // Capturamos TODO primero, filtramos al final (necesitamos network errors
+  // listos antes de decidir si un console error genérico es aceptable).
+  const consoleErrorsRaw = [];
+  const networkErrorsAll = [];
 
   page.on("console", (m) => {
-    if (m.type() === "error") {
-      const text = m.text();
-      if (!isAcceptable(text)) consoleErrors.push(text);
-    }
+    if (m.type() === "error") consoleErrorsRaw.push(m.text());
   });
   page.on("response", (resp) => {
     const status = resp.status();
-    const u = resp.url();
-    if (status >= 400 && !isAcceptable(u)) {
-      networkErrors.push({ status, url: u });
-    }
+    if (status >= 400) networkErrorsAll.push({ status, url: resp.url() });
   });
 
   let loadOk = true;
@@ -129,6 +144,16 @@ async function auditPage(browser, url, pageType) {
     loadOk = false;
     loadError = String(e?.message || e);
   }
+
+  // Filtrado final post-captura: descartamos los console errors aceptables
+  // (URL en lista) Y los console errors genéricos cuyo network match es 100%
+  // aceptable. Idem para network: excluimos URL en lista.
+  const networkErrors = networkErrorsAll.filter((n) => !isAcceptable(n.url));
+  const consoleErrors = consoleErrorsRaw.filter((t) => {
+    if (isAcceptable(t)) return false;
+    if (isGenericConsoleErrorMatchedByNetwork(t, networkErrorsAll)) return false;
+    return true;
+  });
 
   if (!loadOk) {
     await ctx.close();
