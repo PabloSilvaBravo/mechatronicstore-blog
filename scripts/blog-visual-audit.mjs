@@ -37,7 +37,9 @@ const BASE_URL = process.argv.includes("--base-url")
 // Aplica tanto a console errors (match contra texto) como a network 4xx
 // (match contra URL).
 const ACCEPTABLE_PATTERNS = [
-  /giscus\.app/i,                // Giscus comments — hasta que Pablo lo instale en el repo
+  /\[giscus\]/i,                 // mensaje literal "[giscus] An error..." en consola
+  /giscus\.app/i,                // dominio del script Giscus
+  /giscus is not installed/i,    // mensaje explícito hasta que Pablo instale
   /api\.github\.com\/repos\/.*\/discussions/i, // Giscus-related GitHub discussions API
   /sitemap\.xml\?_rsc/i,         // Next.js prefetch quirk
   /favicon\.ico/i,               // no impacta render
