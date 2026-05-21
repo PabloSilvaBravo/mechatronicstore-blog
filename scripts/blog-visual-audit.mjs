@@ -111,6 +111,20 @@ async function auditPage(browser, url, pageType) {
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+    // Pablo 21-may-2026 audit-fix: scrollear al fondo + esperar para
+    // forzar carga de imgs con loading="lazy". Sin esto el audit reporta
+    // falsos positivos (naturalWidth=0) en cards fuera del viewport
+    // inicial — pero esas imgs cargarían bien con scroll del usuario.
+    await page.evaluate(async () => {
+      const step = window.innerHeight * 0.8;
+      const total = document.body.scrollHeight;
+      for (let y = 0; y < total; y += step) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      window.scrollTo(0, 0);
+    });
+    await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
   } catch (e) {
     loadOk = false;
     loadError = String(e?.message || e);
