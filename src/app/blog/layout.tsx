@@ -2,6 +2,8 @@ import Link from "next/link";
 import BlogHeader from "./components/BlogHeader";
 import BackToTop from "./components/BackToTop";
 import UtilityBar from "./components/UtilityBar";
+import NewsletterSignup from "./components/NewsletterSignup";
+import { SearchOverlayProvider } from "./components/SearchOverlay";
 import Logo from "../components/Logo";
 import { getCategoryCounts } from "@/lib/db/queries";
 
@@ -24,7 +26,7 @@ export default async function BlogLayout({
   }
 
   return (
-    <>
+    <SearchOverlayProvider>
       <UtilityBar />
       <BlogHeader categoryCounts={categoryCounts} />
 
@@ -41,20 +43,21 @@ export default async function BlogLayout({
           backgroundColor: "var(--bg-elevated)",
         }}
       >
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {/* Brand */}
-          <div>
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Brand + Newsletter */}
+          <div className="lg:col-span-2">
             <Link href="/blog" className="inline-flex items-center mb-3">
               <Logo size="sm" />
             </Link>
             <p
-              className="text-sm leading-relaxed mt-3"
+              className="text-sm leading-relaxed mt-3 mb-5"
               style={{ color: "var(--text-muted)" }}
             >
               Tutoriales de electrónica, robótica y DIY adaptados al maker
               chileno. Cada proyecto linkea componentes reales del catálogo
               MechatronicStore.cl.
             </p>
+            <NewsletterSignup />
           </div>
 
           {/* Categorías */}
@@ -99,13 +102,57 @@ export default async function BlogLayout({
             </ul>
           </div>
 
-          {/* Recursos */}
+          {/* Sobre + ecosistema */}
           <div>
             <div
               className="text-[10px] font-bold uppercase tracking-[0.12em] mb-3"
               style={{ color: "var(--text-dim)" }}
             >
-              MechatronicStore
+              Sobre
+            </div>
+            <ul className="space-y-1.5 text-sm">
+              <li>
+                <Link
+                  href="/blog/sobre"
+                  className="hover:underline"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Cómo funciona
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/etica"
+                  className="hover:underline"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Política editorial
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/feed.xml"
+                  className="hover:underline"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Feed RSS
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/sitemap.xml"
+                  className="hover:underline"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Sitemap
+                </Link>
+              </li>
+            </ul>
+            <div
+              className="text-[10px] font-bold uppercase tracking-[0.12em] mb-3 mt-6"
+              style={{ color: "var(--text-dim)" }}
+            >
+              Ecosistema
             </div>
             <ul className="space-y-1.5 text-sm">
               <li>
@@ -114,7 +161,7 @@ export default async function BlogLayout({
                   className="hover:underline"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  Tienda online
+                  Tienda
                 </a>
               </li>
               <li>
@@ -134,15 +181,6 @@ export default async function BlogLayout({
                 >
                   Contacto
                 </a>
-              </li>
-              <li>
-                <Link
-                  href="/blog/sitemap.xml"
-                  className="hover:underline"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Sitemap
-                </Link>
               </li>
             </ul>
           </div>
@@ -167,6 +205,6 @@ export default async function BlogLayout({
           </div>
         </div>
       </footer>
-    </>
+    </SearchOverlayProvider>
   );
 }

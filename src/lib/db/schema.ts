@@ -132,3 +132,22 @@ export const tutorialProductClicks = sqliteTable("tutorial_product_clicks", {
 
 export type TutorialProductClick = typeof tutorialProductClicks.$inferSelect;
 export type NewTutorialProductClick = typeof tutorialProductClicks.$inferInsert;
+
+/**
+ * Tabla `newsletter_subscribers` — Pablo 21-may-2026 Tier A
+ * Captura emails desde el footer para el weekly digest (Routine F).
+ * Dedup por email (unique). `unsubscribed_at` permite soft delete sin
+ * perder histórico de cuándo se desuscribió.
+ */
+export const newsletterSubscribers = sqliteTable("newsletter_subscribers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  source: text("source").notNull().default("footer"),    // footer | inline | api | import
+  subscribed_at: text("subscribed_at").default(sql`(datetime('now'))`).notNull(),
+  unsubscribed_at: text("unsubscribed_at"),                // null = activo
+  user_agent: text("user_agent"),                          // diagnóstico anti-bot
+  ip_hash: text("ip_hash"),                                // sha256(ip + salt), no la IP raw
+});
+
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+export type NewNewsletterSubscriber = typeof newsletterSubscribers.$inferInsert;

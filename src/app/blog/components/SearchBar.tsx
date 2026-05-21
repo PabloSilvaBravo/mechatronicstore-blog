@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSearchOverlay } from "./SearchOverlay";
 
 /**
  * SearchBar — campo de búsqueda con LIVE RESULTS estilo Algolia / Stripe.
@@ -50,13 +51,23 @@ interface Props {
 export default function SearchBar({ variant = "full", className = "" }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const overlay = useSearchOverlay();
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [open, setOpen] = useState(false); // modal mobile
   const [dropdownOpen, setDropdownOpen] = useState(false); // dropdown desktop / dentro del modal
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMac, setIsMac] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Detectamos Mac client-side para mostrar ⌘K vs Ctrl K en el hint.
+  // No usamos navigator.platform en SSR para evitar hydration mismatch.
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      setIsMac(/Mac|iPhone|iPad|iPod/i.test(navigator.platform));
+    }
+  }, []);
 
   // Sync query con URL (back/forward, link share)
   useEffect(() => {
@@ -363,8 +374,26 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => {
+          onFocus={(e) => {
+            // Si el provider del overlay está montado, foco → overlay
+            // (UX premium tipo Algolia/Linear). Si no, fallback al
+            // dropdown inline (graceful degradation, comportamiento
+            // original).
+            if (overlay) {
+              e.currentTarget.blur();
+              overlay.setOpen(true);
+              return;
+            }
             if (results.length > 0) setDropdownOpen(true);
+          }}
+          onMouseDown={(e) => {
+            // En desktop con overlay montado, evitamos el flash de foco
+            // → blur → re-render del estilo "focus" del form. Abrimos
+            // overlay direct desde mousedown.
+            if (overlay) {
+              e.preventDefault();
+              overlay.setOpen(true);
+            }
           }}
           placeholder="Buscar tutoriales, ej. ESP32, Arduino…"
           className="flex-1 text-sm outline-none bg-transparent placeholder:opacity-70"
@@ -376,10 +405,14 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           }}
           aria-label="Buscar tutoriales"
           autoComplete="off"
+          readOnly={overlay !== null}
         />
-        {/* Hint visual (escondido en pantallas chicas para no apretar) */}
+        {/* Hint visual — Pablo 21-may-2026:
+            Si el provider del SearchOverlay está montado, mostramos
+            ⌘K (Mac) / Ctrl K (otros) — el shortcut que abre el
+            command palette. Si no, fallback a ↵ (Enter para submit). */}
         <kbd
-          className="hidden md:inline-flex items-center justify-center text-[10px] font-bold tabular-nums"
+          className="hidden md:inline-flex items-center justify-center text-[10px] font-bold tabular-nums gap-0.5"
           aria-hidden
           style={{
             color: "var(--text-dim)",
@@ -392,7 +425,7 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
             letterSpacing: "0.04em",
           }}
         >
-          ↵
+          {overlay ? (isMac ? "⌘K" : "Ctrl K") : "↵"}
         </kbd>
         {/* Botón submit invisible (Enter en input lo dispara igual; mantenemos
             type=submit para form semantics + accessibility) */}

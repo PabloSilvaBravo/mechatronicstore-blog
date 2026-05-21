@@ -452,6 +452,19 @@ input, textarea, select {
 }
 
 /* ───────────────────────────────────────────────────────────────
+ * Skeleton shimmer Pablo 21-may-2026 Tier A — para ImageWithSkeleton
+ * ─────────────────────────────────────────────────────────────── */
+@keyframes blog-skel-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="blog-skel-shimmer"] {
+    animation: none !important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
  * Search bar header — rediseño Pablo 21-may-2026
  * Estilo Stripe/Linear/Algolia DocSearch: neutro en idle, glow púrpura
  * en focus. Reemplaza el sólido púrpura grueso anterior.

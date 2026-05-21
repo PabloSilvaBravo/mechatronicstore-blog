@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getPublishedTutorials } from "@/lib/db/queries";
 import HeroDecor from "../../components/HeroDecor";
 import RevealOnScroll from "../../components/RevealOnScroll";
+import ImageWithSkeleton from "../../components/ImageWithSkeleton";
 
 interface Props {
   params: Promise<{ cat: string }>;
@@ -205,12 +206,10 @@ export default async function CategoryPage({ params }: Props) {
               <li key={t.slug}>
                 <Link href={`/blog/${t.slug}`} className="card-luis group block">
                   {t.hero_image_url && (
-                    <img
+                    <ImageWithSkeleton
                       src={t.hero_image_url}
                       alt={t.title_es}
-                      className="card-img w-full h-44 object-cover"
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
+                      className="card-img w-full h-44"
                     />
                   )}
                   <div className="p-4">
