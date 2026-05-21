@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-20T20:41:21.170Z",
+  "ranked_at": "2026-05-21T12:35:32.494263+00:00",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,300 +25,169 @@
   },
   "rankings": [
     {
-      "id": "934819c08a8a",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 1,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 2
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 8,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 9,
-        "value_added": 8,
-        "originality_potential": 8
-      },
-      "verdict": "PCB custom dual XIAO ESP32-C3/C6 con Gerber, relés y OLED — alto valor por archivos PCB descargables y ángulo unificador único.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "XIAO ESP32-C3",
-        "XIAO ESP32-C6",
-        "SSD1306 OLED",
-        "Relé 5V",
-        "Protoboard"
-      ],
-      "re_angulation_hint": "Reescribir como guía paso a paso para fabricar PCB en JLCPCB con BOM exportada",
-      "combined_score": 0.8
-    },
-    {
-      "id": "45993bdf3593",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 1
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 8,
-        "value_added": 5,
-        "originality_potential": 7
-      },
-      "verdict": "Intro al XIAO ESP32-C5 con dual-band Wi-Fi 6; código básico OLED y relés, sin downloadables PCB ni proyecto real.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "XIAO ESP32-C5",
-        "SSD1306 OLED",
-        "Relé SPDT 5V"
-      ],
-      "re_angulation_hint": "Extender con benchmark consumo dual-band vs C6 + caso IoT Matter concreto",
-      "combined_score": 0.68
-    },
-    {
-      "id": "a8d3173385df",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 1,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 2,
-        "pdf_schemas": 0,
-        "total_distinct": 3
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 5,
-        "value_added": 7,
-        "originality_potential": 6
-      },
-      "verdict": "Review MaTouch ESP32-S3 con repo GitHub y tres ejemplos; producto Makerfabs específico de bajo encaje con catálogo.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32-S3",
-        "IMU MPU6050",
-        "SD Card Module"
-      ],
-      "re_angulation_hint": "Re-angulación a comparativa TFT paralelo vs SPI con displays equivalentes del catálogo",
-      "combined_score": 0.67
-    },
-    {
-      "id": "2794319ce057",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 3,
-        "code_quality": 1,
-        "materials_clarity": 1,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 1,
-        "value_added": 1,
-        "originality_potential": 2
-      },
-      "verdict": "Artículo de geopolítica sobre misiles hipersónicos sin proyecto técnico ni relación con catálogo electrónico — bloqueado.",
-      "is_blocked": true,
-      "blocked_reason": "Contenido de opinión militar/geopolítica, sin tutorial técnico ni productos del catálogo.",
-      "matched_products_hint": [],
-      "re_angulation_hint": "N/A — contenido fuera de scope editorial",
-      "combined_score": 0.145
-    },
-    {
-      "id": "16d08ade217e",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 1
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 5,
-        "value_added": 6,
-        "originality_potential": 8
-      },
-      "verdict": "AI asistencia visual con RDK X5 y Python — ángulo social fuerte pero hardware específico Horizon fuera del catálogo principal.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Raspberry Pi 5",
-        "Cámara USB",
-        "Parlante portable",
-        "Powerbank"
-      ],
-      "re_angulation_hint": "Portar el proyecto a Raspberry Pi 5 + YOLOv8 + TTS local para hardware del catálogo",
-      "combined_score": 0.69
-    },
-    {
-      "id": "b79f5bdce4c8",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 2,
-        "pdf_schemas": 0,
-        "total_distinct": 3
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 6,
-        "value_added": 7,
-        "originality_potential": 8
-      },
-      "verdict": "Grabador de voz por gesto con ESP32-S3 e IMU — ángulo único y código completo, hardware MaTouch específico baja relevancia.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32-S3",
-        "MPU6050",
-        "INMP441",
-        "SD Card Module"
-      ],
-      "re_angulation_hint": "Recrear el proyecto con ESP32-S3 genérico + INMP441 + MPU6050 del catálogo",
-      "combined_score": 0.73
-    },
-    {
-      "id": "b70ab24d6e02",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 1,
-        "pdf_schemas": 0,
-        "total_distinct": 1
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 8,
-        "value_added": 6,
-        "originality_potential": 8
-      },
-      "verdict": "Mic de estudio con ESP32-S3 + DSP en software (gain + limiter) — ángulo original, código en cuerpo sin GitHub.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ESP32-S3",
-        "INMP441",
-        "MAX98357A",
-        "Tarjeta SD"
-      ],
-      "re_angulation_hint": "Profundizar el DSP con explicación matemática del limiter brick-wall y benchmark SNR",
-      "combined_score": 0.74
-    },
-    {
-      "id": "a327a03203dc",
-      "source_language": "en",
+      "id": "175efb849587",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
         "code_files": 2,
         "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 9,
+        "value_added": 5,
+        "originality_potential": 7
+      },
+      "verdict": "Tutorial completo receptor IR HX1838 + ESP32 con optimización de memoria. Código limpio, ángulo reciclaje útil.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "HX1838",
+        "Receptor IR",
+        "Mando IR"
+      ],
+      "re_angulation_hint": "Construir control remoto IR para sistema domótico con menús OLED",
+      "combined_score": 0.725
+    },
+    {
+      "id": "5ac98e994275",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 2,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 9,
+        "value_added": 5,
+        "originality_potential": 6
+      },
+      "verdict": "Tutorial sólido ESP32 + BME280 + microSD + NTP con código completo. Buen encaje catálogo pero en español, riesgo plagio moderado.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "BME280",
+        "Módulo MicroSD",
+        "Adapter SD SPI"
+      ],
+      "re_angulation_hint": "Añadir gráficos en tiempo real con dashboard web y alertas Telegram",
+      "combined_score": 0.72
+    },
+    {
+      "id": "1bda12c1b8bd",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
         "libraries": 0,
         "pdf_schemas": 0,
-        "total_distinct": 2
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 5,
+        "materials_clarity": 5,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 8,
+        "value_added": 4,
+        "originality_potential": 7
+      },
+      "verdict": "Troubleshooting muy específico del GPIO12 strapping pin en ESP32 con SD. Problema real poco documentado, ángulo útil.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "ESP32",
+        "Módulo MicroSD"
+      ],
+      "re_angulation_hint": "Guía exhaustiva de strapping pins ESP32 con todos los conflictos comunes",
+      "combined_score": 0.635
+    },
+    {
+      "id": "9fe60b6c2af1",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 3,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 6,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 4,
+        "value_added": 5,
+        "originality_potential": 7
+      },
+      "verdict": "Tres demos visión artificial con YOLOv8, Teachable Machine y OpenCV. Software puro, encaje limitado con catálogo hardware.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Webcam",
+        "Raspberry Pi 5",
+        "Jetson Nano"
+      ],
+      "re_angulation_hint": "Migrar demos a Raspberry Pi 5 o Jetson Nano con cámara y benchmarks",
+      "combined_score": 0.625
+    },
+    {
+      "id": "2fedd8776129",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
       },
       "scores": {
         "pedagogy": 7,
         "code_quality": 7,
         "materials_clarity": 7,
         "step_completeness": 7,
-        "relevance_to_store_catalog": 6,
-        "value_added": 6,
-        "originality_potential": 7
+        "relevance_to_store_catalog": 8,
+        "value_added": 4,
+        "originality_potential": 4
       },
-      "verdict": "Donkey Car con RTK GPS — proyecto nicho de coche autónomo, hardware RTK GPS específico de costo medio-alto.",
+      "verdict": "Tutorial real TB6612FNG + Arduino con código inline. Repost de bildr.org muy difundido en internet, baja originalidad.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "Raspberry Pi",
-        "NVIDIA Jetson Nano",
-        "Servo motor",
-        "ESC RC",
-        "GPS u-blox"
-      ],
-      "re_angulation_hint": "Versión low-cost con módulo GPS NEO-M9N en lugar de RTK base/rover",
-      "combined_score": 0.66
-    },
-    {
-      "id": "50f5230a3677",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 1,
-        "pdf_schemas": 0,
-        "total_distinct": 2
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 8,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 7,
-        "value_added": 6,
-        "originality_potential": 6
-      },
-      "verdict": "Guía Si4703 FM Tuner con librería y código Arduino/ESP32 — módulo común pero formato datasheet repetido en muchos sitios.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Si4703",
-        "ESP32",
+        "TB6612FNG",
         "Arduino UNO",
-        "Jack 3.5mm"
+        "Motor DC"
       ],
-      "re_angulation_hint": "Construir radio FM portable con OLED de presets + RDS + parlante I2S MAX98357",
-      "combined_score": 0.675
+      "re_angulation_hint": "Extender con encoder, control PID y comparativa frente a L298N",
+      "combined_score": 0.615
     },
     {
-      "id": "1306a9e51a9b",
-      "source_language": "en",
+      "id": "54aba702d1f2",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -329,29 +198,28 @@
         "total_distinct": 2
       },
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 8,
-        "step_completeness": 7,
+        "pedagogy": 6,
+        "code_quality": 6,
+        "materials_clarity": 7,
+        "step_completeness": 6,
         "relevance_to_store_catalog": 9,
-        "value_added": 6,
-        "originality_potential": 5
+        "value_added": 4,
+        "originality_potential": 3
       },
-      "verdict": "MAX30102 oxímetro/pulsómetro — sensor muy presente en catálogo pero contenido genérico de datasheet repetido en internet.",
+      "verdict": "Tutorial DHT11 + Arduino muy básico y genérico. Hay miles de tutoriales idénticos en español. Catálogo encaja pero riesgo plagio alto.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "MAX30102",
-        "ESP32",
+        "DHT11",
         "Arduino UNO",
-        "OLED 0.96"
+        "Jumpers"
       ],
-      "re_angulation_hint": "Wearable salud BLE → app móvil con histórico SpO2 y alertas configurables",
-      "combined_score": 0.7
+      "re_angulation_hint": "Extender con dashboard MQTT, BME280 y caso real de invernadero",
+      "combined_score": 0.585
     },
     {
-      "id": "9f51518fea8f",
-      "source_language": "en",
+      "id": "138eeae7895a",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -363,28 +231,92 @@
       },
       "scores": {
         "pedagogy": 7,
-        "code_quality": 5,
-        "materials_clarity": 7,
+        "code_quality": 3,
+        "materials_clarity": 6,
         "step_completeness": 6,
         "relevance_to_store_catalog": 7,
         "value_added": 4,
-        "originality_potential": 5
+        "originality_potential": 7
       },
-      "verdict": "PCA9306 nivel lógico I2C — descripción de datasheet sin código ni proyecto concreto, valor añadido bajo.",
+      "verdict": "Sistema IoT antiinundación con Zigbee y hub domótico. Caso de uso útil pero sin código ni esquema reproducible.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "PCA9306",
+        "Sensor de agua",
         "ESP32",
-        "Arduino UNO 5V",
-        "Sensor I2C 3.3V"
+        "Zigbee",
+        "Relé"
       ],
-      "re_angulation_hint": "Caso real ESP32 3.3V leyendo sensores I2C de 5V con comparación frente a TXS0108E",
+      "re_angulation_hint": "Construir prototipo DIY con ESP32 + sensor agua + Home Assistant",
       "combined_score": 0.58
     },
     {
-      "id": "5e95a5ea49f0",
-      "source_language": "en",
+      "id": "450ee31c1d43",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 0,
+        "materials_clarity": 5,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 6,
+        "value_added": 5,
+        "originality_potential": 7
+      },
+      "verdict": "Guía estratégica de placa perforada a PCB profesional con KiCad/EasyEDA y Gerbv. Buen contenido editorial pero sin proyecto concreto.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Placa perforada",
+        "Protoboard",
+        "Componentes SMD"
+      ],
+      "re_angulation_hint": "Acompañar con proyecto real de migración protoboard→PCB paso a paso",
+      "combined_score": 0.555
+    },
+    {
+      "id": "5d6e464ddc6f",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 4,
+        "materials_clarity": 4,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 8,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "verdict": "Glosario Arduino útil pero muy genérico y fácil de plagiar. Sin downloadables. Originalidad baja, hay decenas de glosarios iguales.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Arduino UNO",
+        "Arduino Nano",
+        "sensores"
+      ],
+      "re_angulation_hint": "Convertir en glosario interactivo enlazado a productos del catálogo",
+      "combined_score": 0.515
+    },
+    {
+      "id": "e103efeb7ccf",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -397,26 +329,25 @@
       "scores": {
         "pedagogy": 7,
         "code_quality": 5,
-        "materials_clarity": 8,
+        "materials_clarity": 5,
         "step_completeness": 6,
-        "relevance_to_store_catalog": 8,
+        "relevance_to_store_catalog": 3,
         "value_added": 4,
-        "originality_potential": 5
+        "originality_potential": 4
       },
-      "verdict": "XIAO ESP32-S3 pinout y datasheet — placa muy vendida pero contenido sin proyecto ni código diferenciador.",
+      "verdict": "Tutorial instalación DeepSeek con Ollama. Software puro sin hardware del catálogo. Tema saturado en internet.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "XIAO ESP32-S3",
-        "XIAO ESP32-S3 Sense",
-        "Cámara OV2640"
+        "Raspberry Pi 5",
+        "Jetson Nano"
       ],
-      "re_angulation_hint": "Mini proyecto edge AI con OV2640 + detección de movimiento + alerta WiFi",
-      "combined_score": 0.61
+      "re_angulation_hint": "Re-angular hacia inferencia local en Raspberry Pi 5 con benchmarks",
+      "combined_score": 0.465
     },
     {
-      "id": "8055bda47ce2",
-      "source_language": "en",
+      "id": "af3196ee006f",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -428,27 +359,26 @@
       },
       "scores": {
         "pedagogy": 7,
-        "code_quality": 5,
-        "materials_clarity": 8,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 8,
-        "value_added": 4,
-        "originality_potential": 5
+        "code_quality": 0,
+        "materials_clarity": 4,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 6,
+        "value_added": 3,
+        "originality_potential": 6
       },
-      "verdict": "PZEM-004T datasheet de medición energía AC — producto común en catálogo pero contenido solo especificaciones, sin proyecto.",
+      "verdict": "Análisis primera persona del Arduino UNO Q con historia MCU+MPU. Sin proyecto reproducible, sin código, principalmente review.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "PZEM-004T",
-        "ESP32",
-        "CT no invasivo"
+        "Arduino UNO",
+        "Arduino UNO Q"
       ],
-      "re_angulation_hint": "Medidor IoT residencial con dashboard Home Assistant + alertas consumo pico",
-      "combined_score": 0.61
+      "re_angulation_hint": "Transformar en comparativa técnica MCU+MPU con primer proyecto demostrativo",
+      "combined_score": 0.455
     },
     {
-      "id": "e5821e47028f",
-      "source_language": "en",
+      "id": "978138278847",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -463,23 +393,226 @@
         "code_quality": 3,
         "materials_clarity": 5,
         "step_completeness": 6,
-        "relevance_to_store_catalog": 4,
-        "value_added": 3,
-        "originality_potential": 5
+        "relevance_to_store_catalog": 2,
+        "value_added": 4,
+        "originality_potential": 6
       },
-      "verdict": "Teoría voltímetro analógico D'Arsonval de 2008 — base pedagógica pero hardware obsoleto y sin downloadables.",
+      "verdict": "IA local desde pendrive con GGUF y llama.cpp. Software, fuera del catálogo de componentes.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [],
+      "re_angulation_hint": "Re-angular hacia inferencia local en Raspberry Pi 5 / Orange Pi",
+      "combined_score": 0.455
+    },
+    {
+      "id": "f473b9b3802a",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 3,
+        "relevance_to_store_catalog": 6,
+        "value_added": 4,
+        "originality_potential": 7
+      },
+      "verdict": "Listicle curado de 10 proyectos acuáticos con Raspberry Pi. Sin pasos reproducibles, solo inspiración. Encaja con Pi del catálogo.",
       "is_blocked": false,
       "blocked_reason": null,
       "matched_products_hint": [
-        "Resistencia precisión",
-        "Galvanómetro analógico"
+        "Raspberry Pi Pico",
+        "Raspberry Pi 5",
+        "Raspberry Pi 4"
       ],
-      "re_angulation_hint": "Adaptar a voltímetro digital con ADS1115 + display OLED y formulación moderna",
-      "combined_score": 0.46
+      "re_angulation_hint": "Construir uno de los proyectos paso a paso como tutorial completo",
+      "combined_score": 0.44
     },
     {
-      "id": "93f367bf04f8",
-      "source_language": "en",
+      "id": "e7ea33df61cb",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 0,
+        "materials_clarity": 5,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 3,
+        "value_added": 3,
+        "originality_potential": 6
+      },
+      "verdict": "Reutilizar Android antiguo como herramienta de taller. Idea interesante pero sin proyecto técnico concreto.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Endoscopio USB",
+        "Cable OTG"
+      ],
+      "re_angulation_hint": "Crear estación de laboratorio Android con apps específicas paso a paso",
+      "combined_score": 0.415
+    },
+    {
+      "id": "af2bcbf6bce1",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 3,
+        "materials_clarity": 4,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 2,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "verdict": "Troubleshooting Smart App Control de Windows con SciPy/NILMTK. Fuera del catálogo de hardware MechatronicStore.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [],
+      "re_angulation_hint": "No encaja con catálogo, descartar",
+      "combined_score": 0.395
+    },
+    {
+      "id": "0a24841ac8cc",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 2,
+        "materials_clarity": 4,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 1,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "verdict": "Recuperar Samsung Tab con LineageOS y TWRP. Tema Android, totalmente fuera del catálogo electrónico/maker.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [],
+      "re_angulation_hint": "No encaja con catálogo, descartar",
+      "combined_score": 0.38
+    },
+    {
+      "id": "4873f7b8aa22",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 0,
+        "materials_clarity": 4,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 2,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "verdict": "Listado de 30 algoritmos ML con ejemplos teóricos. Sin código real, sin hardware. Tema saturado.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [],
+      "re_angulation_hint": "No encaja con catálogo, descartar",
+      "combined_score": 0.37
+    },
+    {
+      "id": "c3f9a0621948",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 0,
+        "materials_clarity": 5,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 2,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "verdict": "Comparativa capturadora HDMI vs software para usar tablet como monitor. Producto específico fuera del catálogo electrónico.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [],
+      "re_angulation_hint": "No encaja con catálogo, descartar",
+      "combined_score": 0.365
+    },
+    {
+      "id": "d74cbf70581b",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 5,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 3,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "verdict": "Descripción del programador PIC K-150. MechatronicStore no enfatiza PIC, principal stack es Arduino/ESP32/Pi.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Programador PIC",
+        "ICSP"
+      ],
+      "re_angulation_hint": "Re-angular hacia Arduino como programador ICSP de PICs económico",
+      "combined_score": 0.355
+    },
+    {
+      "id": "586b2fae5e28",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -494,114 +627,20 @@
         "code_quality": 2,
         "materials_clarity": 4,
         "step_completeness": 5,
-        "relevance_to_store_catalog": 3,
+        "relevance_to_store_catalog": 1,
         "value_added": 2,
         "originality_potential": 4
       },
-      "verdict": "Definición histórica de medidor analógico — contenido introductorio sin proyecto, valor editorial bajo.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Multímetro digital"
-      ],
-      "re_angulation_hint": "Curso intro \"qué medidor comprar como maker\" con productos del catálogo",
-      "combined_score": 0.375
-    },
-    {
-      "id": "9851a30e51a9",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 2,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 6,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "verdict": "Cómo montar serie-paralelo en protoboard y bloque de terminales — buena pedagogía base pero sin downloadables.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Protoboard 830p",
-        "Resistencias kit",
-        "Bornera tornillo",
-        "Cables jumper"
-      ],
-      "re_angulation_hint": "Guía visual paso a paso con fotos modernas + simulación Wokwi paralela",
-      "combined_score": 0.535
-    },
-    {
-      "id": "f9ccf5d32cfa",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 4,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 4,
-        "value_added": 2,
-        "originality_potential": 5
-      },
-      "verdict": "Análisis cualitativo de fallas en circuitos — buen método pero abstracto, sin proyecto reproducible.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Multímetro",
-        "Resistencias surtido"
-      ],
-      "re_angulation_hint": "Tabla de fallas comunes en proyectos Arduino con casos reales y solución",
-      "combined_score": 0.42
-    },
-    {
-      "id": "e448e2587037",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 3,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 3,
-        "value_added": 2,
-        "originality_potential": 5
-      },
-      "verdict": "Técnica de re-dibujo de esquemáticos — útil pero altamente teórico, sin código ni hardware vinculado al catálogo.",
-      "is_blocked": false,
-      "blocked_reason": null,
+      "verdict": "Optimización Windows 11 con WinGet y Chris Titus. Fuera del nicho electrónica/maker.",
+      "is_blocked": true,
+      "blocked_reason": "Sin relación con electrónica/maker ni catálogo",
       "matched_products_hint": [],
-      "re_angulation_hint": "Tutorial KiCad: ordenar esquemáticos legibles para proyectos open-source",
-      "combined_score": 0.39
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.335
     },
     {
-      "id": "d7ff64b8fd9d",
-      "source_language": "en",
+      "id": "ae8ada73d1bb",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -613,184 +652,23 @@
       },
       "scores": {
         "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 5,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 4,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "verdict": "Diseño de óhmetro analógico — teoría histórica D'Arsonval, sin proyecto reproducible con catálogo actual.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Multímetro",
-        "Resistencias precisión"
-      ],
-      "re_angulation_hint": "Óhmetro digital DIY con INA219 + ESP32 + OLED para medir baja resistencia",
-      "combined_score": 0.45
-    },
-    {
-      "id": "a48d2fcc9414",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 5,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 4,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "verdict": "Diseño de amperímetro con shunt en paralelo — base teórica clásica, sin downloadables ni código moderno.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "ACS712",
-        "INA219",
-        "Multímetro"
-      ],
-      "re_angulation_hint": "Amperímetro digital con ACS712 vs INA219 — comparativa de precisión y código Arduino",
-      "combined_score": 0.45
-    },
-    {
-      "id": "6f445999c58e",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
+        "code_quality": 0,
         "materials_clarity": 4,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 4,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 1,
         "value_added": 2,
-        "originality_potential": 5
-      },
-      "verdict": "Impedancia de carga del voltímetro sobre circuito medido — concepto importante pero sin proyecto ni código.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Multímetro digital",
-        "Resistencias alta impedancia"
-      ],
-      "re_angulation_hint": "Demo experimental con ESP32 ADC vs multímetro 10MΩ con gráfica de error",
-      "combined_score": 0.42
-    },
-    {
-      "id": "6cc0849e7f08",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 2,
-        "materials_clarity": 5,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 4,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "verdict": "Puente de Wheatstone clásico — base sólida pero contenido sin downloadables ni aplicación práctica concreta.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Galga extensiométrica",
-        "HX711",
-        "Resistencias precisión"
-      ],
-      "re_angulation_hint": "Balanza digital DIY con galga + HX711 explicando bridge de Wheatstone aplicado",
-      "combined_score": 0.465
-    },
-    {
-      "id": "c3f622ff7a00",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 4,
-        "step_completeness": 6,
-        "value_added": 2,
-        "originality_potential": 6,
-        "relevance_to_store_catalog": 4
-      },
-      "verdict": "Medición Kelvin de 4 hilos — técnica interesante pero artículo teórico sin proyecto ni downloads.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "INA219",
-        "Resistencia shunt",
-        "Multímetro precisión"
-      ],
-      "re_angulation_hint": "Medir resistencia baterías Li-ion con método 4 hilos + INA219 + Arduino",
-      "combined_score": 0.435
-    },
-    {
-      "id": "d3c218b7e810",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 5,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 5,
-        "value_added": 3,
         "originality_potential": 4
       },
-      "verdict": "Tutorial multímetro analógico de 2008 — multímetro relevante pero foco en aparatos obsoletos y sin proyecto.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Multímetro digital",
-        "Punta de prueba"
-      ],
-      "re_angulation_hint": "Guía compra multímetro maker 2026 con tabla comparativa por presupuesto",
-      "combined_score": 0.455
+      "verdict": "Trucos opciones de desarrollador Android. Tema móviles, no encaja con electrónica/maker.",
+      "is_blocked": true,
+      "blocked_reason": "Sin relación con electrónica/maker ni catálogo",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.315
     },
     {
-      "id": "7b0ae8bd6b95",
-      "source_language": "en",
+      "id": "6d12faee8510",
+      "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -801,26 +679,135 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
+        "pedagogy": 6,
+        "code_quality": 0,
         "materials_clarity": 4,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 3,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 1,
         "value_added": 2,
-        "originality_potential": 5
+        "originality_potential": 4
       },
-      "verdict": "Óhmetros de alto voltaje — temática nicho de aislamiento, baja relevancia maker y sin proyecto vinculado.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Megóhmetro",
-        "Multímetro alta tensión"
-      ],
-      "re_angulation_hint": "Medir aislamiento de motor BLDC con megger seguridad para makers",
-      "combined_score": 0.4
+      "verdict": "Configuración POP/SMTP de Telefónica en Gmail. Completamente fuera del nicho electrónica/maker.",
+      "is_blocked": true,
+      "blocked_reason": "Sin relación con electrónica/maker ni catálogo",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.3
     },
     {
-      "id": "914052505b70",
+      "id": "da45cd0e9715",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 3,
+        "step_completeness": 3,
+        "relevance_to_store_catalog": 2,
+        "value_added": 2,
+        "originality_potential": 4
+      },
+      "verdict": "Review del sistema operativo NAS QNAP QuTS hero h6.0. Producto comercial fuera del catálogo maker.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial sin proyecto técnico reproducible",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.275
+    },
+    {
+      "id": "0a4fd2ea8bd2",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 0,
+        "materials_clarity": 1,
+        "step_completeness": 2,
+        "relevance_to_store_catalog": 1,
+        "value_added": 2,
+        "originality_potential": 4
+      },
+      "verdict": "Reflexión filosófica sobre alineación de IA. Sin proyecto técnico ni relación con catálogo electrónico.",
+      "is_blocked": true,
+      "blocked_reason": "Opinión/reflexión sin proyecto técnico reproducible",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.225
+    },
+    {
+      "id": "26a476bf8d55",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 2,
+        "code_quality": 0,
+        "materials_clarity": 1,
+        "step_completeness": 1,
+        "relevance_to_store_catalog": 5,
+        "value_added": 1,
+        "originality_potential": 2
+      },
+      "verdict": "Noticia de evento Arduino Day 2019 ya pasado. Sin contenido técnico ni proyecto reproducible.",
+      "is_blocked": true,
+      "blocked_reason": "Noticia de evento antiguo sin proyecto técnico",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.2
+    },
+    {
+      "id": "837933d7d79a",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 4,
+        "code_quality": 0,
+        "materials_clarity": 2,
+        "step_completeness": 3,
+        "relevance_to_store_catalog": 1,
+        "value_added": 1,
+        "originality_potential": 2
+      },
+      "verdict": "Artículo de marketing sobre SEO local. Fuera completamente del nicho electrónica/maker de MechatronicStore.",
+      "is_blocked": true,
+      "blocked_reason": "Marketing/SEO sin contenido técnico ni proyecto",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.18
+    },
+    {
+      "id": "62e995b06e40",
       "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
@@ -832,24 +819,104 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 2,
-        "materials_clarity": 6,
-        "step_completeness": 7,
+        "pedagogy": 2,
+        "code_quality": 0,
+        "materials_clarity": 1,
+        "step_completeness": 1,
         "relevance_to_store_catalog": 3,
-        "value_added": 3,
-        "originality_potential": 6
+        "value_added": 1,
+        "originality_potential": 3
       },
-      "verdict": "Bobinado bifilar para resistencias custom — técnica DIY interesante pero específica y sin downloadables.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": [
-        "Alambre nicromo",
-        "Bobina núcleo",
-        "Resistencias precisión"
-      ],
-      "re_angulation_hint": "Calibrar shunts custom para INA219 con bobinado bifilar paso a paso",
-      "combined_score": 0.465
+      "verdict": "Noticia de Maker Faire Brussels 2026. Sin proyecto técnico ni contenido reproducible.",
+      "is_blocked": true,
+      "blocked_reason": "Noticia de evento sin proyecto técnico",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.175
+    },
+    {
+      "id": "9abd82e7d4db",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 3,
+        "code_quality": 0,
+        "materials_clarity": 1,
+        "step_completeness": 1,
+        "relevance_to_store_catalog": 2,
+        "value_added": 1,
+        "originality_potential": 3
+      },
+      "verdict": "Crónica de participación en Festival de la Ciencia de Génova. Sin proyecto técnico reproducible.",
+      "is_blocked": true,
+      "blocked_reason": "Crónica de evento sin proyecto técnico",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.17
+    },
+    {
+      "id": "af418edc3ea2",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 3,
+        "code_quality": 0,
+        "materials_clarity": 2,
+        "step_completeness": 2,
+        "relevance_to_store_catalog": 1,
+        "value_added": 1,
+        "originality_potential": 2
+      },
+      "verdict": "Advertorial sobre hosting WordPress México. Sin contenido técnico, fuera de catálogo.",
+      "is_blocked": true,
+      "blocked_reason": "Advertorial comercial sin proyecto técnico",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.155
+    },
+    {
+      "id": "72f16a4e5c94",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 2,
+        "code_quality": 0,
+        "materials_clarity": 1,
+        "step_completeness": 2,
+        "relevance_to_store_catalog": 1,
+        "value_added": 1,
+        "originality_potential": 2
+      },
+      "verdict": "Contenido advertorial sobre proveedores de internet en EEUU. Sin proyecto técnico, fuera de catálogo, sin valor para makers.",
+      "is_blocked": true,
+      "blocked_reason": "Review/advertorial comercial sin proyecto técnico (ISPs en EEUU)",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable, descartar",
+      "combined_score": 0.13
     }
   ]
 }
