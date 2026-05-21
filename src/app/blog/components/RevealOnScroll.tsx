@@ -61,6 +61,20 @@ export default function RevealOnScroll({
       return;
     }
 
+    // Pablo 21-may-2026 fix: si el elemento YA está en viewport al mount
+    // (típico en pages above-the-fold como /blog/tutoriales grid), mostrar
+    // inmediatamente. Sin esto el grid quedaba con opacity:0 hasta que el
+    // usuario scrolleaba, lo que parecía bug.
+    const rect = el.getBoundingClientRect();
+    const inViewport =
+      rect.top < window.innerHeight && rect.bottom > 0;
+    if (inViewport) {
+      // Pequeño rAF para que el browser pinte el estado inicial primero
+      // y la transición se vea (no flash instantáneo).
+      requestAnimationFrame(() => el.classList.add("is-visible"));
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
