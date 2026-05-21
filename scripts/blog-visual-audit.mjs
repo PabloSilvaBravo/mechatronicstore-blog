@@ -160,9 +160,22 @@ async function auditPage(browser, url, pageType) {
         img.getBoundingClientRect().height > 0,
     }));
   });
-  const brokenImages = images.filter(
-    (i) => i.complete && (i.naturalWidth === 0 || i.naturalHeight === 0),
-  );
+  // Pablo 21-may-2026: excluir nuestro propio CDN (images.mechatronicstore.cl
+  // → R2) del broken-images check. Cloudflare aplica bot detection a
+  // Playwright headless desde GHA runners (AWS IP + webdriver fingerprint)
+  // y devuelve challenge en vez de la img, generando falsos positivos.
+  // Esos heros sí los verifica scripts/monitor_pipeline.py métrica
+  // heros_broken (curl HEAD con UA realista) cada 2h — cobertura redundante.
+  const OUR_CDN_HOSTS = ["images.mechatronicstore.cl"];
+  const brokenImages = images.filter((i) => {
+    if (!i.complete) return false;
+    if (i.naturalWidth !== 0 && i.naturalHeight !== 0) return false;
+    try {
+      const host = new URL(i.src).hostname;
+      if (OUR_CDN_HOSTS.includes(host)) return false; // cubierto por monitor
+    } catch {}
+    return true;
+  });
 
   // === SEO / metadata ===
   const seo = await page.evaluate(() => {
