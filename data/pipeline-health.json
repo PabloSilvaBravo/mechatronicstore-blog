@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-05-21T20:41:49.566907+00:00",
+  "checked_at": "2026-05-21T21:45:05.146108+00:00",
   "metrics": {
-    "drafts_pending": 14,
+    "drafts_pending": 0,
     "published_24h": 9,
     "ranked_stuck": 2,
     "rejected_ratio_48h": 0.921,
@@ -17,7 +17,7 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
+        "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
       },
       {
         "status": 403,
@@ -25,15 +25,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
       },
       {
         "status": 403,
@@ -45,15 +41,19 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4fbf4752fcf4/fa5155d0bbfffa25.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/866a587ce24a/00a427b93e13ecb1.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/e80c44751324/6003ca20dbe7645a.webp"
       }
     ],
     "counts_by_status": {
