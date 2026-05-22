@@ -52,10 +52,31 @@ def main():
     """
     rows = db.execute(sql, [args.limit]).fetchall()
 
+    # Pablo 22-may-2026: cargar hints de Routine B desde blog-rank-output.json
+    # para pasarlos a Routine C. Antes se perdían silenciosamente. El prompt
+    # de Routine C los lee como checklist obligatorio de productos a buscar
+    # con el MCP (matched_products_hint).
+    rank_output_path = Path(__file__).parent.parent / "data" / "blog-rank-output.json"
+    rank_hints_by_id = {}
+    if rank_output_path.exists():
+        try:
+            ranks = json.loads(rank_output_path.read_text())
+            for item in ranks.get("rankings", []):
+                tid = item.get("id")
+                if tid:
+                    rank_hints_by_id[tid] = {
+                        "matched_products_hint": item.get("matched_products_hint") or [],
+                        "re_angulation_hint": item.get("re_angulation_hint") or "",
+                    }
+        except Exception as e:
+            print(f"WARN: blog-rank-output.json parse failed: {e}", file=sys.stderr)
+
     candidates = []
     for r in rows:
+        tid = r[0]
+        hints = rank_hints_by_id.get(tid, {})
         candidates.append({
-            "id": r[0],
+            "id": tid,
             "slug": r[1],
             "source_id": r[2],
             "source_url": r[3],
@@ -79,6 +100,11 @@ def main():
             # aplicar reglas editoriales (re-angulación obligatoria si es=es).
             "source_language": r[16] or "other",
             "source_name": r[17],
+            # Pablo 22-may-2026: hints de Routine B (matched_products_hint
+            # + re_angulation_hint). Routine C los usa como checklist
+            # obligatorio de productos a buscar + sugerencia angulación.
+            "matched_products_hint": hints.get("matched_products_hint", []),
+            "re_angulation_hint": hints.get("re_angulation_hint", ""),
         })
 
     output = {

@@ -336,14 +336,39 @@ buscar_productos(query="Resistencia 220 ohm", limite=5)
 - Quitar marcas/versiones que el catálogo MS no usa
 
 **Paso 3 — Componentes BÁSICOS siempre buscar** (alta probabilidad de
-existir en catálogo MS, son productos core):
-- Microcontroladores: ESP32, ESP8266, Arduino Uno/Nano/Mega, RPi Pico, etc.
-- Displays: TM1637, MAX7219, OLED, LCD 16x2, TFT
-- Sensores: DHT11/22, DS18B20, BME280, MPU6050, HC-SR04, PIR, LDR
-- Componentes pasivos: LED 5mm, Resistencias 220Ω/1kΩ/10kΩ, Capacitores,
-  Diodos, Transistores
-- Cables y prototipado: Protoboard, Jumpers, Cable USB
-- Drivers motor: L298N, A4988
+existir en catálogo MS, son productos core). Para CADA uno de estos
+que aparezca en la lista de materiales, **OBLIGATORIO ejecutar
+`buscar_productos` con AL MENOS 2 queries distintas**:
+
+- **Microcontroladores**: ESP32, ESP8266, ESP32-C3/S3/C6, Arduino Uno/
+  Nano/Mega/Pro Mini, RPi Pico
+- **SBCs**: Raspberry Pi 3/4/5, Orange Pi, BeagleBone
+- **Displays**: TM1637, MAX7219, OLED SSD1306, LCD 16x2, LCD 20x4,
+  TFT ILI9341, e-paper
+- **Sensores**: DHT11/22, DS18B20, BME280, BMP180, MPU6050, HC-SR04,
+  PIR, LDR, TCRT5000, MQ-2/3/4/7/135, sensor de humedad de suelo
+- **Componentes pasivos**: LED 5mm (rojo/verde/azul/amarillo/blanco),
+  Resistencias (220Ω/330Ω/470Ω/1kΩ/10kΩ), Capacitores cerámicos,
+  electrolíticos, Diodos 1N4007/Zener, Transistores BC547/2N2222/
+  TIP120/MOSFETs
+- **Cables y prototipado**: Protoboard 400/830 puntos, Jumpers
+  macho-macho/macho-hembra/hembra-hembra, Cable USB tipo A/B/C/micro
+- **Drivers motor**: L298N, L293D, A4988, DRV8825, TMC2208
+- **Alimentación** (Pablo 22-may-2026 — antes faltaba):
+  Fuente 5V/9V/12V switching, Cargador USB-A/USB-C 5V 1A/2A/3A,
+  Power bank, Batería 9V/18650/AA/AAA/LiPo, soporte para batería,
+  regulador LM2596 / LM7805 / AMS1117 3.3V
+- **Módulos comunes**: HC-05/06 Bluetooth, NRF24L01, RFID RC522,
+  módulo microSD (SPI), módulo RTC DS3231
+- **Conectores**: jack DC, headers macho/hembra 2.54mm, bornera 2/3 pines
+
+**Si el material en el tutorial es genérico** (e.g. "fuente externa",
+"power bank", "alimentación 5V", "cargador"), buscar con varias queries:
+`buscar_productos(query="fuente 5V")`, `buscar_productos(query="cargador
+USB-C")`, `buscar_productos(query="power bank")`. **Si CUALQUIERA
+devuelve un producto con `match_score ≥0.7`, agregarlo a
+linked_products** — el frontend solo necesita un match decente, no el
+"mejor" perfecto.
 
 **Paso 4 — Match_score:**
 - `match_score >= 0.85` → ✅ agregar a linked_products
@@ -375,6 +400,49 @@ El frontend tiene fuzzy matching que compara `material.name` ↔
   "Resistencia 220" o "220Ω"
 - NO traducir nombres al inglés: si el catálogo lo llama "Placa ESP32",
   usar "Placa ESP32" (no "ESP32 board" / "development board" / etc.)
+
+### Materiales de UN solo token — regla crítica (Pablo 22-may-2026)
+
+El frontend matchea por tokens compartidos. Si el material es UN SOLO
+TOKEN ("Protoboard", "Jumpers", "Servo", "Buzzer", "Fuente"), el matcher
+puede fallar (regla R5 frontend lo arregla parcialmente, pero la regla
+robusta es del lado prompt).
+
+**OBLIGATORIO**: si el material tiene UN SOLO TOKEN descriptivo,
+expandilo en `materials_list` para que tenga ≥2 tokens:
+
+| ❌ NO HACER | ✅ HACER |
+|---|---|
+| `"name": "Protoboard"` | `"name": "Protoboard 830 puntos"` |
+| `"name": "Jumpers"` | `"name": "Jumpers macho-macho 20cm"` |
+| `"name": "Servo"` | `"name": "Servo motor SG90 9g"` |
+| `"name": "Buzzer"` | `"name": "Buzzer activo 5V"` |
+| `"name": "Cargador"` | `"name": "Cargador USB-C 5V 2A"` |
+| `"name": "Fuente"` | `"name": "Fuente 5V switching"` |
+| `"name": "Batería"` | `"name": "Batería LiPo 3.7V 600mAh"` |
+| `"name": "Cable USB"` | `"name": "Cable USB-A a micro-USB 30cm"` |
+
+El extra token debe ser la **especificación más común que use el catálogo
+MS** para ese tipo de producto — si dudás, usar el wording del primer
+producto que retorna `buscar_productos(query="protoboard")`.
+
+### Lectura de hints del input (Pablo 22-may-2026)
+
+El input `data/blog-translate-input.json` ahora incluye 2 campos extra
+emitidos por Routine B (Editorial Ranking):
+
+- **`matched_products_hint`** (array de strings): lista de componentes
+  que Routine B detectó en el tutorial. Es un **checklist OBLIGATORIO**:
+  cada item DEBE ser buscado con `buscar_productos` en Paso 1. Si no
+  encontrás match para un item del hint, anotalo en `editorial_notes`
+  para revisión.
+
+- **`re_angulation_hint`** (string): sugerencia de Routine B sobre qué
+  ángulo de re-angulación usar (Chile-context, level-up técnico, etc.).
+  Si está presente, considerala al escribir intro + secciones.
+
+Si los campos no están en el input (versiones viejas del dump), continuar
+sin ellos — son aditivos, no rompen el flow.
 
 ### Si NO hay match real (después de Paso 2)
 
