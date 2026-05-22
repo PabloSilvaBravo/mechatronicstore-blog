@@ -1,27 +1,23 @@
 {
-  "checked_at": "2026-05-22T01:40:45.166890+00:00",
+  "checked_at": "2026-05-22T04:03:49.177265+00:00",
   "metrics": {
     "drafts_pending": 0,
-    "published_24h": 6,
-    "ranked_stuck": 6,
-    "rejected_ratio_48h": 0.93,
-    "published_48h": 28,
+    "published_24h": 12,
+    "ranked_stuck": 0,
+    "rejected_ratio_48h": 0.916,
+    "published_48h": 34,
     "rejected_48h": 371,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
     "editorial_rejected_48h": 0,
     "editorial_rejected_ratio": 0.0,
-    "heros_checked": 22,
+    "heros_checked": 26,
     "heros_broken": 20,
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
       },
       {
         "status": 403,
@@ -29,7 +25,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
       },
       {
         "status": 403,
@@ -37,11 +37,15 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/bda956a198aa/038aadb094d4f4d5.webp"
       },
       {
         "status": 403,
@@ -49,16 +53,15 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/8a884b6de94d/99f99bf40c73e070.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
       }
     ],
+    "ranked_aging_hours": 0,
+    "published_7d": 34,
+    "rank_runs_24h": 2,
+    "translate_runs_24h": 3,
     "counts_by_status": {
-      "published": 28,
-      "ranked": 6,
+      "published": 34,
       "rejected": 426
     }
   },
@@ -68,7 +71,7 @@
       "metric": "heros_broken",
       "value": 20,
       "threshold": 0,
-      "message": "20/22 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+      "message": "20/26 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
     }
   ],
   "status": "warning"
