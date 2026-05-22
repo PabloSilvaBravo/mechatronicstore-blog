@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import db
+from hero_picker import select_best_hero
 
 ROOT = Path(__file__).parent.parent
 INPUT = ROOT / "data" / "blog-translate-output.json"
@@ -107,7 +108,7 @@ def main():
             continue
 
         existing = db.execute(
-            "SELECT id, status, source_url, hero_image_url, slug FROM tutorials WHERE id = ?",
+            "SELECT id, status, source_url, hero_image_url, slug, published_at FROM tutorials WHERE id = ?",
             [tid],
         ).fetchone()
         if not existing:
@@ -117,6 +118,7 @@ def main():
         existing_source_url = existing[2]
         existing_hero = existing[3]
         existing_slug = existing[4]
+        existing_published_at = existing[5]  # Pablo 22-may-2026 (preserve)
 
         # Pablo 20-may-2026 audit: SLUGS ESTABLES.
         # Bug detectado: Routine C re-procesa tutoriales ya publicados (caso
@@ -137,13 +139,32 @@ def main():
         else:
             slug_to_use = tr.get("slug")
 
-        # Hero image: prioridad output > existente > fallback fetch og:image
+        # Hero image: prioridad output > existente > fallback fetch og:image.
+        # Pablo 22-may-2026: aplicar hero_picker.select_best_hero al final
+        # para filtrar dominios bloqueados (studiopieters, tronixstuff) y
+        # caer a primera img útil del body. Antes el blocklist solo se
+        # aplicaba al ingest, así que re-translates de un tutorial con
+        # source de un dominio bloqueado restauraban el hero malo.
         hero_url = tr.get("hero_image_url") or existing_hero
-        if not hero_url and existing_source_url:
-            print(f"  → fallback fetch og:image desde {existing_source_url[:70]}")
-            hero_url = fetch_og_image(existing_source_url)
-            if hero_url:
-                print(f"    ✓ recovered: {hero_url[:80]}")
+        extras: list[str] = []
+        if existing_source_url:
+            try:
+                from scraper import fetch_full_page
+                page = fetch_full_page(existing_source_url)
+                extras = list(page.extra_images or [])
+                if not hero_url and page.main_image_url:
+                    hero_url = page.main_image_url
+                    print(f"    ✓ og:image recuperada: {hero_url[:80]}")
+            except Exception as e:
+                print(f"    ⚠ fetch source falló para hero/extras: {e}")
+        # Aplicar blocklist + filtro tracker/logo. Si hero está bloqueado
+        # y extras tiene algo útil, lo reemplaza. Si nada usable, None →
+        # frontend muestra placeholder (mejor que img wrong/rota).
+        hero_url = select_best_hero(hero_url, extras)
+        if hero_url:
+            print(f"    hero final: {hero_url[:80]}")
+        else:
+            print(f"    ⊘ hero limpiado (todo en blocklist o sin imgs)")
 
         # Pablo 20-may-2026: aplicar checklist editorial. Si pasa < 3 de 5,
         # rejected con razón editorial (revisar manualmente).
@@ -166,6 +187,16 @@ def main():
             stats["editorial_blocked"] += 1
             print(f"  ✗ editorial BLOCKED ({passed}/{total_checks}): {tr.get('title_es','')[:50]}")
             print(f"      checks failed: {failed}")
+
+        # Pablo 22-may-2026: PRESERVAR published_at original.
+        # Si el tutorial YA tenía published_at (re-translate de algo ya
+        # publicado), conservar la fecha original. Solo usar `now` si es
+        # primera publicación (existing_published_at is NULL).
+        # Sin esto, re-translates manuales movían tutoriales viejos al
+        # tope de la home como "recientes" — comportamiento mentiroso.
+        published_at_to_use = existing_published_at if existing_published_at else ts_sqlite
+        if existing_published_at and target_status == "published":
+            print(f"    ↻ preservando published_at original: {existing_published_at}")
 
         try:
             db.execute(
@@ -210,8 +241,8 @@ def main():
                     tr.get("estimated_time_minutes"),
                     tr.get("estimated_cost_clp"),
                     json.dumps(tr.get("tags") or [], ensure_ascii=False),
-                    ts_sqlite,
-                    ts_sqlite,
+                    ts_sqlite,                  # translated_at: siempre now
+                    published_at_to_use,        # preserva si existía
                     tid,
                 ],
             )
