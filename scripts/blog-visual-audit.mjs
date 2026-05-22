@@ -193,7 +193,11 @@ async function auditPage(browser, url, pageType) {
   // y devuelve challenge en vez de la img, generando falsos positivos.
   // Esos heros sí los verifica scripts/monitor_pipeline.py métrica
   // heros_broken (curl HEAD con UA realista) cada 2h — cobertura redundante.
-  const OUR_CDN_HOSTS = ["images.mechatronicstore.cl"];
+  // Pablo 22-may-2026: agregar wp-content/uploads del store porque los
+  // thumbnails de productos (commit 1dcbafd MaterialsList) también vienen
+  // de ahí. Mismo problema que R2: Cloudflare bot detection bloquea
+  // Playwright headless aunque browser real cargue OK.
+  const OUR_CDN_HOSTS = ["images.mechatronicstore.cl", "www.mechatronicstore.cl"];
   const brokenImages = images.filter((i) => {
     if (!i.complete) return false;
     if (i.naturalWidth !== 0 && i.naturalHeight !== 0) return false;
