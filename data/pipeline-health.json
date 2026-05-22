@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-22T19:54:07.866679+00:00",
+  "checked_at": "2026-05-22T21:16:15.087513+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 2,
     "ranked_stuck": 2,
-    "rejected_ratio_48h": 0.882,
+    "rejected_ratio_48h": 0.874,
     "published_48h": 34,
-    "rejected_48h": 255,
+    "rejected_48h": 235,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,35 +17,11 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
       },
       {
         "status": 403,
@@ -54,11 +30,35 @@
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
       }
     ],
-    "ranked_aging_hours": 1,
+    "ranked_aging_hours": 2,
     "published_7d": 34,
-    "rank_runs_24h": 2,
+    "rank_runs_24h": 1,
     "translate_runs_24h": 2,
     "counts_by_status": {
       "published": 34,
