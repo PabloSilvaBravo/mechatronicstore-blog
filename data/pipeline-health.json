@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-22T04:03:49.177265+00:00",
+  "checked_at": "2026-05-22T09:36:39.726580+00:00",
   "metrics": {
-    "drafts_pending": 0,
+    "drafts_pending": 10,
     "published_24h": 12,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.916,
+    "rejected_ratio_48h": 0.89,
     "published_48h": 34,
-    "rejected_48h": 371,
+    "rejected_48h": 274,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -25,6 +25,14 @@
       },
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
+      },
+      {
+        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
       },
       {
@@ -33,15 +41,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/07cbf6c824eb/aab141f3cd105489.jpg"
       },
       {
         "status": 403,
@@ -50,10 +54,6 @@
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/866a587ce24a/00a427b93e13ecb1.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
       }
     ],
     "ranked_aging_hours": 0,
@@ -61,8 +61,9 @@
     "rank_runs_24h": 2,
     "translate_runs_24h": 3,
     "counts_by_status": {
+      "draft": 10,
       "published": 34,
-      "rejected": 426
+      "rejected": 461
     }
   },
   "alerts": [
