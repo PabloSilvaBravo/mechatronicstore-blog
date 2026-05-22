@@ -19,6 +19,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import db
 from hero_picker import select_best_hero
+import re as _re
+
+# Pablo 22-may-2026: helper inverso de to_thumb_url (enrich_linked_products.py).
+# Los thumbs de productos vienen como `foto-100x100.webp` (cropeado para card).
+# Para usar como HERO necesitamos la version full-res (foto.webp ~600-1200px)
+# que WordPress también sirve en el mismo path sin sufijo de tamaño.
+_THUMB_SIZE_RE = _re.compile(
+    r"-\d+x\d+(\.(?:jpg|jpeg|png|webp|gif|avif))(\?.*)?$", _re.IGNORECASE
+)
+
+
+def to_full_res(url: str) -> str:
+    """Quita el sufijo -WxH de un URL de WP image para usar full-res."""
+    if not url:
+        return url
+    return _THUMB_SIZE_RE.sub(r"\1\2", url, count=1)
 
 ROOT = Path(__file__).parent.parent
 INPUT = ROOT / "data" / "blog-translate-output.json"
@@ -158,13 +174,32 @@ def main():
             except Exception as e:
                 print(f"    ⚠ fetch source falló para hero/extras: {e}")
         # Aplicar blocklist + filtro tracker/logo. Si hero está bloqueado
-        # y extras tiene algo útil, lo reemplaza. Si nada usable, None →
-        # frontend muestra placeholder (mejor que img wrong/rota).
+        # y extras tiene algo útil, lo reemplaza. Si nada usable, None.
         hero_url = select_best_hero(hero_url, extras)
+
+        # Pablo 22-may-2026: FALLBACK universal cuando hero queda NULL
+        # (e.g. source en blocklist tronixstuff/studiopieters y todas las
+        # extras también del mismo dominio). En vez de placeholder gris,
+        # usar la imagen del PRIMER producto linked con match_score≥0.85
+        # (alta confianza editorial) en version full-res (sin -100x100).
+        # Razones: (a) tutorial vende ese producto, foto contextual,
+        # (b) refuerza marca MechatronicStore en vez de hueco, (c) cero
+        # riesgo legal (catálogo propio), (d) regla universal — aplica a
+        # cualquier tutorial futuro sin hero válido.
+        if not hero_url:
+            linked = tr.get("linked_products") or []
+            for p in linked:
+                img = p.get("image_url")
+                score = p.get("match_score") or 0
+                if img and score >= 0.85:
+                    hero_url = to_full_res(img)
+                    print(f"    ↳ hero fallback (catálogo {p.get('product_id','?')}): {hero_url[:70]}")
+                    break
+
         if hero_url:
             print(f"    hero final: {hero_url[:80]}")
         else:
-            print(f"    ⊘ hero limpiado (todo en blocklist o sin imgs)")
+            print(f"    ⊘ hero limpiado (todo blocklist + sin linked_products score≥0.85)")
 
         # Pablo 20-may-2026: aplicar checklist editorial. Si pasa < 3 de 5,
         # rejected con razón editorial (revisar manualmente).
