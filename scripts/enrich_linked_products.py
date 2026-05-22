@@ -46,6 +46,32 @@ UA = (
     "Chrome/130.0.0.0 Safari/537.36"
 )
 
+# Pablo 22-may-2026: helper para convertir URL de imagen a thumbnail.
+# WordPress genera sizes automáticos al uploadear: foto.jpg → foto-100x100.jpg
+# en el mismo path. Las thumbs son ~10× más pequeñas (1-10KB vs 50-500KB),
+# critical para performance del blog donde una página puede tener 20+ thumbs.
+#
+# El pattern es estándar de WP: /path/<name>-<W>x<H>.<ext>
+# Ejemplos confirmados en mechatronicstore.cl:
+#   .../arduino-uno-r3-atmega328p.jpg → .../arduino-uno-r3-atmega328p-100x100.jpg
+#   .../resistencias.webp → .../resistencias-100x100.webp
+# Si la versión cropeada no existe (raro pero posible con WebP recientes),
+# el <img onError> del frontend hace fallback a la URL original.
+_THUMB_EXT_RE = re.compile(r"\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$", re.IGNORECASE)
+_THUMB_ALREADY_RE = re.compile(r"-\d+x\d+\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$", re.IGNORECASE)
+
+
+def to_thumb_url(url: str, size: int = 100) -> str:
+    """Transforma image.jpg → image-100x100.jpg (formato WP standard)."""
+    if not url or _THUMB_ALREADY_RE.search(url):
+        return url
+    m = _THUMB_EXT_RE.search(url)
+    if not m:
+        return url
+    ext, query = m.group(1), m.group(2) or ""
+    return _THUMB_EXT_RE.sub(f"-{size}x{size}.{ext}{query}", url, count=1)
+
+
 # Regex para extraer WC post_id del HTML del producto.
 # WooCommerce renderiza <input name="add-to-cart" value="649"> en .cart form.
 WC_ID_RE = re.compile(r'name="add-to-cart"\s+value="(\d+)"')
@@ -157,10 +183,10 @@ def enrich_tutorial(tid: str, slug: str, products_json: str, dry: bool) -> tuple
         if not p.get("image_url"):
             img = resolve_image(permalink)
             if img:
-                p["image_url"] = img
+                p["image_url"] = to_thumb_url(img, 100)
                 enriched_img += 1
                 changed = True
-                print(f"      img: {img[:80]}")
+                print(f"      img: {p['image_url'][:80]}")
             time.sleep(0.4)
 
     if changed and not dry:

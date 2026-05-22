@@ -7,6 +7,20 @@ interface Props {
   slug: string;
 }
 
+// Pablo 22-may-2026: WordPress genera sizes cropeados automáticamente
+// (foto.jpg → foto-100x100.jpg en el mismo path). Las thumbs cropeadas
+// son ~10× más livianas (1-10KB vs 50-500KB) — critical performance
+// con 20+ thumbs/página. El <img onError> hace fallback a original si
+// la cropeada no existe (raro con WebP recientes).
+const THUMB_EXT_RE = /\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i;
+const THUMB_ALREADY_RE = /-\d+x\d+\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i;
+function toThumb(url: string, size = 100): string {
+  if (!url || THUMB_ALREADY_RE.test(url)) return url;
+  const m = url.match(THUMB_EXT_RE);
+  if (!m) return url;
+  return url.replace(THUMB_EXT_RE, `-${size}x${size}.${m[1]}${m[2] || ""}`);
+}
+
 function buildProductUrl(
   rawUrl: string,
   slug: string,
@@ -269,11 +283,20 @@ export default function MaterialsList({
                   }}
                 >
                   <img
-                    src={product.image_url}
+                    src={toThumb(product.image_url, 100)}
                     alt=""
                     className="w-full h-full object-cover"
                     loading="lazy"
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      // Si la cropeada -100x100 no existe (raro), cae a la
+                      // versión original guardada en linked_products_json.
+                      const img = e.currentTarget;
+                      if (!img.dataset.fb && product.image_url) {
+                        img.dataset.fb = "1";
+                        img.src = product.image_url;
+                      }
+                    }}
                   />
                 </div>
               ) : (
