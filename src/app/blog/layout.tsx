@@ -27,10 +27,26 @@ export default async function BlogLayout({
 
   return (
     <SearchOverlayProvider>
+      {/* Skip link — Pablo 21-may-2026 (alineación store).
+          A11y: keyboard users pueden saltar header+nav directo al contenido.
+          Solo visible cuando recibe focus (clase utility sr-only:focus-not). */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-md focus:outline-none"
+        style={{
+          background: "var(--brand-purple)",
+          color: "#fff",
+          fontWeight: 600,
+          fontSize: "13px",
+        }}
+      >
+        Saltar al contenido
+      </a>
+
       <UtilityBar />
       <BlogHeader categoryCounts={categoryCounts} />
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
+      <main id="main" className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
         {children}
       </main>
 

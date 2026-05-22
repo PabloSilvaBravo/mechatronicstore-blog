@@ -85,6 +85,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: tutorial.subtitle_es,
       images: [ogImage],
     },
+    // Pablo 21-may-2026 (DEEP-INSPECT store): el store mechatronicstore.cl
+    // usa twitter:label1/data1 + label2/data2 para metadata extra (autor +
+    // tiempo de lectura). Lo replico aquí para que las card-previews en
+    // Twitter/X muestren más info accionable.
+    other: {
+      "twitter:label1": "Escrito por",
+      "twitter:data1": "Equipo MechatronicStore",
+      "twitter:label2": "Tiempo de lectura",
+      "twitter:data2": tutorial.estimated_time_minutes
+        ? `${tutorial.estimated_time_minutes} min`
+        : "5 min",
+    },
   };
 }
 

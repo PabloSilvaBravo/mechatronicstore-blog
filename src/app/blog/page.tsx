@@ -82,29 +82,72 @@ function formatPublishedDate(iso: string): string {
 export default async function BlogHomePage() {
   const tutorials = await getPublishedTutorials(24);
 
-  // JSON-LD WebSite + Blog schema (Pablo 20-may-2026 audit SEO)
+  // JSON-LD @graph profundo — Pablo 21-may-2026 (DEEP-INSPECT store):
+  // Match con el schema del store mechatronicstore.cl que tiene
+  // @graph con Place + Store + Organization + WebSite + Blog + BlogPostings.
+  // GeoCoordinates del local físico en Curicó (Manuel Rodriguez 212).
   const websiteSchema = {
     "@context": "https://schema.org",
-    "@type": "Blog",
-    "@id": `${SITE_BASE}/blog#blog`,
-    name: "Blog MechatronicStore",
-    description: DESCRIPTION,
-    url: `${SITE_BASE}/blog`,
-    inLanguage: "es-CL",
-    publisher: {
-      "@type": "Organization",
-      name: "MechatronicStore",
-      url: SITE_BASE,
-      logo: { "@type": "ImageObject", url: `${SITE_BASE}/blog/logo-mechastore-blog.svg` },
-    },
-    blogPost: tutorials.slice(0, 12).map((t) => ({
-      "@type": "BlogPosting",
-      headline: t.title_es,
-      url: `${SITE_BASE}/blog/${t.slug}`,
-      image: t.hero_image_url || undefined,
-      datePublished: t.published_at || undefined,
-      inLanguage: "es-CL",
-    })),
+    "@graph": [
+      {
+        "@type": "Place",
+        "@id": `${SITE_BASE}/#place`,
+        name: "MechatronicStore (local Curicó)",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "Manuel Rodriguez 212, local 1",
+          addressLocality: "Curicó",
+          addressRegion: "Maule",
+          addressCountry: "CL",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: -34.9833,
+          longitude: -71.2333,
+        },
+      },
+      {
+        "@type": ["Store", "Organization"],
+        "@id": `${SITE_BASE}/#org`,
+        name: "MechatronicStore",
+        url: SITE_BASE,
+        logo: { "@type": "ImageObject", url: `${SITE_BASE}/blog/logo-mechastore-blog.svg` },
+        email: "ventas@mechatronicstore.cl",
+        telephone: "+56976167930",
+        location: { "@id": `${SITE_BASE}/#place` },
+        sameAs: [
+          "https://www.instagram.com/mechatronicstore.cl/",
+          "https://www.tiktok.com/@mechatronicstore.cl",
+          "https://www.youtube.com/channel/UCduHpxJBRrJBa2lgT0NPFbQ",
+        ],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_BASE}/#website`,
+        url: SITE_BASE,
+        name: "MechatronicStore",
+        inLanguage: "es-CL",
+        publisher: { "@id": `${SITE_BASE}/#org` },
+      },
+      {
+        "@type": "Blog",
+        "@id": `${SITE_BASE}/blog#blog`,
+        name: "Blog MechatronicStore",
+        description: DESCRIPTION,
+        url: `${SITE_BASE}/blog`,
+        inLanguage: "es-CL",
+        publisher: { "@id": `${SITE_BASE}/#org` },
+        isPartOf: { "@id": `${SITE_BASE}/#website` },
+        blogPost: tutorials.slice(0, 12).map((t) => ({
+          "@type": "BlogPosting",
+          headline: t.title_es,
+          url: `${SITE_BASE}/blog/${t.slug}`,
+          image: t.hero_image_url || undefined,
+          datePublished: t.published_at || undefined,
+          inLanguage: "es-CL",
+        })),
+      },
+    ],
   };
 
   if (tutorials.length === 0) {
