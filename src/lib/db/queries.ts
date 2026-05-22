@@ -20,11 +20,16 @@ export interface TutorialPublished {
   code_blocks: Array<{ lang: string; caption?: string; code: string }>;
   linked_products: Array<{
     name_original: string;
-    product_id: number;
+    product_id: number | string;        // SKU dashboard (X4-8, GP3-6...)
     product_url: string;
     price_clp: number;
     stock_available: boolean;
     match_score: number;
+    /** WooCommerce post_id numérico — para ?add-to-cart=N. Enriquecido por
+     *  scripts/enrich_linked_products.py. NULL si no resolvió aún. */
+    wc_id?: number;
+    /** Thumb del producto (~100x100). Del MCP o og:image del store. */
+    image_url?: string;
   }>;
   github_url: string | null;
   download_urls: Array<{ label: string; url: string; kind: string }>;

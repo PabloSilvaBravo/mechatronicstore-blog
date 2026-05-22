@@ -10,7 +10,9 @@ interface Props {
 function buildProductUrl(
   rawUrl: string,
   slug: string,
-  productId: number,
+  productId: number | string,
+  wcId?: number,
+  qty?: number,
 ): string {
   try {
     const u = new URL(rawUrl);
@@ -18,6 +20,16 @@ function buildProductUrl(
     u.searchParams.set("utm_medium", "tutorial");
     u.searchParams.set("utm_campaign", slug);
     u.searchParams.set("utm_content", String(productId));
+    // Pablo 22-may-2026: si tenemos wc_id, agregamos ?add-to-cart=N
+    // que WooCommerce procesa nativamente: agrega al cart Y queda en
+    // la página del producto con notif "Producto añadido". Sin wc_id
+    // solo abre página producto (UX intermedia OK).
+    if (wcId) {
+      u.searchParams.set("add-to-cart", String(wcId));
+      if (qty && qty > 1) {
+        u.searchParams.set("quantity", String(qty));
+      }
+    }
     return u.toString();
   } catch {
     return rawUrl;
@@ -223,20 +235,42 @@ export default function MaterialsList({
             style={{ borderColor: "var(--border-subtle)" }}
           >
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div
-                className="mt-1 flex-shrink-0 w-5 h-5 flex items-center justify-center"
-                style={{ color: product ? "var(--brand-yellow)" : "var(--text-dim)" }}
-              >
-                {product ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <circle cx="12" cy="12" r="9" />
-                  </svg>
-                )}
-              </div>
+              {/* Thumbnail del producto si el match existe + tiene imagen.
+                  Pablo 22-may-2026: el MCP buscar_productos devuelve thumb
+                  100×100, y enrich_linked_products.py scrapea og:image
+                  como fallback. Mejor UX que el checkmark suelto. */}
+              {product?.image_url ? (
+                <div
+                  className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden border"
+                  style={{
+                    borderColor: "var(--border-subtle)",
+                    background: "var(--bg-elevated)",
+                  }}
+                >
+                  <img
+                    src={product.image_url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="mt-1 flex-shrink-0 w-5 h-5 flex items-center justify-center"
+                  style={{ color: product ? "var(--brand-yellow)" : "var(--text-dim)" }}
+                >
+                  {product ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                  )}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div
                   className="font-semibold leading-snug"
@@ -272,7 +306,13 @@ export default function MaterialsList({
                     ${product.price_clp.toLocaleString("es-CL")}
                   </span>
                   <TrackableLink
-                    href={buildProductUrl(product.product_url, slug, product.product_id)}
+                    href={buildProductUrl(
+                      product.product_url,
+                      slug,
+                      product.product_id,
+                      product.wc_id,
+                      m.qty,
+                    )}
                     slug={slug}
                     source="material_list"
                     productId={String(product.product_id)}
