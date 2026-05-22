@@ -41,6 +41,11 @@ ALERTS = {
     "sources_silent_pct_max": 0.30,   # 30%+ sources sin pollear = ingest roto
     "editorial_rejected_ratio_48h_max": 0.60,  # >60% pegado por checklist = prompt mal
     "hero_images_4xx_max": 0,          # Pablo 20-may: cero tolerancia a heros muertos
+    # Pablo 22-may: monitor bajada cadencia 3→2/día
+    "ranked_aging_hours_max": 24,      # oldest ranked sin translatear >24h = warning
+    "published_7d_min": 15,            # caída sostenida (avg pre-bajada 5/día × 7 = 35)
+    "rank_commits_24h_min": 1,         # mínimo 1 corrida ranking en 24h
+    "translate_commits_24h_min": 1,    # mínimo 1 corrida translate en 24h
 }
 
 
@@ -236,6 +241,91 @@ def main():
                 f"{len(heros_4xx)}/{len(hero_checks)} hero images devuelven 4xx/5xx/timeout. "
                 f"Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. "
                 f"Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+            ),
+        })
+
+    # === Métrica 8: Ranked aging (Pablo 22-may bajada cadencia) ===
+    # El oldest tutorial en status='ranked' no debería esperar >24h al
+    # próximo Routine C. Si lo hace, indica que Routine C no corrió o
+    # rejected en bloque sin avanzar.
+    r = db.execute("""
+        SELECT MAX(CAST((julianday('now') - julianday(ranked_at)) * 24 AS INTEGER))
+        FROM tutorials
+        WHERE status='ranked' AND ranked_at IS NOT NULL
+    """).fetchone()
+    ranked_aging_h = r[0] or 0
+    report["metrics"]["ranked_aging_hours"] = ranked_aging_h
+    if ranked_aging_h > ALERTS["ranked_aging_hours_max"]:
+        report["alerts"].append({
+            "severity": "warning",
+            "metric": "ranked_aging_hours",
+            "value": ranked_aging_h,
+            "threshold": ALERTS["ranked_aging_hours_max"],
+            "message": (
+                f"Tutorial ranked más viejo lleva {ranked_aging_h}h esperando "
+                f"translate. Routine C puede estar fallando o cadencia 2/día "
+                f"insuficiente — considerar volver a 3/día (ver AGENTS.md)."
+            ),
+        })
+
+    # === Métrica 9: Published rate sostenido (caída detecta cadencia mal) ===
+    r = db.execute("""
+        SELECT COUNT(*) FROM tutorials
+        WHERE status='published' AND published_at >= datetime('now', '-7 days')
+    """).fetchone()
+    published_7d = r[0]
+    report["metrics"]["published_7d"] = published_7d
+    if published_7d < ALERTS["published_7d_min"]:
+        report["alerts"].append({
+            "severity": "warning",
+            "metric": "published_7d",
+            "value": published_7d,
+            "threshold": ALERTS["published_7d_min"],
+            "message": (
+                f"Solo {published_7d} publicaciones en 7d (baseline pre-bajada "
+                f"22-may era ~35/7d). Si sostenido 3+ días, revertir cadencia "
+                f"a 3/día via RemoteTrigger (cron viejo en AGENTS.md)."
+            ),
+        })
+
+    # === Métrica 10: Corridas routine recientes (verificar que crons disparan) ===
+    # Heurística: buscar timestamps únicos de ranked_at (cada corrida marca un grupo)
+    # y translated_at en últimas 24h. Si 0 grupos → routine no corrió.
+    r = db.execute("""
+        SELECT COUNT(DISTINCT strftime('%Y-%m-%d %H', ranked_at))
+        FROM tutorials
+        WHERE ranked_at >= datetime('now', '-24 hours')
+    """).fetchone()
+    rank_runs_24h = r[0] or 0
+    report["metrics"]["rank_runs_24h"] = rank_runs_24h
+    if rank_runs_24h < ALERTS["rank_commits_24h_min"]:
+        report["alerts"].append({
+            "severity": "critical",
+            "metric": "rank_runs_24h",
+            "value": rank_runs_24h,
+            "threshold": ALERTS["rank_commits_24h_min"],
+            "message": (
+                f"Cero corridas de Ranking en 24h (debería ser 2/día). "
+                f"Verificar trigger CCR trig_018awZKUDjfX8JqWmh5x5Mi4 enabled."
+            ),
+        })
+
+    r = db.execute("""
+        SELECT COUNT(DISTINCT strftime('%Y-%m-%d %H', translated_at))
+        FROM tutorials
+        WHERE translated_at >= datetime('now', '-24 hours')
+    """).fetchone()
+    translate_runs_24h = r[0] or 0
+    report["metrics"]["translate_runs_24h"] = translate_runs_24h
+    if translate_runs_24h < ALERTS["translate_commits_24h_min"]:
+        report["alerts"].append({
+            "severity": "critical",
+            "metric": "translate_runs_24h",
+            "value": translate_runs_24h,
+            "threshold": ALERTS["translate_commits_24h_min"],
+            "message": (
+                f"Cero corridas de Translation en 24h (debería ser 2/día). "
+                f"Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
             ),
         })
 
