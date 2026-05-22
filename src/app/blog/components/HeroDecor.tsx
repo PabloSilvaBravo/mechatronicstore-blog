@@ -22,27 +22,43 @@ export default function HeroDecor() {
         className="absolute inset-0 bg-dot-grid bg-dot-grid-fade opacity-50"
       />
 
-      {/* Blob purple top-left — vibe orgánico */}
+      {/* Blob purple top-left — vibe orgánico.
+          Pablo 22-may-2026 fix FOUC: TODOS los estilos del blob están
+          inline (border-radius, gradient, blur). Si solo usás clase
+          .bg-blob-purple, durante los ms previos a hidratar el CSS, el
+          div se ve como rectángulo sólido — bug visible al recargar. */}
       <div
-        className="bg-blob-purple"
+        aria-hidden
         style={{
+          position: "absolute",
+          pointerEvents: "none",
           width: "560px",
           height: "560px",
           top: "-120px",
           left: "-180px",
           opacity: 0.5,
+          borderRadius: "9999px",
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--brand-purple) 35%, transparent) 0%, transparent 70%)",
+          filter: "blur(40px)",
         }}
       />
 
-      {/* Blob yellow bottom-right */}
+      {/* Blob yellow bottom-right — idem inline fix FOUC */}
       <div
-        className="bg-blob-yellow"
+        aria-hidden
         style={{
+          position: "absolute",
+          pointerEvents: "none",
           width: "440px",
           height: "440px",
           bottom: "-100px",
           right: "-120px",
           opacity: 0.35,
+          borderRadius: "9999px",
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--brand-yellow) 25%, transparent) 0%, transparent 70%)",
+          filter: "blur(50px)",
         }}
       />
 
