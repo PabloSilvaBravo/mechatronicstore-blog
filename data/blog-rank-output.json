@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-21T20:38:46Z",
+  "ranked_at": "2026-05-22T18:37:30Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,287 +25,91 @@
   },
   "rankings": [
     {
-      "id": "8abf350193a7",
+      "id": "e248e2e42bd2",
       "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 3,
-        "code_quality": 1,
-        "materials_clarity": 1,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 1,
-        "value_added": 2,
-        "originality_potential": 2
-      },
-      "combined_score": 0.170,
-      "verdict": "Noticia comercial sobre el Google I/O 2026 y la elección de un iPhone para la demo. Cero contenido técnico, ningún proyecto reproducible, sin downloadables. Fuera del scope editorial maker.",
-      "is_blocked": true,
-      "blocked_reason": "Noticia/evento comercial sin proyecto técnico ni componente DIY reproducible",
-      "matched_products_hint": [],
-      "re_angulation_hint": "No reangulable: noticia pura sin contenido técnico"
-    },
-    {
-      "id": "8282b6c88ee3",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 4,
-        "code_quality": 1,
-        "materials_clarity": 5,
-        "step_completeness": 2,
-        "relevance_to_store_catalog": 2,
-        "value_added": 2,
-        "originality_potential": 3
-      },
-      "combined_score": 0.260,
-      "verdict": "Review comercial de un disipador be quiet! sin proyecto técnico ni componente reproducible. No encaja con catálogo MechatronicStore y no aporta valor maker.",
-      "is_blocked": true,
-      "blocked_reason": "Review comercial puro sin proyecto técnico DIY",
-      "matched_products_hint": [],
-      "re_angulation_hint": "No reangulable: review de producto fuera de catálogo"
-    },
-    {
-      "id": "c203ebdb148d",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 4,
-        "code_quality": 1,
-        "materials_clarity": 1,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 1,
-        "value_added": 2,
-        "originality_potential": 2
-      },
-      "combined_score": 0.180,
-      "verdict": "Resumen de keynote del Google I/O 2026. Noticia sin proyecto técnico ni downloadables, sin relación con el catálogo de electrónica maker de MechatronicStore.",
-      "is_blocked": true,
-      "blocked_reason": "Noticia/evento corporativo sin proyecto técnico reproducible",
-      "matched_products_hint": [],
-      "re_angulation_hint": "No reangulable: cobertura de evento sin componente DIY"
-    },
-    {
-      "id": "5da8c2a6de49",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 1,
-        "materials_clarity": 5,
-        "step_completeness": 4,
-        "relevance_to_store_catalog": 8,
-        "value_added": 3,
-        "originality_potential": 3
-      },
-      "combined_score": 0.470,
-      "verdict": "Guia teorica de tipos de LED en espanol. Sin codigo, sin downloadables y altamente generica: hay cientos de versiones equivalentes en la web. Riesgo de plagio fuerte.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["LED 5mm", "LED SMD", "LED RGB", "LED infrarrojo", "LED UV"],
-      "re_angulation_hint": "Convertir en guia de compra LED con tabla SKU MechatronicStore y ejemplos PCB"
-    },
-    {
-      "id": "111ad9c76d2e",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 3,
-        "materials_clarity": 5,
-        "step_completeness": 5,
-        "relevance_to_store_catalog": 8,
-        "value_added": 3,
-        "originality_potential": 4
-      },
-      "combined_score": 0.515,
-      "verdict": "Articulo sobre que es un LED y como funciona, en espanol. Incluye circuito basico de polarizacion pero sin code, sin GitHub, sin esquemas descargables. Tutorial muy difundido.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["LED 5mm", "resistor", "protoboard", "bateria 9V"],
-      "re_angulation_hint": "Re-angular como tutorial practico con sketch Arduino PWM y dimmer fisico"
-    },
-    {
-      "id": "25c6f1329878",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 6,
-        "code_quality": 1,
-        "materials_clarity": 4,
-        "step_completeness": 4,
-        "relevance_to_store_catalog": 7,
-        "value_added": 2,
-        "originality_potential": 3
-      },
-      "combined_score": 0.405,
-      "verdict": "Texto descriptivo sobre resistores fijos (carbon, metal, bobinado, SMD). Sin proyecto, sin codigo, sin downloadables. Contenido enciclopedico muy generico y plagiable.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["resistor 1/4W", "resistor SMD 0805", "kit resistores"],
-      "re_angulation_hint": "Re-enfocar como guia visual calculo R limitadora con calculadora interactiva"
-    },
-    {
-      "id": "219b7a2a5e09",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 5,
-        "materials_clarity": 7,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 7,
-        "value_added": 4,
-        "originality_potential": 5
-      },
-      "combined_score": 0.580,
-      "verdict": "Explica fotodiodo y propone un sensor de incendios con BC547, zumbador y LED. Lista de materiales clara pero sin codigo ni GitHub. Proyecto interesante pero ya muy difundido.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["fotodiodo IR", "BC547", "buzzer activo", "LED 5mm", "resistor 470 ohm", "protoboard"],
-      "re_angulation_hint": "Extender sensor de incendios con ESP32 y notificacion Telegram con dataset OpAmp"
-    },
-    {
-      "id": "50d30e0a333d",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 1,
-        "stl_files": 0,
-        "code_files": 0,
+        "code_files": 1,
         "pcb_files": 0,
         "libraries": 0,
         "pdf_schemas": 0,
         "total_distinct": 1
       },
       "scores": {
-        "pedagogy": 4,
-        "code_quality": 1,
-        "materials_clarity": 3,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 7,
+        "pedagogy": 8,
+        "code_quality": 7,
+        "materials_clarity": 8,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 9,
+        "value_added": 4,
+        "originality_potential": 7
+      },
+      "combined_score": 0.715,
+      "verdict": "Tutorial sólido de presencia BLE con ESPresense y ESP32, pero fuente en español y solo YAML como downloadable. Riesgo plagio alto si copiamos directo, requiere ángulo único.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["ESP32", "ESP32 DevKit", "Cable USB"],
+      "re_angulation_hint": "Extender con automatizaciones multi-room y troubleshooting RSSI por habitación"
+    },
+    {
+      "id": "190384df43d0",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 1,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 3,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 8,
         "value_added": 3,
         "originality_potential": 4
       },
-      "combined_score": 0.350,
-      "verdict": "Anuncio del Raspberry Pi AI HAT+ 2 con Hailo-10H. Es noticia de producto, no tutorial. Solo menciona repo de Hailo. No reproducible como proyecto.",
-      "is_blocked": true,
-      "blocked_reason": "Noticia/anuncio de producto sin tutorial tecnico reproducible",
-      "matched_products_hint": ["Raspberry Pi 5"],
-      "re_angulation_hint": "No reangulable como tutorial hasta tener guia Hailo deploy local LLM"
-    },
-    {
-      "id": "b34866fff43e",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 5,
-        "code_quality": 1,
-        "materials_clarity": 3,
-        "step_completeness": 2,
-        "relevance_to_store_catalog": 4,
-        "value_added": 2,
-        "originality_potential": 5
-      },
-      "combined_score": 0.310,
-      "verdict": "Reportaje empresarial sobre Smart Materials en Jaen y su fabricacion de filamentos. Historia interesante pero sin proyecto tecnico ni downloadables. No es tutorial maker.",
+      "combined_score": 0.520,
+      "verdict": "Introducción básica a ESP32-CAM en español, sin código real ni descargables concretos. Demasiado genérico, hay cientos de intros iguales.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["filamento PLA", "filamento PETG", "filamento TPU"],
-      "re_angulation_hint": "Convertir en guia tecnica comparativa de tipos de filamento para impresoras del catalogo"
+      "matched_products_hint": ["ESP32-CAM", "Convertidor USB Serial", "Cable USB"],
+      "re_angulation_hint": "Combinar intro con proyecto streaming MJPEG completo y caja STL imprimible"
     },
     {
-      "id": "38c2ae5727fa",
+      "id": "dc1cc5dbea74",
       "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
-        "code_files": 0,
+        "code_files": 1,
         "pcb_files": 0,
         "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
+        "pdf_schemas": 1,
+        "total_distinct": 2
       },
       "scores": {
-        "pedagogy": 4,
-        "code_quality": 1,
-        "materials_clarity": 1,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 1,
-        "value_added": 2,
+        "pedagogy": 6,
+        "code_quality": 5,
+        "materials_clarity": 7,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 8,
+        "value_added": 4,
         "originality_potential": 3
       },
-      "combined_score": 0.190,
-      "verdict": "Noticia sobre la torre Tor Alva impresa en 3D con hormigon en Suiza. Articulo de arquitectura, no proyecto maker reproducible. Sin relacion con catalogo.",
-      "is_blocked": true,
-      "blocked_reason": "Noticia de arquitectura/megaconstruccion sin proyecto DIY reproducible",
-      "matched_products_hint": [],
-      "re_angulation_hint": "No reangulable: escala industrial fuera del scope maker"
+      "combined_score": 0.555,
+      "verdict": "Blink LED en ESP32-CAM, contenido extremadamente genérico en español. Originalidad muy baja, no aporta valor diferenciador.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["ESP32-CAM", "Convertidor USB Serial", "ESP32-CAM-MB"],
+      "re_angulation_hint": "Saltar blink y mostrar control del flash via web server con auth básica"
     },
     {
-      "id": "eb83b73c21ab",
+      "id": "e283bf7ee8bc",
       "source_language": "es",
       "downloadables_detected": {
         "github_repos": 0,
@@ -317,104 +121,188 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 4,
-        "code_quality": 1,
-        "materials_clarity": 2,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 4,
-        "value_added": 2,
-        "originality_potential": 4
+        "pedagogy": 2,
+        "code_quality": 0,
+        "materials_clarity": 0,
+        "step_completeness": 0,
+        "relevance_to_store_catalog": 0,
+        "value_added": 1,
+        "originality_potential": 2
       },
-      "combined_score": 0.260,
-      "verdict": "Anuncio de la impresora Mova AtomForm Palette 300 con ruleta de 12 boquillas. Noticia de producto, no tutorial. Sin downloadables ni componente DIY.",
+      "combined_score": 0.080,
+      "verdict": "Noticia y opinión sobre Google I/O 2026 y el iPhone. No es tutorial técnico ni proyecto DIY, no aporta a la línea editorial del blog.",
       "is_blocked": true,
-      "blocked_reason": "Noticia/anuncio de producto comercial sin proyecto tecnico reproducible",
-      "matched_products_hint": ["impresora 3D"],
-      "re_angulation_hint": "No reangulable: anuncio de producto de gama alta fuera del scope DIY"
+      "blocked_reason": "Noticia tecnológica y opinión, no proyecto técnico — fuera de scope editorial del blog",
+      "matched_products_hint": [],
+      "re_angulation_hint": "N/A — bloqueado por no ser contenido técnico DIY"
     },
     {
-      "id": "56d27729ad60",
+      "id": "1f0daf518baa",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 2,
+        "code_quality": 0,
+        "materials_clarity": 1,
+        "step_completeness": 0,
+        "relevance_to_store_catalog": 0,
+        "value_added": 1,
+        "originality_potential": 1
+      },
+      "combined_score": 0.075,
+      "verdict": "Review de lanzamiento comercial de tarjeta de sonido Creative. No es proyecto técnico DIY ni encaja con catálogo de electrónica maker.",
+      "is_blocked": true,
+      "blocked_reason": "Review/lanzamiento comercial sin proyecto técnico — no encaja con scope editorial",
+      "matched_products_hint": [],
+      "re_angulation_hint": "N/A — bloqueado por ser review comercial"
+    },
+    {
+      "id": "ca35c83050a0",
       "source_language": "es",
       "downloadables_detected": {
         "github_repos": 1,
-        "stl_files": 1,
-        "code_files": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 1,
+        "total_distinct": 4
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 8,
+        "materials_clarity": 9,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 9,
+        "value_added": 7,
+        "originality_potential": 6
+      },
+      "combined_score": 0.780,
+      "verdict": "Reloj digital muy completo con código, libs propias, repo y PDF esquemático. Buen valor añadido pero ángulo común; fuente en español con riesgo plagio.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Arduino Nano Every", "DS3231", "Display 7 segmentos", "Protoboard 830", "Transistor 2N2222", "Resistencia 1K", "Pushbutton"],
+      "re_angulation_hint": "Añadir alarma y ajuste por encoder rotatorio en lugar de dos botones"
+    },
+    {
+      "id": "dcd4e034e1e3",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 8,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 9,
+        "value_added": 5,
+        "originality_potential": 4
+      },
+      "combined_score": 0.675,
+      "verdict": "Termómetro LM35+LCD básico en español. Código limpio pero combinación extremadamente común con miles de tutoriales idénticos en la web.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Arduino Uno R3", "LM35", "LCD 16x2", "Potenciómetro 10K", "Protoboard 830", "Cables Dupont"],
+      "re_angulation_hint": "Reemplazar LM35 por DS18B20 y añadir logging en SD con alertas"
+    },
+    {
+      "id": "e7ddfe8d4968",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 2,
         "pcb_files": 0,
         "libraries": 0,
         "pdf_schemas": 0,
         "total_distinct": 2
       },
       "scores": {
-        "pedagogy": 5,
-        "code_quality": 2,
-        "materials_clarity": 5,
-        "step_completeness": 3,
-        "relevance_to_store_catalog": 8,
-        "value_added": 4,
-        "originality_potential": 4
-      },
-      "combined_score": 0.475,
-      "verdict": "Listado de 18 ideas para Semana Santa con Arduino, Raspberry Pi, NAS y Ambilight. Menciona Thingiverse y Alexa Pi en GitHub pero no profundiza ni propone tutoriales completos.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino UNO", "Raspberry Pi 4", "tira LED", "sensor humedad suelo", "starter kit"],
-      "re_angulation_hint": "Profundizar UNO de esos proyectos (Ambilight Raspberry) como tutorial completo con sketch"
-    },
-    {
-      "id": "61e518b90530",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 1,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 1
-      },
-      "scores": {
-        "pedagogy": 5,
-        "code_quality": 2,
-        "materials_clarity": 3,
-        "step_completeness": 3,
-        "relevance_to_store_catalog": 6,
-        "value_added": 4,
-        "originality_potential": 5
-      },
-      "combined_score": 0.430,
-      "verdict": "Lista de 17 simuladores Arduino (Tinkercad, Wokwi, Proteus, Fritzing). Util pero solo recopilacion de enlaces externos, sin tutorial ni proyecto propio descargable.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino UNO", "Arduino Mega", "kit Arduino"],
-      "re_angulation_hint": "Tutorial practico: simular sketch DHT22 en Wokwi y exportar a Arduino UNO real"
-    },
-    {
-      "id": "eb21e661e4aa",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 1,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 1
-      },
-      "scores": {
-        "pedagogy": 6,
-        "code_quality": 4,
+        "pedagogy": 7,
+        "code_quality": 8,
         "materials_clarity": 7,
-        "step_completeness": 5,
+        "step_completeness": 7,
         "relevance_to_store_catalog": 9,
         "value_added": 5,
-        "originality_potential": 6
+        "originality_potential": 5
       },
-      "combined_score": 0.620,
-      "verdict": "Seleccion de 11 proyectos Halloween con Arduino y Raspberry Pi: listas de materiales claras, enlaces a Arduino Project Hub e Instructables. Falta codigo propio y desarrollo paso a paso original.",
+      "combined_score": 0.680,
+      "verdict": "Conexión WiFi básica con Pico W en MicroPython, dos ejemplos completos. Útil pero ángulo muy común en español, requiere extensión fuerte.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["Arduino UNO", "Raspberry Pi 4", "sensor PIR", "servomotor", "ESP8266", "LED 5mm", "protoboard", "rele 4 canales"],
-      "re_angulation_hint": "Re-fabricar UN proyecto (calabaza Arduino con ESP) como tutorial completo con sketch propio"
+      "matched_products_hint": ["Raspberry Pi Pico W", "Cable USB Micro B"],
+      "re_angulation_hint": "Sumar reconexión automática con backoff y deep sleep para proyectos a batería"
+    },
+    {
+      "id": "eb92d88a18a8",
+      "source_language": "es",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 8,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 9,
+        "value_added": 5,
+        "originality_potential": 5
+      },
+      "combined_score": 0.690,
+      "verdict": "Alarma PIR con Arduino y buzzer, código limpio usando millis sin bloquear. Ángulo común en español; sin downloads adicionales reduce diferenciación.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Arduino Uno R3", "HC-SR501", "Buzzer activo", "Pushbutton", "Protoboard 830"],
+      "re_angulation_hint": "Añadir notificación Telegram via puente WiFi y log temporal en SD"
+    },
+    {
+      "id": "1ec722f7c21b",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 4,
+        "pdf_schemas": 0,
+        "total_distinct": 2
+      },
+      "scores": {
+        "pedagogy": 9,
+        "code_quality": 9,
+        "materials_clarity": 9,
+        "step_completeness": 9,
+        "relevance_to_store_catalog": 9,
+        "value_added": 8,
+        "originality_potential": 8
+      },
+      "combined_score": 0.865,
+      "verdict": "Datalogger ESP32+BME280+microSD con web server y gráficos interactivos Chart.js. Tutorial Random Nerd muy completo, fuente en inglés, alto valor añadido y reangulable.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["ESP32", "BME280", "Módulo microSD", "MicroSD card", "Protoboard 830", "Cables Dupont"],
+      "re_angulation_hint": "Adaptar a DHT22+DS18B20 dual y servir dashboard offline en modo AP"
     }
   ]
 }
