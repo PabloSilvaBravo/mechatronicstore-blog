@@ -46,13 +46,13 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: python3 scripts/dump_blog_rank_input.py --limit 30
+        run: python3 scripts/dump_blog_rank_input.py --limit 60
 
       - name: Dump translate input (post-ranking)
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: python3 scripts/dump_blog_translate_input.py --limit 10
+        run: python3 scripts/dump_blog_translate_input.py --limit 15
 
       - name: Commit + push rank+translate inputs
         run: |

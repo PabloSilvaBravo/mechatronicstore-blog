@@ -4,6 +4,10 @@ name: Blog Rank Prep (refresh input)
 # el rank-input solo se generaba después del ingest (04:00 UTC). La 2da y 3ra
 # corrida diaria de Routine B leían input stale de hasta 16h.
 #
+# Pablo 22-may-2026: bajamos cadencia 3/día → 2/día con cap duplicado.
+# Backlog real 0, ratio rank→publish ~9% justifica menos corridas. Ranking
+# slots nuevos 06:30 + 18:30 UTC. Refresh corre 5 min antes (06:25 + 18:25).
+#
 # Este workflow corre 5 min antes de cada Routine B y refresca el dump con
 # los drafts más recientes (incluye refetch promotes + cambios manuales).
 #
@@ -13,7 +17,7 @@ name: Blog Rank Prep (refresh input)
 on:
   schedule:
     # 25 min después de la hora pero antes de cada rank (que es :30)
-    - cron: "25 4,12,20 * * *"
+    - cron: "25 6,18 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -42,13 +46,13 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: python3 scripts/dump_blog_rank_input.py --limit 30
+        run: python3 scripts/dump_blog_rank_input.py --limit 60
 
       - name: Dump fresh translate input (paralelo)
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: python3 scripts/dump_blog_translate_input.py --limit 10
+        run: python3 scripts/dump_blog_translate_input.py --limit 15
 
       - name: Commit + push si cambió
         run: |

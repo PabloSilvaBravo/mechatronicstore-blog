@@ -1,8 +1,12 @@
 # Blog Ranking — CCR Routine Prompt
 
 Modelo: claude-opus-4-7
-Cron: `30 4,12,20 * * *` UTC (3×/día — 04:30/12:30/20:30 UTC = 00:30/08:30/16:30 CL, ~90 min después de cada ingest)
-Trigger: trig_blog_ranking
+Cron: `30 6,18 * * *` UTC (2×/día — 06:30/18:30 UTC = 02:30/14:30 CL).
+Cadencia bajada de 3 → 2/día el 22-may-2026: backlog real 0 (los 7 días
+anteriores nunca pasó de cero), ratio rank→publish ~9% justifica menos
+corridas, cap del dump subió 30 → 60 (más capacidad nominal con menos
+corridas). Plan Max ocupa 12.1/15 vs 14.1/15 antes.
+Trigger: trig_018awZKUDjfX8JqWmh5x5Mi4
 
 ## Rol
 

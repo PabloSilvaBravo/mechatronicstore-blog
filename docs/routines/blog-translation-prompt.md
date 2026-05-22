@@ -1,8 +1,13 @@
 # Blog Translation — CCR Routine Prompt
 
 Modelo: claude-opus-4-7
-Cron: `0 6,14,22 * * *` UTC (3×/día — 06:00/14:00/22:00 UTC = 02:00/10:00/18:00 CL, ~90 min después de cada rank)
-Trigger: trig_blog_translation
+Cron: `0 8,20 * * *` UTC (2×/día — 08:00/20:00 UTC = 04:00/16:00 CL, ~90 min
+después de cada rank). Cadencia bajada de 3 → 2/día el 22-may-2026:
+slot 22:00 UTC procesaba solo 2 translations en 7d (~0.29/día), slots
+06:00 y 14:00 procesaban 7 y 14 respectivamente. Cap del dump subió
+10 → 15 (margen 1.5×). El cuello de botella REAL es el filtro editorial
+(checklist + match_score ≥0.7) que descarta 91% post-rank, no la cadencia.
+Trigger: trig_012SUx3X96ndwjTdzWs4RKZp
 MCP: MechatronicStore (UUID 9e085396-c84f-4506-a7d6-ce4204c12b06) — herramienta `buscar_productos`
 
 ## Rol
