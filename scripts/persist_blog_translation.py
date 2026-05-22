@@ -29,12 +29,30 @@ _THUMB_SIZE_RE = _re.compile(
     r"-\d+x\d+(\.(?:jpg|jpeg|png|webp|gif|avif))(\?.*)?$", _re.IGNORECASE
 )
 
+# Placeholders genéricos del catálogo MS (Flatsome usa estos cuando el
+# producto no tiene foto propia subida). Skipearlos para que dos tutoriales
+# que linkean el mismo producto-sin-foto NO terminen con el mismo hero.
+# Pablo 22-may-2026: matcheamos por PREFIJO porque las URLs en
+# linked_products_json incluyen sufijos -100x100 / -600x600 etc.
+GENERIC_PLACEHOLDER_PREFIXES = (
+    "portada-productos-",  # cubre portada-productos-600x600*, -100x100, etc.
+)
+
 
 def to_full_res(url: str) -> str:
     """Quita el sufijo -WxH de un URL de WP image para usar full-res."""
     if not url:
         return url
     return _THUMB_SIZE_RE.sub(r"\1\2", url, count=1)
+
+
+def is_generic_placeholder(url: str) -> bool:
+    """True si el URL es uno de los placeholders genéricos del store (prefix match)."""
+    if not url:
+        return False
+    # Extraer basename y comparar contra prefijos conocidos
+    basename = url.rsplit("/", 1)[-1]
+    return any(basename.startswith(p) for p in GENERIC_PLACEHOLDER_PREFIXES)
 
 ROOT = Path(__file__).parent.parent
 INPUT = ROOT / "data" / "blog-translate-output.json"
@@ -188,13 +206,35 @@ def main():
         # cualquier tutorial futuro sin hero válido.
         if not hero_url:
             linked = tr.get("linked_products") or []
+            # Cross-tutorial dedup: cargar heros ya usados por otros published
+            # para NO replicar el mismo hero. Si producto A es usado como hero
+            # de tutorial X, tutorial Y debe elegir producto B siguiente.
+            already_used = set()
+            try:
+                rows_used = db.execute(
+                    "SELECT hero_image_url FROM tutorials WHERE status='published' "
+                    "AND hero_image_url IS NOT NULL AND id != ?",
+                    [tid],
+                ).fetchall()
+                already_used = {r[0] for r in rows_used if r[0]}
+            except Exception as e:
+                print(f"    ⚠ dedup query falló: {e}")
+
             for p in linked:
                 img = p.get("image_url")
                 score = p.get("match_score") or 0
-                if img and score >= 0.85:
-                    hero_url = to_full_res(img)
-                    print(f"    ↳ hero fallback (catálogo {p.get('product_id','?')}): {hero_url[:70]}")
-                    break
+                if not img or score < 0.85:
+                    continue
+                candidate = to_full_res(img)
+                if is_generic_placeholder(candidate):
+                    print(f"    ⊘ skip {p.get('product_id','?')}: placeholder genérico")
+                    continue
+                if candidate in already_used:
+                    print(f"    ⊘ skip {p.get('product_id','?')}: hero ya usado por otro tutorial")
+                    continue
+                hero_url = candidate
+                print(f"    ↳ hero fallback (catálogo {p.get('product_id','?')}): {hero_url[:70]}")
+                break
 
         if hero_url:
             print(f"    hero final: {hero_url[:80]}")
