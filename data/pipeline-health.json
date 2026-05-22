@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-05-22T18:39:47.249640+00:00",
+  "checked_at": "2026-05-22T19:54:07.866679+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 2,
@@ -12,20 +12,40 @@
     "sources_silent_pct": 0.0,
     "editorial_rejected_48h": 0,
     "editorial_rejected_ratio": 0.0,
-    "heros_checked": 27,
-    "heros_broken": 20,
+    "heros_checked": 30,
+    "heros_broken": 23,
     "heros_broken_urls": [
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+      },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/a30ba3ea3667/94fad4d997197ae2.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
       },
       {
         "status": 403,
@@ -33,30 +53,10 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/2a3ef6e75e08/728daeb2cc24f36a.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4e1610cba496/77a3c9b2422a98d0.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/866a587ce24a/00a427b93e13ecb1.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/e80c44751324/6003ca20dbe7645a.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
       }
     ],
-    "ranked_aging_hours": 0,
+    "ranked_aging_hours": 1,
     "published_7d": 34,
     "rank_runs_24h": 2,
     "translate_runs_24h": 2,
@@ -70,9 +70,9 @@
     {
       "severity": "warning",
       "metric": "heros_broken",
-      "value": 20,
+      "value": 23,
       "threshold": 0,
-      "message": "20/27 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+      "message": "23/30 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
     }
   ],
   "status": "warning"
