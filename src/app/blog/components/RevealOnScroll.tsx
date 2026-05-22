@@ -28,9 +28,19 @@ interface Props {
   children: ReactNode;
   /** Si true, los hijos directos reciben transition-delay escalonado */
   stagger?: boolean;
-  /** Threshold del observer — % visible para disparar (default 0.15) */
+  /** Threshold del observer — % visible para disparar (default 0, dispara
+   *  apenas asome 1px). Pablo 22-may-2026: 0.15 era demasiado restrictivo
+   *  para grids altos (3000px+ de "Más tutoriales") — pedía scrollear
+   *  ~450px dentro del bloque antes de animar, daba sensación de lazy
+   *  load roto. */
   threshold?: number;
-  /** Margin del rootRect — útil para disparar antes (default "0px 0px -10% 0px") */
+  /** Margin del rootRect — positivo expande el root (preload antes de
+   *  entrar al viewport), negativo lo contrae (dispara tarde). Default
+   *  "0px 0px 240px 0px" = el observer considera el viewport 240px más
+   *  abajo de lo real, así el bloque se anima cuando aún está 240px por
+   *  debajo del fold — el usuario lo ve aparecer en la transición de
+   *  scroll, no después. Pablo 22-may-2026: el default anterior
+   *  "0px 0px -10% 0px" disparaba tarde. */
   rootMargin?: string;
   /** className extra (se mergea con `reveal-on-scroll`) */
   className?: string;
@@ -41,8 +51,8 @@ interface Props {
 export default function RevealOnScroll({
   children,
   stagger = false,
-  threshold = 0.15,
-  rootMargin = "0px 0px -10% 0px",
+  threshold = 0,
+  rootMargin = "0px 0px 240px 0px",
   className = "",
   as = "div",
 }: Props) {
