@@ -127,10 +127,15 @@ def main():
         # pero NO el slug.
         # Caso primera publicación (status='ranked' o 'translating'): usar
         # slug nuevo del output.
-        if existing_status == "published" and existing_slug:
+        # Pablo 22-may-2026: si el tutorial YA tiene slug (cualquiera sea
+        # su estado), preservarlo. Antes solo lo preservaba si estaba
+        # 'published', pero re-translates manuales (SET status='ranked'
+        # del que ya estaba published) cambiaban el slug → 404 SEO.
+        # COALESCE: prefiere slug existente, fallback al del output.
+        if existing_slug:
             slug_to_use = existing_slug
         else:
-            slug_to_use = tr.get("slug") or existing_slug
+            slug_to_use = tr.get("slug")
 
         # Hero image: prioridad output > existente > fallback fetch og:image
         hero_url = tr.get("hero_image_url") or existing_hero
