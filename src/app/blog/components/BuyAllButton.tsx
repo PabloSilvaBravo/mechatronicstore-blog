@@ -44,8 +44,15 @@ export default function BuyAllButton({ linkedProducts, slug }: Props) {
     setError("");
 
     try {
-      // Sequential fetches. WooCommerce no soporta bulk con un solo request,
-      // así que iteramos. Tarda ~200-500ms por producto.
+      // Pablo 22-may-2026 v2: SECUENCIAL pero con sesiones WC.
+      // Test E2E mostró que paralelo (Promise.all) causa race: WC cart
+      // session lockea entre requests concurrentes y solo persiste ~30-40%
+      // de los adds. Secuencial garantiza que TODOS los productos se
+      // guarden en la session cookie antes del redirect.
+      //
+      // Trade-off: ~300ms por producto = ~3s para 10 productos. Aceptable
+      // vs perder productos del cart.
+      const failed: string[] = [];
       for (const p of addable) {
         const qty = (p as { qty?: number }).qty || 1;
         const url =
@@ -54,15 +61,19 @@ export default function BuyAllButton({ linkedProducts, slug }: Props) {
           `&utm_source=blog&utm_medium=tutorial` +
           `&utm_campaign=${encodeURIComponent(slug)}` +
           `&utm_content=buy_all_${p.wc_id}`;
-        const res = await fetch(url, {
-          method: "GET",
-          credentials: "include", // cookies WC sesión
-          redirect: "follow",
-        });
-        if (!res.ok && res.status !== 0) {
-          throw new Error(`Producto ${p.wc_id} no se agregó (HTTP ${res.status})`);
+        try {
+          const res = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+            redirect: "follow",
+          });
+          if (!res.ok && res.status !== 0) {
+            failed.push(`${p.name_original} (HTTP ${res.status})`);
+          }
+        } catch (err) {
+          failed.push(`${p.name_original} (${err instanceof Error ? err.message : "error"})`);
         }
-        // Track click conversion (best-effort, no bloqueante)
+        // Track conversion best-effort, no esperamos
         fetch("/api/blog/track/click", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -76,11 +87,18 @@ export default function BuyAllButton({ linkedProducts, slug }: Props) {
         }).catch(() => {});
       }
 
+      if (failed.length === addable.length) {
+        throw new Error(`Ningún producto se agregó: ${failed[0]}`);
+      }
+
       setStatus("done");
-      // Pequeño delay para que el usuario vea el "✓ Listo" antes de redirect
+      // 1.2s: tiempo suficiente para que WC commit la session + UX visible
+      // del estado "✓ Listo" antes de navegar
       setTimeout(() => {
-        window.location.href = "https://www.mechatronicstore.cl/cart/?utm_source=blog&utm_medium=tutorial&utm_campaign=" + encodeURIComponent(slug);
-      }, 700);
+        window.location.href =
+          "https://www.mechatronicstore.cl/cart/?utm_source=blog&utm_medium=tutorial&utm_campaign=" +
+          encodeURIComponent(slug);
+      }, 1200);
     } catch (e) {
       setStatus("error");
       setError(e instanceof Error ? e.message : "Error desconocido");

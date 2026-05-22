@@ -56,7 +56,15 @@ OG_IMAGE_RE = re.compile(r'<meta\s+property="og:image"\s+content="([^"]+)"')
 
 
 def resolve_wc_id(permalink: str, timeout: int = 10) -> Optional[int]:
-    """Fetch permalink + regex parse del input add-to-cart. Devuelve WC post_id."""
+    """
+    Fetch permalink + regex parse del input add-to-cart.
+
+    Pablo 22-may-2026 FIX: si WP redirige a OTRO slug (porque el permalink
+    original no existe), el wc_id parsed pertenece al producto del destino,
+    NO al producto original. Detectar el mismatch comparando paths.
+    Si mismatch → return None para que el UI muestre "no disponible" en
+    vez de un link a producto WRONG.
+    """
     try:
         clean_url = permalink.split("?")[0]  # quitar query params (utm, variants)
         resp = requests.get(
@@ -70,6 +78,17 @@ def resolve_wc_id(permalink: str, timeout: int = 10) -> Optional[int]:
     except Exception as e:
         print(f"    ✗ fetch failed: {e}")
         return None
+
+    # Detectar redirect a otro slug → mismatch
+    final_url = resp.url.split("?")[0].rstrip("/")
+    original_url = clean_url.rstrip("/")
+    if final_url != original_url:
+        # WP redirigió. Si los slugs base difieren → producto distinto.
+        original_slug = original_url.rsplit("/", 1)[-1]
+        final_slug = final_url.rsplit("/", 1)[-1]
+        if original_slug and final_slug and original_slug != final_slug:
+            print(f"    ⊘ redirect mismatch: {original_slug} → {final_slug}")
+            return None
 
     # 1) Try main add-to-cart input
     m = WC_ID_RE.search(html)

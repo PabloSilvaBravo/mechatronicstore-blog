@@ -67,17 +67,24 @@ const UNIQUE_TECH_KEYWORDS = new Set([
 ]);
 
 // Componentes GENÉRICOS comunes (no únicos): solo matchean si comparten
-// también un valor (220, 5mm, 10k, etc.).
+// también un valor (220, 5mm, 10k, etc.) — regla R4.
+// O via R5 (Pablo 22-may-2026): single-token generic matchea contra
+// catálogo con mismo token, sin necesidad de valor numérico.
 const GENERIC_COMPONENTS = new Set([
   "led", "leds", "resistencia", "resistencias", "resistor",
   "diodo", "diodos", "transistor", "transistores",
-  "capacitor", "capacitores", "condensador",
+  "capacitor", "capacitores", "condensador", "condensadores",
   "potenciometro", "potenciómetro", "trimpot",
   "protoboard", "breadboard", "matriz", "jumper", "jumpers",
-  "boton", "botón", "pulsador", "switch", "rele", "relé",
-  "servo", "motor", "stepper", "encoder",
+  "boton", "botón", "pulsador", "pulsadores", "switch", "rele", "relé",
+  "servo", "servomotor", "motor", "stepper", "encoder",
   "buzzer", "altavoz", "speaker", "microfono", "micrófono",
-  "fuente", "regulador", "bateria", "batería", "cargador",
+  "fuente", "fuentes", "regulador", "reguladores",
+  "bateria", "batería", "baterias", "baterías",
+  "cargador", "cargadores", "powerbank", "pila", "pilas",
+  "cable", "cables", "header", "headers", "conector", "conectores",
+  "modulo", "módulo", "modulos", "módulos",
+  "antena", "antenas",
 ]);
 
 // Tokens numéricos / valores: 220, 220k, 5mm, 10uf, 3v3, etc.
@@ -158,6 +165,20 @@ function findProduct(
     const compOverlap = [...plGenericComps].filter((t) => mlGenericComps.has(t)).length;
     const valOverlap = [...plValues].filter((t) => mlValues.has(t)).length;
     if (compOverlap >= 1 && valOverlap >= 1) return p;
+
+    // R5 (Pablo 22-may-2026): material es UN solo token GENÉRICO
+    // (protoboard, jumpers, servo, buzzer, fuente) → matchea contra
+    // cualquier producto que tenga ese MISMO token genérico.
+    // Safe porque el LLM ya filtró por match_score ≥ 0.7 al guardar en
+    // linked_products — los matches son editorialmente aprobados.
+    // Sin R5, materiales single-token quedaban como "no disponible"
+    // aunque el producto SÍ estaba en linked_products (e.g. "Protoboard"
+    // como material no matcheaba "Protoboard 830 puntos" del catálogo
+    // porque solo comparte 1 token de 4+ chars).
+    if (mlTokensAll.length <= 2 && mlGenericComps.size >= 1) {
+      const sharedGeneric = [...plGenericComps].some((t) => mlGenericComps.has(t));
+      if (sharedGeneric) return p;
+    }
   }
 
   return undefined;
