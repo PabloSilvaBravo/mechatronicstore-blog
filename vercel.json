@@ -5,5 +5,5 @@
       "main": true
     }
   },
-  "ignoreCommand": "bash -c 'if git diff --quiet HEAD^ HEAD -- src public package.json next.config.* tsconfig.json drizzle.config.* postcss.config.* tailwind.config.* vercel.json; then echo \"only data/* or docs/* changed — skip deploy\"; exit 0; else echo \"code changed — deploy\"; exit 1; fi'"
+  "ignoreCommand": "bash -c 'if ! git rev-parse HEAD^ >/dev/null 2>&1; then echo \"no parent (shallow clone) — deploy\"; exit 1; fi; if git diff --quiet HEAD^ HEAD -- src public package.json next.config.* tsconfig.json drizzle.config.* postcss.config.* tailwind.config.* vercel.json; then echo \"only data/* or docs/* changed — skip deploy\"; exit 0; else echo \"code changed — deploy\"; exit 1; fi'"
 }
