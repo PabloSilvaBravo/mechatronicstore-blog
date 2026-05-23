@@ -35,9 +35,17 @@ def main():
     # obligatoria si es=es vs traducción + bonus angulación si es=en).
     # cs_image_quality/cs_novelty ahora contienen value_added/originality
     # (schema reuse, mismo nombre de columna).
+    # Pablo 23-may-2026 fase 1.3 — incluir body_html_en (con <img>) y
+    # extra_images_json para que Routine C pueda:
+    #   1. Convertir <img src="..."> a markdown ![](url) inline en body_es
+    #   2. Mapear imágenes extras a steps[].image_url cuando aplique
+    # Cap body_html a 40000 chars (~10K tokens) para no explotar el
+    # presupuesto Opus. Si supera, se trunca al final.
     sql = """
         SELECT t.id, t.slug, t.source_id, t.source_url, t.title_en, t.subtitle_en,
                SUBSTR(t.body_en, 1, 30000) AS body_en_excerpt,
+               SUBSTR(t.body_html_en, 1, 40000) AS body_html_en_excerpt,
+               t.extra_images_json,
                t.hero_image_url, t.combined_score,
                t.cs_pedagogy, t.cs_code_quality, t.cs_materials_clarity,
                t.cs_step_completeness, t.cs_image_quality,
@@ -75,6 +83,11 @@ def main():
     for r in rows:
         tid = r[0]
         hints = rank_hints_by_id.get(tid, {})
+        # Pablo 23-may-2026 fase 1.3 — parsear extra_images_json
+        try:
+            extra_images = json.loads(r[8]) if r[8] else []
+        except (json.JSONDecodeError, TypeError):
+            extra_images = []
         candidates.append({
             "id": tid,
             "slug": r[1],
@@ -83,23 +96,28 @@ def main():
             "title_en": r[4] or "",
             "subtitle_en": r[5] or "",
             "body_en_excerpt": r[6] or "",
-            "hero_image_url": r[7],
-            "combined_score": r[8],
+            # Pablo 23-may-2026 fase 1.3 — body_html con <img> tags + lista
+            # de extras. La routine C debe usar estos para producir markdown
+            # con ![](url) inline y mapear a steps[].image_url.
+            "body_html_en_excerpt": r[7] or "",
+            "extra_images": extra_images[:20],
+            "hero_image_url": r[9],
+            "combined_score": r[10],
             "scores": {
-                "pedagogy": r[9],
-                "code_quality": r[10],
-                "materials_clarity": r[11],
-                "step_completeness": r[12],
+                "pedagogy": r[11],
+                "code_quality": r[12],
+                "materials_clarity": r[13],
+                "step_completeness": r[14],
                 # schema legacy: cs_image_quality almacena value_added
-                "value_added": r[13],
-                "relevance_to_store_catalog": r[14],
+                "value_added": r[15],
+                "relevance_to_store_catalog": r[16],
                 # schema legacy: cs_novelty almacena originality_potential
-                "originality_potential": r[15],
+                "originality_potential": r[17],
             },
             # Pablo 20-may-2026: Routine C necesita source_language para
             # aplicar reglas editoriales (re-angulación obligatoria si es=es).
-            "source_language": r[16] or "other",
-            "source_name": r[17],
+            "source_language": r[18] or "other",
+            "source_name": r[19],
             # Pablo 22-may-2026: hints de Routine B (matched_products_hint
             # + re_angulation_hint). Routine C los usa como checklist
             # obligatorio de productos a buscar + sugerencia angulación.
