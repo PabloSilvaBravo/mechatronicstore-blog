@@ -18,7 +18,14 @@ export const tutorials = sqliteTable("tutorials", {
   // Contenido original (EN)
   title_en: text("title_en"),
   subtitle_en: text("subtitle_en"),
-  body_en: text("body_en"),
+  body_en: text("body_en"),                                 // texto plano (legacy/filter)
+  // Pablo 23-may-2026 Fase 1.1 — body HTML completo y extras de imágenes.
+  // Sin esto el pipeline de translate solo veía texto plano y por eso
+  // los tutoriales terminaban con 1 sola imagen (el hero). El HTML
+  // preserva los <img> inline para que Routine C los convierta a
+  // markdown ![](url) y los mapee a steps[].image_url.
+  body_html_en: text("body_html_en"),                       // HTML completo del scrape (con <img>)
+  extra_images_json: text("extra_images_json"),             // JSON: [url1, url2, ...] (top 20 del scraper)
 
   // Contenido traducido/reescrito (ES-CL)
   title_es: text("title_es"),
