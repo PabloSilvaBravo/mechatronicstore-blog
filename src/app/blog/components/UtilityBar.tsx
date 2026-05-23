@@ -1,11 +1,10 @@
 /**
  * UtilityBar — banner top con mensaje "Envío gratis".
  *
- * Pablo 23-may-2026 v7 — auditoría Playwright del store confirmó:
- * banner-container-fixed del store es bg NEGRO sólido #000000, h 44px,
- * fontSize 15px, color texto blanco PLANO (sin acentos amarillos).
- * Versiones anteriores tenían gradient morado + palabras amarillas
- * — eso era invención que no existe en el store.
+ * Pablo 23-may-2026 v8 — CORRECCIÓN tras review visual de Pablo: la
+ * utility bar del store NO es negra. Es MORADO OSCURO (~#3c1171), no
+ * el negro `#000000` que medía el JS (probablemente leyó
+ * backgroundColor pero el bg visible viene de un layer encima).
  *
  * Server component sin JS.
  */
@@ -15,10 +14,10 @@ export default function UtilityBar() {
       href="https://www.mechatronicstore.cl/envios-y-despachos/?utm_source=blog&utm_medium=utility_bar&utm_campaign=envio_gratis"
       className="block w-full text-center font-medium hover:opacity-90 transition-opacity"
       style={{
-        background: "#000000",
+        background: "#3c1171",
         color: "#ffffff",
-        fontSize: "15px",
-        padding: "8px 12px",
+        fontSize: "14px",
+        padding: "10px 12px",
         letterSpacing: "0.01em",
       }}
     >

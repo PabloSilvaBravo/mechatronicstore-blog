@@ -156,11 +156,21 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
     <header
       className="sticky top-0 z-40"
       style={{
-        // Pablo 23-may-2026 v7 — header outer match con store: bg del
-        // body claro (wrapper #ffffff). Mantener var(--bg-card) que en
-        // light theme es blanco, en dark theme adaptable. Sin border
-        // bottom (store no tiene).
-        backgroundColor: "var(--bg-card)",
+        // Pablo 23-may-2026 v8 — bg BLANCO FIJO + CSS vars locales que
+        // sobrescriben las globales SOLO dentro del header. Esto fuerza
+        // todos los textos (var(--text), var(--text-muted), etc.) a
+        // valores claros independiente de si el resto del blog está en
+        // dark theme. Paridad con store (que no tiene dark mode) sin
+        // tocar 20+ inline styles.
+        backgroundColor: "#ffffff",
+        ["--text" as string]: "#1a1a1a",
+        ["--text-muted" as string]: "#5f5f6e",
+        ["--text-dim" as string]: "#8a8a9a",
+        ["--bg-card" as string]: "#ffffff",
+        ["--bg-hover" as string]: "#f5f5f7",
+        ["--nav-row-bg" as string]: "#f5f5f7",
+        ["--border-subtle" as string]: "rgba(0, 0, 0, 0.08)",
+        color: "#1a1a1a",
       }}
     >
       {/* ─── Row 2: Main bar ──────────────────────────────────────

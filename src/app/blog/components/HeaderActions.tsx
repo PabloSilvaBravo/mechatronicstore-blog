@@ -83,7 +83,9 @@ export default function HeaderActions() {
         COTIZAR
       </a>
 
-      {/* Cart icon — bg púrpura sólido 32×33 radius 12px */}
+      {/* Cart icon — Pablo 23-may-2026 v8: SVG FILLED (estilo store
+          Flatsome icon-cart) en lugar de outline. Cuadrado morado 32×33
+          radius 12 con shopping bag blanco sólido relleno adentro. */}
       <a
         href="https://www.mechatronicstore.cl/cart/?utm_source=blog&utm_medium=header&utm_campaign=cart"
         className="header-icon-btn flex items-center justify-center transition-colors"
@@ -95,20 +97,14 @@ export default function HeaderActions() {
           width="18"
           height="18"
           viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          fill="currentColor"
           aria-hidden
         >
-          <path d="M6 2h12l3 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8l3-6Z" />
-          <path d="M3 8h18" />
-          <path d="M9 13a3 3 0 0 0 6 0" />
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6zm0 2h12l2 2H4l2-2zM4 8h16v12H4V8zm4 2v2a4 4 0 0 0 8 0v-2h-2v2a2 2 0 0 1-4 0v-2H8z" />
         </svg>
       </a>
 
-      {/* Account icon — bg púrpura sólido 32×33 radius 12px */}
+      {/* Account icon — SVG FILLED estilo store icon-user. */}
       <a
         href="https://www.mechatronicstore.cl/mi-cuenta/?utm_source=blog&utm_medium=header&utm_campaign=cuenta"
         className="header-icon-btn hidden sm:flex items-center justify-center transition-colors"
@@ -120,15 +116,10 @@ export default function HeaderActions() {
           width="18"
           height="18"
           viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          fill="currentColor"
           aria-hidden
         >
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 21c0-4.418 3.582-7 8-7s8 2.582 8 7" />
+          <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-8a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 10c-3.87 0-9 1.945-9 5.5V22h18v-2.5c0-3.555-5.13-5.5-9-5.5zm0 2c3.526 0 7 1.71 7 3.5V20H5v-.5c0-1.79 3.474-3.5 7-3.5z" />
         </svg>
       </a>
     </div>
