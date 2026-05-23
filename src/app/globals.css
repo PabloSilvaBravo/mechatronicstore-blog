@@ -575,11 +575,15 @@ input, textarea, select {
   flex: 0 0 10px !important;
 }
 
+/* Pablo 23-may-2026 v9 — match EXACTO con el .ms-kl-text del store:
+ *   font-size: 14px, font-weight: 600, text-transform: uppercase
+ *   sin letter-spacing extra (el store no la tiene).
+ * La versión vieja tenía 13px / 700 / letter-spacing 0.04em que
+ * generaba la diferencia tipográfica que Pablo reportó. */
 .ms-kl-btn .ms-kl-text {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: inherit;
 }
 
