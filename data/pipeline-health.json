@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-05-22T23:05:50.148013+00:00",
+  "checked_at": "2026-05-23T03:40:35.093819+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 0,
@@ -25,7 +25,27 @@
       },
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
+      },
+      {
+        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       },
       {
         "status": 403,
@@ -34,32 +54,12 @@
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
       }
     ],
-    "ranked_aging_hours": 4,
+    "ranked_aging_hours": 9,
     "published_7d": 34,
     "rank_runs_24h": 1,
-    "translate_runs_24h": 1,
+    "translate_runs_24h": 0,
     "counts_by_status": {
       "published": 34,
       "ranked": 2,
@@ -80,6 +80,13 @@
       "value": 23,
       "threshold": 0,
       "message": "23/30 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+    },
+    {
+      "severity": "critical",
+      "metric": "translate_runs_24h",
+      "value": 0,
+      "threshold": 1,
+      "message": "Cero corridas de Translation en 24h (debería ser 2/día). Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
     }
   ],
   "status": "critical"
