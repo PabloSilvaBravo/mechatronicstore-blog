@@ -1,5 +1,9 @@
 "use client";
 
+// Pablo 23-may-2026: bump comment to force Vercel deploy of v4 SearchBar
+// refactor (commit 7f15561 was skipped when a docs-only commit landed
+// right after it, Vercel only honored HEAD^→HEAD diff which only saw docs).
+
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
