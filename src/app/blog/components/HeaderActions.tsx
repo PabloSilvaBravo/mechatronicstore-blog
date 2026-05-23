@@ -83,9 +83,11 @@ export default function HeaderActions() {
         COTIZAR
       </a>
 
-      {/* Cart icon — Pablo 23-may-2026 v8: SVG FILLED (estilo store
-          Flatsome icon-cart) en lugar de outline. Cuadrado morado 32×33
-          radius 12 con shopping bag blanco sólido relleno adentro. */}
+      {/* Cart icon — Pablo 23-may-2026 v9: SVG path EXACTO del icon
+          `shopping-bag` (U+E90A) del font flatsome-icons que usa el
+          store. Extraído de fl-icons.svg, units-per-em=1024, ascent=960.
+          El <g transform="translate(0,960) scale(1,-1)"> flippea el Y
+          del coordinate system de SVG fonts (Y-up) al SVG normal (Y-down). */}
       <a
         href="https://www.mechatronicstore.cl/cart/?utm_source=blog&utm_medium=header&utm_campaign=cart"
         className="header-icon-btn flex items-center justify-center transition-colors"
@@ -96,15 +98,18 @@ export default function HeaderActions() {
         <svg
           width="18"
           height="18"
-          viewBox="0 0 24 24"
+          viewBox="0 0 1024 1024"
           fill="currentColor"
           aria-hidden
         >
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6zm0 2h12l2 2H4l2-2zM4 8h16v12H4V8zm4 2v2a4 4 0 0 0 8 0v-2h-2v2a2 2 0 0 1-4 0v-2H8z" />
+          <g transform="translate(0,960) scale(1,-1)">
+            <path d="M1004 146.286l20-178.857q1.714-16-9.143-28.571-10.857-12-27.429-12h-950.857q-16.571 0-27.429 12-10.857 12.571-9.143 28.571l20 178.857h984zM950.857 625.714l49.143-442.857h-976l49.143 442.857q1.714 13.714 12 23.143t24.571 9.429h146.286v-73.143q0-30.286 21.429-51.714t51.714-21.429 51.714 21.429 21.429 51.714v73.143h219.429v-73.143q0-30.286 21.429-51.714t51.714-21.429 51.714 21.429 21.429 51.714v73.143h146.286q14.286 0 24.571-9.429t12-23.143zM731.429 731.428v-146.286q0-14.857-10.857-25.714t-25.714-10.857-25.714 10.857-10.857 25.714v146.286q0 60.571-42.857 103.429t-103.429 42.857-103.429-42.857-42.857-103.429v-146.286q0-14.857-10.857-25.714t-25.714-10.857-25.714 10.857-10.857 25.714v146.286q0 90.857 64.286 155.143t155.143 64.286 155.143-64.286 64.286-155.143z" />
+          </g>
         </svg>
       </a>
 
-      {/* Account icon — SVG FILLED estilo store icon-user. */}
+      {/* Account icon — SVG path EXACTO de icon `user` (U+E901) del
+          mismo font. Mismo transform Y-flip que el cart. */}
       <a
         href="https://www.mechatronicstore.cl/mi-cuenta/?utm_source=blog&utm_medium=header&utm_campaign=cuenta"
         className="header-icon-btn hidden sm:flex items-center justify-center transition-colors"
@@ -115,11 +120,13 @@ export default function HeaderActions() {
         <svg
           width="18"
           height="18"
-          viewBox="0 0 24 24"
+          viewBox="0 0 1024 1024"
           fill="currentColor"
           aria-hidden
         >
-          <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-8a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 10c-3.87 0-9 1.945-9 5.5V22h18v-2.5c0-3.555-5.13-5.5-9-5.5zm0 2c3.526 0 7 1.71 7 3.5V20H5v-.5c0-1.79 3.474-3.5 7-3.5z" />
+          <g transform="translate(0,960) scale(1,-1)">
+            <path d="M576 253.388v52.78c70.498 39.728 128 138.772 128 237.832 0 159.058 0 288-192 288s-192-128.942-192-288c0-99.060 57.502-198.104 128-237.832v-52.78c-217.102-17.748-384-124.42-384-253.388h896c0 128.968-166.898 235.64-384 253.388z" />
+          </g>
         </svg>
       </a>
     </div>
