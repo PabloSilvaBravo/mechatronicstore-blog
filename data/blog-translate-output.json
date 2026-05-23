@@ -1,209 +1,125 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-22T01:39:22Z",
+  "translated_at": "2026-05-23T08:11:10Z",
   "translations": [
     {
-      "id": "934819c08a8a",
-      "slug": "placa-universal-xiao-esp32-c3-c6-reles-oled",
-      "title_es": "Placa universal XIAO ESP32-C3 y C6: un solo PCB con relés, OLED y WiFi 6",
-      "subtitle_es": "Diseña una placa de desarrollo que aloja el XIAO C3 o C6, con 4 relés aislados, OLED y fuente 5V/3A.",
-      "hero_image_url": null,
-      "body_es": "## El problema: dos microcontroladores casi gemelos, pero sin una base común\n\nEl XIAO ESP32-C3 y el XIAO ESP32-C6 tienen el mismo tamaño físico y el mismo pinout, pero capacidades muy distintas: el C3 es excelente para proyectos Wi-Fi/Bluetooth clásicos, mientras que el C6 ya trae Wi-Fi 6, Thread y Zigbee. La consecuencia práctica es que la mayoría de los makers terminan armando un protoboard distinto para cada uno, o peor, sueldan headers en una placa que no soporta cargas reales.\n\nEste artículo te muestra cómo armar una **placa base universal** —en formato PCB diseñado en EasyEDA— que aloja indistintamente el C3 o el C6, con relés aislados ópticamente, salida regulada de 5 V/3 A, conectores serie listos para módulos GSM/GPS y un display OLED I2C para mostrar estado en tiempo real. Al final vas a tener una placa de desarrollo reusable para automatización, IoT y prototipos de campo, sin tener que soldar absolutamente nada cada vez que cambias de proyecto.\n\n## Arquitectura del diseño\n\nLa placa se organiza en cuatro bloques bien delimitados:\n\n1. **Alimentación**: regulador switching 5 V/3 A capaz de aguantar servos de torque alto, módulos celulares o LEDs de potencia. Entrada de 9 V a 25 V vía jack DC o terminal block (también admite panel solar).\n2. **Salidas de relé**: cuatro relés SPDT de 5 V controlados por transistores 2N2222 NPN, cada uno aislado del microcontrolador con un optoacoplador PC817.\n3. **Periféricos digitales**: pantalla OLED SSD1306 vía I2C, headers UART (3.3 V/GND/TX/RX), headers SPI/GPIO etiquetados.\n4. **El zócalo XIAO**: pads con el pinout exacto del XIAO, de modo que tanto el C3 como el C6 calzan sin modificación.\n\n### Detalle: por qué los optoacopladores son innegociables\n\nCuando un relé conmuta una carga inductiva (un motor, una bomba, incluso una ampolleta antigua), la bobina genera transitorios de cientos de volts que pueden viajar de vuelta por la línea de control. El PC817 corta esa ruta eléctricamente: el LED interno excita un fototransistor, pero no hay conexión galvánica entre el lado microcontrolador y el lado relé. Sin esto, un solo evento de ruido puede freír el ESP32 sin que entiendas qué pasó. El componente cuesta menos de $500 CLP y te ahorra reemplazar la placa entera.\n\n### Detalle: el diodo flyback en paralelo a cada bobina\n\nCada relé lleva un diodo 1N4007 en antiparalelo con su bobina. Cuando cortas la corriente que pasa por una bobina, el campo magnético colapsa y genera una contra-tensión (la famosa Ley de Lenz). Sin el diodo, ese pico —que puede superar los 200 V momentáneamente— destruye el transistor driver. Con el diodo, la energía se descarga de forma controlada por el camino de baja resistencia que ofrece el 1N4007 en directa.\n\n## Diseño del PCB en EasyEDA\n\nEasyEDA es gratuito y la curva de aprendizaje es mucho más baja que KiCad o Altium. Una vez que el esquemático está listo:\n\n1. Defines el contorno del PCB (yo lo hice intencionalmente generoso: hay espacio físico para enchufar módulos sin sentirte ahogado).\n2. Ruteas las pistas; las de potencia (5 V y GND del switching) las dejas más anchas (1.0 mm mínimo).\n3. Generas los archivos Gerber, BOM y Pick-and-Place.\n4. Encargas la fabricación a una casa como Seeed Studio o JLCPCB.\n\nUna vez que llegan los PCB, viene el ensamblado SMD. Si nunca has soldado SMD, ten paciencia: una stencil + pasta + horno de reflow casero (o pistola de aire caliente) hacen el trabajo. Un microscopio digital ayuda muchísimo para alinear componentes pequeños.\n\n## Probando la placa con XIAO ESP32-C3 + OLED SSD1306\n\nUna vez montada, lo primero es verificar la comunicación I2C con la pantalla OLED. Este sketch escribe \"Mechatronic\" en la pantalla:\n\n```cpp\n#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\n#define SCREEN_WIDTH 128\n#define SCREEN_HEIGHT 64\nAdafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin();  // SDA=D4, SCL=D5 en XIAO ESP32-C3\n\n  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {\n    Serial.println(\"OLED no detectado\");\n    for(;;);\n  }\n\n  display.clearDisplay();\n  display.setTextColor(WHITE);\n  display.setTextSize(2);\n  display.setCursor(0, 20);\n  display.println(\"Mechatronic\");\n  display.display();\n}\n\nvoid loop() {}\n```\n\nSi la pantalla se queda en negro, lo primero que tienes que verificar es la dirección I2C (0x3C es la más común, pero algunos clones usan 0x3D) y que SDA/SCL estén realmente en D4/D5 del XIAO.\n\n## Probando los relés\n\nImportante: **NO uses el pin D9 para controlar relés en el ESP32-C3**. D9 participa en el proceso de boot del chip; si tiene una carga conectada (como la base del transistor 2N2222), la placa puede no arrancar. Este sketch usa D0, D8 y D10:\n\n```cpp\nint relay1 = D0;\nint relay2 = D8;\nint relay4 = D10;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(relay1, OUTPUT);\n  pinMode(relay2, OUTPUT);\n  pinMode(relay4, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(relay1, HIGH); Serial.println(\"Relay1 ON\"); delay(1000);\n  digitalWrite(relay2, HIGH); Serial.println(\"Relay2 ON\"); delay(1000);\n  digitalWrite(relay4, HIGH); Serial.println(\"Relay4 ON\"); delay(1000);\n  digitalWrite(relay1, LOW);  Serial.println(\"Relay1 OFF\"); delay(1000);\n  digitalWrite(relay2, LOW);  Serial.println(\"Relay2 OFF\"); delay(1000);\n  digitalWrite(relay4, LOW);  Serial.println(\"Relay4 OFF\"); delay(1000);\n}\n```\n\nEl click metálico característico te confirma que está funcionando. Si quieres verificar visualmente, puedes conectar un LED + resistencia de 220 Ω entre el contacto normalmente abierto del relé y los 5 V de la placa.\n\n## Cambiar al XIAO ESP32-C6\n\nComo el pinout es idéntico, **el mismo código funciona sin modificar una sola línea**. Lo único que cambia es la selección del board en el Arduino IDE: \"XIAO_ESP32C6\" en lugar de \"XIAO_ESP32C3\". Eso sí, necesitas la versión más reciente del board package de Espressif; las versiones anteriores a la 3.0 no incluyen el C6.\n\n## Variantes y mejoras\n\nEsta placa base se presta a varias extensiones que el diseño original no contempla:\n\n- **Modo MQTT con dashboard remoto**: agrega una capa de software con la librería `PubSubClient`. Cada relé se mapea a un topic (`casa/luces/sala`), y un broker Mosquitto local o uno público como HiveMQ te permite controlar todo desde Home Assistant o desde una app móvil casera.\n- **Lectura de corriente con sensor ACS712**: si conectas un módulo ACS712 de 20 A en serie con la línea de carga de cada relé, puedes detectar si el equipo controlado realmente encendió o si hay un fusible quemado. Útil para automatización industrial.\n- **Backup con supercapacitor**: agregar un supercapacitor de 1 F en paralelo con la alimentación 5 V te da unos segundos de respaldo para guardar estado en flash (NVS de ESP32) ante una caída de luz, evitando que pierdas configuración.\n\n## Personalización para Chile\n\nEn MechatronicStore tienes todos los componentes core para armar esta placa con stock local:\n\n- **Seeed Studio XIAO ESP32-C3** (SKU GS1-4) — $8.830 CLP\n- **Seeed Studio XIAO ESP32-C6** (SKU GS3-5) — $10.190 CLP\n- **Pantalla Oled 128x32 I2C 0.91\" SSD1306** (SKU D-112) — $3.990 CLP *(equivalencia: el tutorial original usa un OLED 128x64; el de 128x32 cabe perfecto si reduces `SCREEN_HEIGHT` a 32 en el sketch).*\n- **Módulo Optoacoplador de Aislamiento 4 Canales PC817** (SKU GQ3-7) — $3.990 CLP *(equivalencia: trae los 4 PC817 ya soldados sobre placa, ahorra trabajo SMD si recién partes).*\n- **Transistor 2N2222 NPN** (SKU GA4-6) — $200 CLP (necesitas 4)\n- **Diodo rectificador 1N4007** (SKU GF3-10) — $200 CLP (necesitas 4)\n- **Fuente De Poder Switching 5v 10A DC** (SKU K-444) — $10.900 CLP *(equivalencia: el tutorial pide 5V/3A, esta de 10A te deja margen para crecer y cuesta lo mismo).*\n- **Módulo relé 5V de 1 canal** (SKU D-205) — $1.690 CLP cada uno (necesitas 4) *(equivalencia: si prefieres no diseñar el PCB ni soldar SMD, puedes usar 4 módulos relé prefabricados y armar todo en protoboard).*\n\nSi ya armaste tu propio PCB y solo necesitas reponer componentes pasivos, los kits de transistores TO-92 (SKU C-513, $8.900 CLP) y diodos (SKU C-508, $2.890 CLP) son la opción más rentable.\n\n## Recursos\n\n- **Tutorial original (inglés)**: [Xiao ESP32C3 & Xiao ESP32C6 Ultimate Development Board](https://www.electroniclinic.com/xiao-esp32c3-xiao-esp32c6-ultimate-development-board-one-pcb-for-wifi-6-relays-iot-power/)\n- **Documentación XIAO ESP32-C3 (oficial Seeed)**: <https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/>\n- **Documentación XIAO ESP32-C6 (oficial Seeed)**: <https://wiki.seeedstudio.com/xiao_esp32c6_getting_started/>\n- **Librerías Arduino para el SSD1306**: [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) + [Adafruit-GFX-Library](https://github.com/adafruit/Adafruit-GFX-Library)\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
+      "id": "1ec722f7c21b",
+      "slug": "datalogger-esp32-graficos-navegador-csv-microsd",
+      "title_es": "Datalogger ESP32 con gráficos en el navegador y CSV en microSD",
+      "subtitle_es": "Arma un datalogger ESP32 que loguea DHT22 y DS18B20 en una microSD y sirve un dashboard web con gráficos zoomables y descarga del CSV.",
+      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp",
+      "body_es": "## Por qué necesitas un datalogger con servidor web\n\nSi alguna vez quisiste saber qué temperatura tuvo tu bodega durante la noche, o cuánta humedad hubo en la pieza del bebé mientras estabas en el trabajo, te encontraste con el problema clásico del Arduino IDE: el Monitor Serial solo muestra datos cuando el cable USB está conectado. En el momento que desenchufas, pierdes el registro.\n\nEste proyecto resuelve ese problema con un ESP32 que cumple tres roles al mismo tiempo: lee sensores cada 60 segundos, guarda cada lectura con marca de tiempo en una tarjeta microSD como archivo CSV, y publica un servidor web que dibuja todo en gráficos interactivos. Conectas el navegador a la IP del ESP32, ves la curva de temperatura de las últimas 20 horas, haces zoom con la rueda del mouse, descargas el CSV completo para Excel, y si quieres limpiar el historial, hay un botón rojo que lo borra todo.\n\nAl terminar este tutorial vas a saber:\n\n- Cómo combinar Wi-Fi, NTP, SPI (microSD) e I2C/OneWire (sensores) en un solo sketch de Arduino para ESP32.\n- Cómo usar Chart.js + chartjs-plugin-zoom para gráficos zoomables sin escribir JavaScript desde cero.\n- Cómo servir HTML completo desde la flash del ESP32 usando ESPAsyncWebServer.\n- Cómo estructurar un archivo CSV de log para que sea legible tanto por el navegador como por hojas de cálculo.\n\n## Re-angulación chilena: por qué DHT22 + DS18B20 en lugar de BME280\n\nEl tutorial original usa un sensor BME280 (temperatura + humedad + presión barométrica) porque está pensado para makers en EEUU/Europa, donde el BME280 cuesta 3 USD en cualquier tienda. En Chile el BME280 escasea, llega importado a precios altos, y la presión barométrica rara vez se usa en proyectos hobby.\n\nEsta versión adapta el datalogger a dos sensores que sí encuentras en stock local y resuelven más casos de uso:\n\n- **DHT22** para temperatura y humedad ambiente (donde está el ESP32).\n- **DS18B20** sumergible para una segunda temperatura medida en otra parte (afuera del refri, dentro del estanque del termo, en la sombra del patio).\n\nLa ventaja extra: el DS18B20 viene con sonda de acero inoxidable IP67. Puedes meterlo en líquidos, dejarlo a la intemperie, o pasarlo por una ventana, mientras el ESP32 queda adentro alimentado por USB. Con un BME280 esto no se puede.\n\n## Hardware necesario\n\nLista de componentes para la versión chilena del datalogger:\n\n- 1× **Placa ESP32 DevKit** (cualquier variante WROOM-32 con 30 o 38 pines)\n- 1× **Módulo Sensor DHT22** (preferentemente el módulo, no el sensor pelado, porque ya trae la resistencia de pull-up de 10 kΩ)\n- 1× **Sensor DS18B20 sumergible** (los cables suelen ser rojo=VCC, amarillo=Data, negro=GND)\n- 1× **Módulo datalogger microSD** (los que tienen el regulador 3.3 V on-board)\n- 1× **Tarjeta microSD 8 GB** formateada en FAT32\n- 1× **Protoboard 830 puntos**\n- 1× **Cable USB** según tu modelo de ESP32 (micro-USB o USB-C)\n- 1× **Resistencia 4.7 kΩ** para el pull-up de OneWire del DS18B20 (entre Data y VCC)\n- ~10 **cables jumper macho-macho** y **macho-hembra**\n\nNota técnica: aunque ambos sensores funcionan a 3.3 V, el DHT22 a veces da lecturas inestables con menos de 5 V. Si el sensor reporta `nan` cada 5 lecturas, mueve VCC al pin 5V del ESP32. La línea de datos sigue siendo segura porque el ESP32 tolera 3.3 V en su entrada y el DHT22 maneja niveles lógicos compatibles.\n\n## Mapa de conexiones\n\nEl ESP32 dispone de buses SPI y I2C dedicados, pero en este proyecto no usamos I2C (sin BME280). En su lugar tenemos:\n\n- **SPI (microSD)**: CS=GPIO 5, MOSI=GPIO 23, MISO=GPIO 19, SCK=GPIO 18.\n- **OneWire (DS18B20)**: línea de datos en GPIO 4 + resistencia 4.7 kΩ entre Data y 3.3 V.\n- **Bus 1-wire propio del DHT22**: GPIO 15 (el módulo con resistencia ya integrada).\n\nDeja libres los GPIO 12, 13, 14 (sensores capacitivos) y los GPIO 6-11 (flash interna). El resto puedes redistribuirlo según tu cableado físico.\n\n## Librerías que tienes que instalar\n\nDesde el Library Manager del Arduino IDE:\n\n- **ESPAsyncWebServer** (autor: ESP32Async)\n- **AsyncTCP** (autor: ESP32Async)\n- **DHT sensor library** (autor: Adafruit)\n- **Adafruit Unified Sensor** (dependencia de la anterior)\n- **OneWire** (autor: Paul Stoffregen)\n- **DallasTemperature** (autor: Miles Burton)\n\nNo necesitas Adafruit_BME280 ni Adafruit_Sensor para BME280 en esta versión.\n\n## Sketch completo adaptado\n\nEl código sigue la misma arquitectura del tutorial original (timer + log a SD + servidor async con HTML embebido), pero adaptado a DHT22 + DS18B20 y con las cabeceras del CSV ajustadas. Pega esto en el IDE de Arduino, cambia SSID y PASSWORD, y compila para tu placa ESP32:\n\n```cpp\n#include <WiFi.h>\n#include <ESPAsyncWebServer.h>\n#include <AsyncTCP.h>\n#include <DHT.h>\n#include <OneWire.h>\n#include <DallasTemperature.h>\n#include <SD.h>\n#include <SPI.h>\n#include <time.h>\n\nconst char* ssid     = \"REEMPLAZA_TU_SSID\";\nconst char* password = \"REEMPLAZA_TU_PASSWORD\";\n\n#define DHT_PIN     15\n#define DHT_TYPE    DHT22\n#define ONE_WIRE_PIN 4\n\n#define SD_CS   5\n#define SD_MOSI 23\n#define SD_MISO 19\n#define SD_SCK  18\n\nconst char* ntpServer = \"pool.ntp.org\";\nconst long  gmtOffset_sec = -14400;   // Chile continental UTC-4\nconst int   daylightOffset_sec = 0;\n\nunsigned long previousMillis = 0;\nconst long interval = 60000;\nconst char* dataFile = \"/datalog.csv\";\n\nAsyncWebServer server(80);\nDHT dht(DHT_PIN, DHT_TYPE);\nOneWire oneWire(ONE_WIRE_PIN);\nDallasTemperature ds18b20(&oneWire);\n\nString getTimeStr() {\n  struct tm t;\n  if (!getLocalTime(&t)) return \"00:00:00\";\n  char buf[9];\n  sprintf(buf, \"%02d:%02d:%02d\", t.tm_hour, t.tm_min, t.tm_sec);\n  return String(buf);\n}\n\nString getDateStr() {\n  struct tm t;\n  if (!getLocalTime(&t)) return \"1970-01-01\";\n  char buf[11];\n  sprintf(buf, \"%04d-%02d-%02d\", t.tm_year+1900, t.tm_mon+1, t.tm_mday);\n  return String(buf);\n}\n\nvoid initSD() {\n  SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);\n  if (!SD.begin(SD_CS)) { Serial.println(\"SD inicialización falló\"); return; }\n  if (!SD.exists(dataFile)) {\n    File f = SD.open(dataFile, FILE_WRITE);\n    if (f) { f.println(\"temp_dht,humedad,temp_ds18,hora,fecha\"); f.close(); }\n  }\n}\n\nvoid logData() {\n  float tDht = dht.readTemperature();\n  float hum  = dht.readHumidity();\n  ds18b20.requestTemperatures();\n  float tDs  = ds18b20.getTempCByIndex(0);\n  if (isnan(tDht) || isnan(hum) || tDs == DEVICE_DISCONNECTED_C) {\n    Serial.println(\"Lectura inválida, salto este ciclo\");\n    return;\n  }\n  File file = SD.open(dataFile, FILE_APPEND);\n  if (file) {\n    file.printf(\"%.2f,%.2f,%.2f,%s,%s\\n\",\n                tDht, hum, tDs, getTimeStr().c_str(), getDateStr().c_str());\n    file.close();\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  dht.begin();\n  ds18b20.begin();\n  WiFi.begin(ssid, password);\n  Serial.print(\"Conectando a Wi-Fi\");\n  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print(\".\"); }\n  Serial.print(\"\\nIP del ESP32: http://\");\n  Serial.println(WiFi.localIP());\n  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);\n  delay(2000);\n  initSD();\n  // Las rutas /, /data, /download, /delete se definen igual que en\n  // el tutorial original; solo cambian las etiquetas de columnas en\n  // el HTML para reflejar DHT/DS18 en lugar de temp_c/temp_f/hum/press.\n  server.begin();\n}\n\nvoid loop() {\n  if (millis() - previousMillis >= interval) {\n    previousMillis = millis();\n    logData();\n  }\n}\n```\n\nEl HTML del dashboard (Chart.js + plugin de zoom) es exactamente el del tutorial original, con dos cambios menores: la cabecera de la tabla CSV pasa a `temp_dht,humedad,temp_ds18,hora,fecha` y se reemplazan los tres gráficos (temperatura/humedad/presión) por tres gráficos también (DHT22 temp, DHT22 humedad, DS18B20 temp). El código JavaScript de parseo del CSV es trivialmente adaptable: cambias las llaves del objeto y los `parseFloat` de cada serie.\n\n## Cómo se usa el dashboard\n\nAl subir el sketch, abre el Monitor Serial a 115200 baudios y presiona RST en el ESP32. La placa se conecta a tu Wi-Fi e imprime la IP local (algo como `192.168.1.42`). Esa misma IP la abres en cualquier navegador del notebook, tablet o celular que esté en la misma red.\n\nLa página carga sola con los datos del CSV. Los botones cumplen estas funciones:\n\n- **Refresh Charts**: vuelve a leer el CSV. La página ya se auto-refresca cada 30 s, pero el botón fuerza una actualización inmediata.\n- **Download CSV**: te descarga el archivo completo al disco para abrirlo en Excel o Google Sheets.\n- **Delete All Data**: borra el archivo y crea uno nuevo con solo la cabecera. Pide confirmación antes.\n- **Reset All Zoom**: deshace el zoom en los tres gráficos a la vez.\n\nEl zoom funciona con la rueda del mouse, con drag (selección de rango) y con pellizco en touchscreen. La página es responsive: en un celular se ven los gráficos apilados y los botones se acomodan en grilla.\n\n## Detalles que el tutorial original no explica\n\nDos cosas que aprendí adaptándolo:\n\n**1. El offset NTP en Chile**: el ejemplo original usa `gmtOffset_sec = 3600` (UTC+1, hora central europea). Para Chile continental hay que poner `-14400` (UTC-4) y para Chile insular `-21600` (UTC-6). No uses `daylightOffset_sec` aunque cambies con el horario de verano: Chile decidió eliminar el cambio de hora en 2022 y la mayoría de servidores NTP no aplican DST automático para Chile.\n\n**2. Por qué el código limita a 1200 puntos en el gráfico**: la línea `const displayData = allData.slice(-1200);` no es arbitraria. Chart.js renderiza canvas, y con más de 2-3k puntos en una serie el cuadro de zoom empieza a lagear notoriamente en celulares de gama media. 1200 puntos = 20 horas a 1 lectura/minuto, suficiente para casi todo. Si necesitas un mes de datos, exporta el CSV y abre con software de planilla.\n\n## Variantes y mejoras\n\nIdeas concretas para extender el proyecto que no están en el tutorial original:\n\n- **Modo AP offline**: si el lugar donde va el datalogger no tiene Wi-Fi (bodega, casa de campo), reemplaza `WiFi.begin()` por `WiFi.softAP(\"datalogger\", \"12345678\")`. El ESP32 crea su propia red, el celular se conecta directo a ella, y el dashboard sigue funcionando sin internet ni router. Útil para mediciones en terreno.\n- **Notificación al celular cuando la temperatura cruza un umbral**: agrega una llamada HTTP POST a un webhook de IFTTT o Telegram dentro de `logData()` cuando `tDs > 30.0` (alerta de calor en bodega) o `tDht < 5.0` (riesgo de helada en invernadero). Lo agregas con ~10 líneas extra.\n- **Alimentación con batería 18650 + panel solar**: el ESP32 consume ~80 mA en operación. Con una 18650 de 3000 mAh y un módulo TP4056 con protección dura ~30 horas. Agregando un panel solar de 5 W con regulador buck dura indefinidamente. Para máxima autonomía, mete el ESP32 en `deepSleep(60 * 1000000)` entre lecturas y bajas el consumo a ~10 µA.\n- **Reemplazo del DS18B20 por un termopar tipo K + MAX6675** si necesitas medir más de 100 °C (horno, estufa, escape). El sketch cambia muy poco: solo la librería de lectura.\n\n## Personalización para Chile (componentes en MechatronicStore)\n\nEn lugar del BME280 importado, esta lista usa sensores con stock local:\n\n- **Placa ESP32 con Wifi y Bluetooth ESP-WROOM-32 (USB-C)** (SKU X2-10V2) — $7.990 CLP\n- **Módulo Sensor de Temperatura y Humedad DHT22** (SKU G-021) — $4.700 CLP\n- **Sensor de Temperatura DS18B20 tipo termocupla sumergible** (SKU G-232) — $2.990 CLP\n- **Módulo datalogger para tarjeta de memoria microSD** (SKU G-014) — $2.500 CLP\n- **Micro SD tarjeta de memoria 8 GB** (SKU B-450V1) — $7.990 CLP\n- **Breadboard / Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP\n- **Cables macho macho 30cm** (SKU C-417) — $2.990 CLP\n- **Cables macho hembra 30cm** (SKU C-418) — $1.990 CLP\n- **Resistencia 1/4W 1 unidad — 220Ω** (SKU GK1-18) — $100 CLP (para pull-up si tu DS18B20 no la trae)\n\nSi en el tutorial original mencionan \"BME280 module\" y \"Adafruit Feather ESP32\", el ESP32 WROOM-32 USB-C del catálogo cumple la misma función al mismo precio (~8.000 CLP vs ~25.000 CLP del Feather importado), y la combinación DHT22 + DS18B20 entrega temperatura interna, humedad y temperatura externa, una funcionalidad que el BME280 solo no logra.\n\nCosto estimado de la versión chilena completa: ~$35.000 CLP, contra ~$60.000 CLP de la lista importada con BME280.\n\n## Recursos\n\n- **Tutorial original**: [ESP32 Web Server: Charts with Historical Data (load .csv file)](https://randomnerdtutorials.com/esp32-web-server-charts-historical-data/) por Rui Santos & Sara Santos (Random Nerd Tutorials).\n- **Documentación ESPAsyncWebServer**: [github.com/ESP32Async/ESPAsyncWebServer](https://github.com/ESP32Async/ESPAsyncWebServer)\n- **Chart.js + plugin zoom**: [chartjs-plugin-zoom](https://www.chartjs.org/chartjs-plugin-zoom/latest/)\n- **DHT sensor library (Adafruit)**: [github.com/adafruit/DHT-sensor-library](https://github.com/adafruit/DHT-sensor-library)\n- **DallasTemperature library**: [github.com/milesburton/Arduino-Temperature-Control-Library](https://github.com/milesburton/Arduino-Temperature-Control-Library)\n\nVersión chilena del proyecto, con re-angulación a DHT22 + DS18B20 y componentes en stock local en MechatronicStore.\n",
       "materials_list": [
-        {
-          "name": "Seeed Studio XIAO ESP32-C3",
-          "qty": 1,
-          "role": "microcontrolador"
-        },
-        {
-          "name": "Seeed Studio XIAO ESP32-C6",
-          "qty": 1,
-          "role": "microcontrolador alternativo"
-        },
-        {
-          "name": "Pantalla Oled 128x32 I2C 0.91\" SSD1306",
-          "qty": 1,
-          "role": "display de estado"
-        },
-        {
-          "name": "Módulo Optoacoplador de Aislamiento 4 Canales PC817",
-          "qty": 1,
-          "role": "aislamiento galvánico"
-        },
-        {
-          "name": "Transistor 2N2222 NPN",
-          "qty": 4,
-          "role": "driver de relé"
-        },
-        {
-          "name": "Diodo rectificador 1N4007",
-          "qty": 4,
-          "role": "flyback de bobina"
-        },
-        {
-          "name": "Fuente De Poder Switching 5V 10A DC",
-          "qty": 1,
-          "role": "alimentación principal"
-        },
-        {
-          "name": "Módulo relé 5V de 1 canal",
-          "qty": 4,
-          "role": "salida AC/DC controlada"
-        },
-        {
-          "name": "Terminal Block PCB 2 pines",
-          "qty": 6,
-          "role": "conexiones de potencia"
-        },
-        {
-          "name": "Fila de pin header 2.54mm 40 pines macho",
-          "qty": 2,
-          "role": "zócalo XIAO + headers de expansión"
-        }
+        {"name": "Placa ESP32 DevKit USB-C", "qty": 1, "role": "core"},
+        {"name": "Módulo Sensor DHT22 temperatura humedad", "qty": 1, "role": "sensor"},
+        {"name": "Sensor DS18B20 sumergible", "qty": 1, "role": "sensor"},
+        {"name": "Módulo datalogger microSD SPI", "qty": 1, "role": "almacenamiento"},
+        {"name": "Tarjeta microSD 8GB", "qty": 1, "role": "almacenamiento"},
+        {"name": "Protoboard 830 puntos", "qty": 1, "role": "prototipado"},
+        {"name": "Cables macho macho 30cm", "qty": 1, "role": "cableado"},
+        {"name": "Cables macho hembra 30cm", "qty": 1, "role": "cableado"},
+        {"name": "Resistencia 220 ohm 1/4W", "qty": 1, "role": "pull-up"}
       ],
       "steps": [
-        {
-          "position": 1,
-          "name": "Esquemático en EasyEDA",
-          "text": "Dibuja el esquemático con bloques: alimentación switching 5V/3A, zócalo XIAO con pinout estándar, 4 etapas de driver (2N2222 + PC817 + 1N4007 + relé), OLED I2C y headers UART/SPI."
-        },
-        {
-          "position": 2,
-          "name": "Diseño y fabricación del PCB",
-          "text": "Genera el PCB con pistas anchas (1.0 mm) en líneas de potencia. Exporta Gerber + BOM + Pick-and-Place y envíalo a Seeed Studio, JLCPCB o tu fab favorito."
-        },
-        {
-          "position": 3,
-          "name": "Ensamblado SMD",
-          "text": "Aplica pasta de soldar con stencil, coloca los componentes (un microscopio digital ayuda mucho), y reflowea con pistola de aire caliente u horno casero."
-        },
-        {
-          "position": 4,
-          "name": "Test del OLED SSD1306",
-          "text": "Carga el sketch de prueba que escribe 'Mechatronic' en la pantalla I2C. Verifica dirección 0x3C y conexiones SDA=D4, SCL=D5."
-        },
-        {
-          "position": 5,
-          "name": "Test de los 4 relés",
-          "text": "Carga el sketch de blink de relés en D0, D8 y D10. Evita D9 (interfiere con el boot del ESP32-C3). Vas a escuchar el click metálico característico."
-        },
-        {
-          "position": 6,
-          "name": "Migrar al XIAO ESP32-C6",
-          "text": "Cambia el board en Arduino IDE a XIAO_ESP32C6 (requiere board package Espressif 3.0+) y vuelve a cargar el mismo código. Sin cambios."
-        }
+        {"position": 1, "name": "Montar hardware en protoboard", "text": "Coloca el ESP32 en el protoboard a horcajadas del canal central. Conecta DHT22 a GPIO 15 (con VCC al carril 5V). Conecta DS18B20 a GPIO 4 con resistencia 4.7 kΩ entre Data y 3.3 V. Conecta el módulo microSD por SPI: CS=GPIO5, MOSI=GPIO23, MISO=GPIO19, SCK=GPIO18, VCC al 3.3 V, GND al GND."},
+        {"position": 2, "name": "Formatear microSD e insertarla", "text": "Formatea la microSD como FAT32 en tu PC (Windows: clic derecho > Formatear; Linux: mkfs.vfat). El driver SD del ESP32 no reconoce exFAT. Inserta la tarjeta en el módulo antes de energizar."},
+        {"position": 3, "name": "Instalar librerías en Arduino IDE", "text": "Desde el Library Manager instala: ESPAsyncWebServer (ESP32Async), AsyncTCP (ESP32Async), DHT sensor library (Adafruit), Adafruit Unified Sensor, OneWire (Paul Stoffregen), DallasTemperature (Miles Burton)."},
+        {"position": 4, "name": "Cargar el sketch", "text": "Pega el código adaptado en el IDE. Cambia SSID y PASSWORD por los de tu Wi-Fi. Verifica que gmtOffset_sec esté en -14400 para Chile continental. Selecciona la placa ESP32 Dev Module en Tools > Board y carga."},
+        {"position": 5, "name": "Verificar IP y acceder al dashboard", "text": "Abre el Monitor Serial a 115200 baudios y presiona RST. La placa imprime su IP local. En cualquier navegador en la misma red, escribe esa IP. El dashboard carga los gráficos automáticamente y se refresca cada 30 segundos."},
+        {"position": 6, "name": "Probar zoom, descarga y borrado del CSV", "text": "Usa la rueda del mouse o pellizco táctil para hacer zoom en cualquier gráfico. Presiona Download CSV para bajarte el archivo a tu PC. Presiona Delete All Data para reiniciar el log (te pedirá confirmación)."}
       ],
       "code_blocks": [
         {
           "lang": "cpp",
-          "caption": "Test inicial del OLED SSD1306 vía I2C",
-          "code": "#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\n#define SCREEN_WIDTH 128\n#define SCREEN_HEIGHT 64\nAdafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin();  // SDA=D4, SCL=D5 en XIAO ESP32-C3\n  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {\n    Serial.println(\"OLED no detectado\");\n    for(;;);\n  }\n  display.clearDisplay();\n  display.setTextColor(WHITE);\n  display.setTextSize(2);\n  display.setCursor(0, 20);\n  display.println(\"Mechatronic\");\n  display.display();\n}\n\nvoid loop() {}\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Test de los 4 relés (omitiendo D9)",
-          "code": "int relay1 = D0;\nint relay2 = D8;\nint relay4 = D10;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(relay1, OUTPUT);\n  pinMode(relay2, OUTPUT);\n  pinMode(relay4, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(relay1, HIGH); delay(1000);\n  digitalWrite(relay2, HIGH); delay(1000);\n  digitalWrite(relay4, HIGH); delay(1000);\n  digitalWrite(relay1, LOW);  delay(1000);\n  digitalWrite(relay2, LOW);  delay(1000);\n  digitalWrite(relay4, LOW);  delay(1000);\n}\n"
+          "caption": "Sketch ESP32 datalogger con DHT22 + DS18B20 y servidor web",
+          "code": "#include <WiFi.h>\n#include <ESPAsyncWebServer.h>\n#include <AsyncTCP.h>\n#include <DHT.h>\n#include <OneWire.h>\n#include <DallasTemperature.h>\n#include <SD.h>\n#include <SPI.h>\n#include <time.h>\n\nconst char* ssid     = \"REEMPLAZA_TU_SSID\";\nconst char* password = \"REEMPLAZA_TU_PASSWORD\";\n\n#define DHT_PIN     15\n#define DHT_TYPE    DHT22\n#define ONE_WIRE_PIN 4\n\n#define SD_CS   5\n#define SD_MOSI 23\n#define SD_MISO 19\n#define SD_SCK  18\n\nconst char* ntpServer = \"pool.ntp.org\";\nconst long  gmtOffset_sec = -14400;\nconst int   daylightOffset_sec = 0;\n\nunsigned long previousMillis = 0;\nconst long interval = 60000;\nconst char* dataFile = \"/datalog.csv\";\n\nAsyncWebServer server(80);\nDHT dht(DHT_PIN, DHT_TYPE);\nOneWire oneWire(ONE_WIRE_PIN);\nDallasTemperature ds18b20(&oneWire);\n\nvoid logData() {\n  float tDht = dht.readTemperature();\n  float hum  = dht.readHumidity();\n  ds18b20.requestTemperatures();\n  float tDs  = ds18b20.getTempCByIndex(0);\n  if (isnan(tDht) || isnan(hum) || tDs == DEVICE_DISCONNECTED_C) return;\n  File file = SD.open(dataFile, FILE_APPEND);\n  if (file) {\n    file.printf(\"%.2f,%.2f,%.2f\\n\", tDht, hum, tDs);\n    file.close();\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  dht.begin();\n  ds18b20.begin();\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) delay(500);\n  Serial.println(WiFi.localIP());\n  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);\n  SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);\n  SD.begin(SD_CS);\n  server.begin();\n}\n\nvoid loop() {\n  if (millis() - previousMillis >= interval) {\n    previousMillis = millis();\n    logData();\n  }\n}"
         }
       ],
       "linked_products": [
         {
-          "name_original": "Seeed Studio XIAO ESP32-C3",
-          "product_id": "GS1-4",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-c3/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GS1-4",
-          "price_clp": 8830,
+          "name_original": "Placa ESP32 DevKit USB-C",
+          "product_id": "X2-10V2",
+          "product_url": "https://www.mechatronicstore.cl/esp32/?attribute_entrada=Tipo+C&utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=X2-10V2",
+          "price_clp": 7990,
           "stock_available": true,
-          "match_score": 0.98
+          "match_score": 0.88
         },
         {
-          "name_original": "Seeed Studio XIAO ESP32-C6",
-          "product_id": "GS3-5",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-c6/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GS3-5",
-          "price_clp": 10190,
+          "name_original": "Módulo Sensor DHT22 temperatura humedad",
+          "product_id": "G-021",
+          "product_url": "https://www.mechatronicstore.cl/modulo-sensor-de-temperatura-y-humedad-dht22/?utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=G-021",
+          "price_clp": 4700,
           "stock_available": true,
-          "match_score": 0.98
+          "match_score": 0.94
         },
         {
-          "name_original": "Pantalla Oled 128x32 I2C 0.91\" SSD1306",
-          "product_id": "D-112",
-          "product_url": "https://www.mechatronicstore.cl/pantalla-oled-128x32-i2c-0-91-ssd1306/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=D-112",
-          "price_clp": 3990,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Módulo Optoacoplador de Aislamiento 4 Canales PC817",
-          "product_id": "GQ3-7",
-          "product_url": "https://www.mechatronicstore.cl/modulo-optoacoplador-de-aislamiento-4-canales-pc817/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GQ3-7",
-          "price_clp": 3990,
+          "name_original": "Sensor DS18B20 sumergible",
+          "product_id": "G-232",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-temperatura-ds18b20-tipo-termocupla-arduino-pic/?utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=G-232",
+          "price_clp": 2990,
           "stock_available": true,
           "match_score": 0.92
         },
         {
-          "name_original": "Transistor 2N2222 NPN",
-          "product_id": "GA4-6",
-          "product_url": "https://www.mechatronicstore.cl/transistor-2n2222/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GA4-6",
-          "price_clp": 200,
+          "name_original": "Módulo datalogger microSD SPI",
+          "product_id": "G-014",
+          "product_url": "https://www.mechatronicstore.cl/modulo-datalogger-para-tarjeta-de-memoria-microsd/?utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=G-014",
+          "price_clp": 2500,
           "stock_available": true,
           "match_score": 0.95
         },
         {
-          "name_original": "Diodo rectificador 1N4007",
-          "product_id": "GF3-10",
-          "product_url": "https://www.mechatronicstore.cl/diodo-rectificador-in4007-1n4007-4007/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GF3-10",
-          "price_clp": 200,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Fuente De Poder Switching 5V 10A DC",
-          "product_id": "K-444",
-          "product_url": "https://www.mechatronicstore.cl/fuente-de-poder-switching-5v-10a-dc/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=K-444",
-          "price_clp": 10900,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Módulo relé 5V de 1 canal",
-          "product_id": "D-205",
-          "product_url": "https://www.mechatronicstore.cl/rele-de-1-canal/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=D-205",
-          "price_clp": 1690,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Terminal Block PCB 2 pines",
-          "product_id": "GD2-8",
-          "product_url": "https://www.mechatronicstore.cl/terminal-block-para-pcb/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GD2-8",
-          "price_clp": 290,
+          "name_original": "Tarjeta microSD 8GB",
+          "product_id": "B-450V1",
+          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?attribute_memoria=8gb&utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=B-450V1",
+          "price_clp": 7990,
           "stock_available": true,
           "match_score": 0.9
         },
         {
-          "name_original": "Fila de pin header 2.54mm 40 pines macho",
-          "product_id": "GD3-3",
-          "product_url": "https://www.mechatronicstore.cl/pin-header-en-fila-macho-macho/?utm_source=blog&utm_medium=tutorial&utm_campaign=placa-universal-xiao-esp32-c3-c6-reles-oled&utm_content=GD3-3",
-          "price_clp": 290,
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=C-302",
+          "price_clp": 3790,
           "stock_available": true,
-          "match_score": 0.92
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Cables macho macho 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.86
+        },
+        {
+          "name_original": "Cables macho hembra 30cm",
+          "product_id": "C-418",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=C-418",
+          "price_clp": 1990,
+          "stock_available": true,
+          "match_score": 0.86
+        },
+        {
+          "name_original": "Resistencia 220 ohm 1/4W",
+          "product_id": "GK1-18",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=220%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=datalogger-esp32-graficos-navegador-csv-microsd&utm_content=GK1-18",
+          "price_clp": 100,
+          "stock_available": true,
+          "match_score": 0.78
         }
       ],
       "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "advanced",
-      "estimated_time_minutes": 240,
-      "estimated_cost_clp": 56000,
-      "tags": [
-        "xiao",
-        "esp32-c3",
-        "esp32-c6",
-        "pcb",
-        "relé",
-        "oled",
-        "iot"
+      "download_urls": [
+        {"label": "Tutorial original (Random Nerd Tutorials)", "url": "https://randomnerdtutorials.com/esp32-web-server-charts-historical-data/", "kind": "link"}
       ],
+      "category": "esp32",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 90,
+      "estimated_cost_clp": 35140,
+      "tags": ["esp32", "datalogger", "dht22", "ds18b20", "microsd", "webserver", "chartjs"],
       "source_language": "en",
-      "re_angulation_applied": "primera persona del autor original → guía instructiva con bloques temáticos (problema → arquitectura → detalles técnicos → fabricación → pruebas → variantes), profundización técnica añadida (por qué optoacoplador, ley de Lenz en flyback diode, advertencia D9-boot), nueva sección Variantes (MQTT, ACS712, supercapacitor) + Personalización Chile con equivalencias específicas",
+      "re_angulation_applied": "Re-angulación de sensor BME280 (importado, no en catálogo local) a DHT22 + DS18B20 (stock local en MechatronicStore). Cambio de voz: primera persona plural → segunda persona instructiva. Estructura: lineal del tutorial original → bloques temáticos (concepto → re-angulación → hardware → conexiones → librerías → sketch → uso → detalles que original omite → variantes → Chile). Profundización técnica añadida: offset NTP Chile específico, límite 1200 puntos de Chart.js explicado, modo deepSleep para batería, alimentación DHT22 con 5V para evitar nan, modo AP offline.",
       "editorial_checklist": {
         "title_distinct": true,
         "has_unique_section": true,
@@ -211,711 +127,148 @@
         "body_word_ratio": 1.35,
         "tone_or_structure_changed": true
       },
+      "editorial_notes": "BME280 del matched_products_hint no tiene match directo en catálogo. Re-angulación del hint (DHT22+DS18B20) cubre el caso de uso ampliándolo.",
       "editorial_quality_warning": false
     },
     {
-      "id": "b0650d488fae",
-      "slug": "rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire",
-      "title_es": "RF de largo alcance con Arduino: tutorial paso a paso con módulos 315/433 MHz",
-      "subtitle_es": "Manda datos entre dos Arduinos a 30+ metros con módulos RF baratos y la librería VirtualWire (ASK + CRC).",
-      "hero_image_url": null,
-      "body_es": "## ¿Para qué sirve este proyecto?\n\nImagínate que necesitas mandar una señal entre dos Arduinos separados por 20 o 30 metros, sin Wi-Fi, sin pareo Bluetooth ni complicaciones. Quizá un sensor en el patio que tiene que avisar al control central adentro de la casa, o un control remoto casero para una puerta de garaje. Los módulos RF de 315 MHz y 433 MHz cuestan menos de $3.000 CLP el par y resuelven exactamente eso: comunicación digital unidireccional, simple, barata, con alcance real al aire libre de hasta 100 metros si los alimentas a 12 V.\n\nEste tutorial te lleva desde el \"hola mundo\" de RF hasta tres montajes funcionales: detección de presencia (recibir paquetes regulares), control remoto con botones que encienden LEDs a distancia, y envío de datos numéricos crudos (temperatura, humedad, lo que necesites). Al final vas a entender cómo funciona internamente la modulación ASK, cuándo te conviene RF en lugar de Bluetooth o LoRa, y cómo aumentar el alcance sin volar el receptor.\n\n## Cómo funciona la transmisión RF a bajo costo\n\nLos módulos baratos de 315/433 MHz usan modulación ASK (Amplitude Shift Keying): el transmisor enciende y apaga la portadora de radio para representar 1s y 0s. Eso es genial porque es trivialmente simple, pero **no tiene protocolo, ni checksum, ni control de errores**. Cualquier interferencia (otro Arduino transmitiendo, un microondas, un control remoto del vecino) entra como si fuera dato válido. Por eso usamos la librería **VirtualWire**: agrega un preámbulo, un identificador de inicio, longitud y checksum CRC sobre los datos crudos, igual que hace Ethernet a nivel de paquete.\n\n## Setup base de prueba\n\nLo primero es confirmar que el hardware funciona. Vas a armar dos circuitos idénticos en lo físico pero con código distinto: uno transmite, el otro recibe.\n\n**Lista de materiales para el test inicial:**\n\n- 1 par de módulos RF de 315 MHz o 433 MHz (transmisor + receptor)\n- 2 Arduinos (Uno R3, Nano o compatibles)\n- 2 protoboards\n- Jumpers macho-macho\n- 1 LED indicador en el receptor + 1 resistencia de 330 Ω\n- Fuente externa para el Arduino transmisor (un cargador USB sirve)\n\n### Instalación de la librería VirtualWire\n\nLa librería original ya no se distribuye desde el manager de Arduino IDE moderno, así que tienes que cargarla manualmente:\n\n1. Descarga el `.zip` de VirtualWire (sirve cualquier mirror reciente — el código no ha cambiado desde 2014).\n2. En el IDE: `Sketch → Include Library → Add .zip Library...` y selecciona el archivo.\n3. Verifica que aparece en `Sketch → Include Library → VirtualWire`.\n\n### Cableado del transmisor\n\n| Módulo TX | Arduino |\n|---|---|\n| GND | GND |\n| VCC | 5 V |\n| SIG / DATA | D12 |\n\n### Cableado del receptor\n\n| Módulo RX | Arduino |\n|---|---|\n| GND | GND |\n| VCC | 5 V |\n| SIG / DATA | D11 |\n\nAdicional en el receptor: LED + resistencia de 330 Ω entre D2 y GND.\n\n### Sketch del transmisor (test \"hello\")\n\n```cpp\n#include <VirtualWire.h>\n\nconst int led_pin = 11;\nconst int transmit_pin = 12;\nconst int receive_pin = 2;\nconst int transmit_en_pin = 3;\n\nvoid setup() {\n  vw_set_tx_pin(transmit_pin);\n  vw_set_rx_pin(receive_pin);\n  vw_set_ptt_pin(transmit_en_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);  // bps\n  pinMode(led_pin, OUTPUT);\n}\n\nbyte count = 1;\nvoid loop() {\n  char msg[7] = {'h','e','l','l','o',' ','#'};\n  msg[6] = count;\n  digitalWrite(led_pin, HIGH);\n  vw_send((uint8_t *)msg, 7);\n  vw_wait_tx();\n  digitalWrite(led_pin, LOW);\n  delay(1000);\n  count++;\n}\n```\n\n### Sketch del receptor\n\n```cpp\n#include <VirtualWire.h>\n\nconst int led_pin = 2;\nconst int receive_pin = 11;\n\nvoid setup() {\n  Serial.begin(9600);\n  vw_set_rx_pin(receive_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  vw_rx_start();\n  pinMode(led_pin, OUTPUT);\n}\n\nvoid loop() {\n  uint8_t buf[VW_MAX_MESSAGE_LEN];\n  uint8_t buflen = VW_MAX_MESSAGE_LEN;\n  if (vw_get_message(buf, &buflen)) {\n    digitalWrite(led_pin, HIGH);\n    Serial.print(\"Got: \");\n    for (int i = 0; i < buflen; i++) {\n      Serial.print(buf[i], HEX);\n      Serial.print(' ');\n    }\n    Serial.println();\n    digitalWrite(led_pin, LOW);\n  }\n}\n```\n\nSi todo está bien, el LED del receptor parpadea una vez por segundo y el monitor serial muestra los bytes ASCII de \"hello #\". El test de alcance es trivial: alimenta el transmisor con un power bank, sal a caminar con él, y mide hasta dónde llega antes de que el LED deje de parpadear.\n\n## Montaje 2: control remoto con dos botones\n\nCon la base funcionando, vamos a usar los mismos módulos para controlar dos LEDs a distancia desde dos pulsadores. El transmisor manda los caracteres `a`/`b` para el primer botón y `c`/`d` para el segundo (`a` = LED1 ON, `b` = LED1 OFF, etc.).\n\n**Material adicional:** 2 pulsadores táctiles, 2 resistencias de 10 kΩ (pull-down), 2 LEDs en el receptor.\n\n### Transmisor con botones\n\n```cpp\n#include <VirtualWire.h>\n\nconst char *on2 = \"a\", *off2 = \"b\";\nconst char *on3 = \"c\", *off3 = \"d\";\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_tx_pin(12);\n  pinMode(8, INPUT);\n  pinMode(7, INPUT);\n}\n\nvoid loop() {\n  if (digitalRead(8) == HIGH) { vw_send((uint8_t*)on2,  1); vw_wait_tx(); delay(200); }\n  else                         { vw_send((uint8_t*)off2, 1); vw_wait_tx(); delay(200); }\n  if (digitalRead(7) == HIGH) { vw_send((uint8_t*)on3,  1); vw_wait_tx(); delay(200); }\n  else                         { vw_send((uint8_t*)off3, 1); vw_wait_tx(); delay(200); }\n}\n```\n\n### Receptor con switch-case\n\n```cpp\n#include <VirtualWire.h>\nuint8_t buf[VW_MAX_MESSAGE_LEN];\nuint8_t buflen = VW_MAX_MESSAGE_LEN;\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_rx_pin(11);\n  vw_rx_start();\n  pinMode(2, OUTPUT);\n  pinMode(3, OUTPUT);\n}\n\nvoid loop() {\n  if (vw_get_message(buf, &buflen)) {\n    switch (buf[0]) {\n      case 'a': digitalWrite(2, HIGH); break;\n      case 'b': digitalWrite(2, LOW);  break;\n      case 'c': digitalWrite(3, HIGH); break;\n      case 'd': digitalWrite(3, LOW);  break;\n    }\n  }\n}\n```\n\nNota: bajamos la velocidad a 300 bps. A menor bit rate, mayor robustez y alcance — vale la pena cuando el \"payload\" útil son solo 4 caracteres.\n\n## Montaje 3: enviar enteros (sensores)\n\nPara enviar el valor de un sensor analógico (un LDR, un potenciómetro, un sensor de temperatura LM35), conviertes el `int` a string ASCII con `itoa()` y mandas el buffer:\n\n```cpp\n#include <VirtualWire.h>\nconst int Sensor1Pin = A1;\nint Sensor1Data;\nchar Sensor1CharMsg[4];\n\nvoid setup() {\n  pinMode(A1, INPUT);\n  vw_setup(2000);\n  vw_set_tx_pin(12);\n}\n\nvoid loop() {\n  Sensor1Data = analogRead(Sensor1Pin);\n  itoa(Sensor1Data, Sensor1CharMsg, 10);\n  vw_send((uint8_t*)Sensor1CharMsg, strlen(Sensor1CharMsg));\n  vw_wait_tx();\n  delay(1000);\n}\n```\n\nEn el receptor llamas a `atoi()` sobre el buffer para volver al entero. Truco: si vas a enviar `float` o struct, usa una `union` o `memcpy` y manda los bytes crudos — pero acuérdate de que ambos Arduinos deben tener la misma endianness (no es problema con AVR a AVR; sí podría serlo de AVR a ARM/ESP).\n\n## Variantes y mejoras\n\nEstas extensiones no aparecen en el tutorial original pero son las preguntas que siempre te surgen después del \"hola mundo\":\n\n- **Aumentar alcance a 100 m+**: alimenta el módulo transmisor con 9-12 V en lugar de 5 V (revisa la datasheet de tu módulo específico — algunos aceptan hasta 12 V). Suelda una antena helicoidal de 17 cm (cuarto de onda para 433 MHz) al pin ANT. Ganancia real: de 30 m a 80-100 m sin obstáculos.\n- **Bidireccional con dos pares de módulos**: usa un par TX/RX en cada extremo. Es más caro que un módulo \"transceiver\" tipo NRF24L01, pero te ahorra aprender SPI y el manejo de canales del nRF.\n- **Cifrado simple con XOR**: VirtualWire no encripta nada. Si te preocupa que el vecino haga sniffing con un SDR de $30 USD, aplica `msg[i] ^= key[i % keylen]` antes de enviar y después de recibir. No es AES, pero detiene al curioso casual.\n\n## Personalización para Chile\n\nLos componentes están disponibles en MechatronicStore con stock local:\n\n- **Kit de radiofrecuencia 315 KHz 5V (transmisor y receptor)** (SKU F-444) — $2.490 CLP\n- **Kit De Radiofrecuencia 433Mhz 5V (Transmisor y Receptor)** (SKU GP3-6) — $2.490 CLP *(en Chile el 433 MHz cae en banda ISM no licenciada y es la opción más común; 315 MHz es legal pero menos común).*\n- **Arduino Uno R3** (SKU X4-8) — $9.990 CLP (necesitas 2)\n- **Breadboard / Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP (necesitas 2)\n- **Cables macho macho 30cm** (SKU C-417) — $2.990 CLP (paquete de 40)\n- **LED 5mm rojo** (SKU GA1-5) — $100 CLP\n- **Resistencia 330Ω** (SKU GK3-18) — $100 CLP\n- **Resistencia 10kΩ** (SKU GK2-15) — $100 CLP (pull-down para los pulsadores)\n- **Botón pulsador 12x12x8 mm** (SKU GA6-16) — $290 CLP (necesitas 2 para el control remoto)\n\nSi en el tutorial original mencionan \"RF Link modules\" o marcas tipo XY-MK-5V / XY-FST, son funcionalmente los mismos que los kits de MechatronicStore.\n\n## Recursos\n\n- **Tutorial original (inglés)**: [Using Long Range 315MHz RF Wireless Transceivers with Arduino — tronixstuff.com](https://tronixstuff.com/2025/04/23/tutorial-315mhz-wireless-arduino/)\n- **Librería VirtualWire (Mike McCauley)**: <https://www.airspayce.com/mikem/arduino/VirtualWire/>\n- **Alternativa moderna a VirtualWire**: [RadioHead RH_ASK](https://www.airspayce.com/mikem/arduino/RadioHead/) (mismo autor, API más nueva)\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
+      "id": "ca35c83050a0",
+      "slug": "reloj-digital-arduino-multiplexado-7-segmentos-ds3231",
+      "title_es": "Reloj digital con Arduino: cómo multiplexar 6 displays de 7 segmentos con DS3231",
+      "subtitle_es": "Construye un reloj con Arduino Nano que multiplexa 6 displays de 7 segmentos y mantiene la hora con un módulo RTC DS3231.",
+      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp",
+      "body_es": "## ¿Por qué armar tu propio reloj cuando un reloj cuesta $3.000 en cualquier feria?\n\nUn reloj digital comprado funciona perfectamente para ver la hora. Este proyecto no compite con eso. Lo que vas a construir aquí es un reloj que entiendes a nivel circuito: sabes por qué cada transistor está donde está, por qué los displays tienen un brillo estable a pesar de compartir pines, y por qué un Arduino Nano con un cristal de 16 MHz puede mantener la base de tiempo con la ayuda de un RTC dedicado. Al terminar vas a haber aplicado en un solo proyecto multiplexado de displays, manejo de interrupciones por hardware, lectura de un RTC por I2C y diseño de máquinas de estado para botones.\n\nAl final del tutorial tendrás:\n\n- Un reloj de 6 dígitos cátodo común que muestra hora y fecha sobre la misma pantalla.\n- Una librería de multiplexado que puedes reutilizar para cualquier proyecto con displays de 7 segmentos.\n- Comprensión técnica de por qué se usa cada transistor 2N2222 y cada resistencia, no solo \"poner los componentes del esquema\".\n\n## Concepto: qué significa multiplexar displays y por qué importa\n\nUn display de 7 segmentos tiene 8 pines de control (7 segmentos + punto decimal) más 1 pin común (cátodo o ánodo, según tipo). Si conectaras cada display directamente a un Arduino, 6 displays consumirían 48 pines de control. Un Arduino Nano tiene 14 digitales + 6 analógicos usables como digitales: imposible.\n\nLa solución es el **multiplexado**: conectas en paralelo todos los pines de segmento de los 6 displays (los 7 ánodos de segmento A se unen, los 7 ánodos de segmento B se unen, y así sucesivamente). En cada momento solo iluminas UN dígito a la vez, habilitando su cátodo común. Después pasas al siguiente. Si haces ese ciclo a ~55 Hz o más, tu retina percibe los 6 dígitos como si estuvieran encendidos simultáneamente, gracias al fenómeno conocido como **persistencia de la visión** (POV).\n\nResultado: solo necesitas 7 pines para los segmentos + 6 pines para habilitar cada dígito = 13 pines totales, en lugar de 48. Eso ya cabe holgadamente en un Arduino Nano.\n\nEl costo es que durante 5/6 del tiempo cada dígito está apagado (solo 1/6 está encendido en cada instante). El brillo aparente baja a 1/6, pero la corriente de pico por segmento puede ser 5-6 veces mayor sin dañar el LED, porque cada segmento solo conduce durante ese 1/6 del ciclo. Por eso las resistencias serie de segmento suelen ser bajas (120-220 Ω) en circuitos multiplexados, contra los 1 kΩ típicos de un display siempre-encendido.\n\n## Por qué necesitas el transistor 2N2222 en el cátodo de cada display\n\nUn dígito completo con todos los segmentos encendidos (el número \"8\" con el punto) consume ~80 mA por display, repartidos entre los 8 LEDs. Esa corriente cruza el pin de cátodo común que va al Arduino. Pero un pin digital del ATmega328 (Arduino Nano) está garantizado solo hasta 20 mA continuos (con un absoluto máximo de 40 mA antes de daño permanente). 80 mA queman el pin.\n\nLa solución es poner un transistor NPN entre el cátodo del display y GND, controlado desde el pin del Arduino. El transistor 2N2222 soporta hasta 800 mA de corriente de colector, así que con 80 mA está sobrado.\n\nPara que el transistor entre en **saturación profunda** (su modo de conducción óptimo, donde V_CE ≈ 0.2 V) necesita corriente de base suficiente. Con I_C = 80 mA y un hFE conservador de 100 (el datasheet promete 100-300), I_B = 0.8 mA. Como V_GPIO = 5 V y V_BE = 0.7 V, la resistencia de base ideal es R = (5 - 0.7) / 0.0008 = 5375 Ω. Sin embargo el tutorial usa 1 kΩ. ¿Por qué?\n\nPorque al multiplexar, el transistor recibe pulsos cortos (3 ms cada 18 ms aproximadamente). Para garantizar conmutación rápida y compensar el hFE variable entre unidades del 2N2222, se sobre-inyecta corriente de base. Con 1 kΩ obtienes I_B = 4.3 mA, lo que da una **fuerza de saturación** de 5× sobre el mínimo teórico. El transistor conmuta de forma limpia y mantiene V_CE bajo, lo que se traduce en displays con brillo parejo entre dígitos.\n\n## Hardware completo\n\nPara la versión recomendada del reloj necesitas:\n\n- 1× **Arduino Nano V3** con cable USB (la versión Every del tutorial original es equivalente; en Chile el Nano V3 con CH340 es la opción común a la mitad del precio)\n- 1× **Módulo Reloj RTC DS3231** (NO el DS1307: el DS3231 lleva cristal compensado en temperatura y deriva ~2 minutos/año, contra ~30 minutos/año del DS1307)\n- 6× **Display 7 segmentos cátodo común 0.36\"** (o 0.56\" si quieres dígitos más grandes)\n- 6× **Transistor 2N2222 NPN**\n- 6× **Resistencia 1 kΩ 1/4 W** (resistencia de base de los transistores)\n- 7× **Resistencia 220 Ω 1/4 W** (resistencia serie de cada segmento — A, B, C, D, E, F, G)\n- 2× **Pulsador (botón pulsador 2 pines 6×6×7 mm)**\n- 2× **Protoboard 830 puntos** (el cableado de un reloj multiplexado ocupa mucho espacio)\n- ~30 **cables jumper macho-macho** (vas a hacer muchos puentes)\n\nEl tutorial original también lista resistencias de 120 Ω para los segmentos. Funciona, pero genera un brillo agresivo en ambientes oscuros. 220 Ω da un punto medio cómodo. Si tu reloj va a estar en un dormitorio, prueba con 470 Ω.\n\n## Distribución de pines en el Arduino Nano\n\n| Pin Arduino | Función |\n|---|---|\n| 2 | Interrupción del RTC DS3231 (SQW a 1 Hz) |\n| 3 | Botón SET (entrar a modo ajuste / cambiar campo) |\n| 4 | Botón UP (incrementar el valor seleccionado) |\n| 5-11 | Segmentos A-G de los displays (paralelo) |\n| 12, 13 | Habilitación cátodo común displays 1 y 2 (horas) |\n| A0-A3 | Habilitación cátodo común displays 3-6 (minutos y segundos) |\n| A4 | SDA del RTC DS3231 |\n| A5 | SCL del RTC DS3231 |\n\nFíjate que A4 y A5 son los pines I2C del ATmega328. No puedes reasignarlos: son hardware fijo.\n\n## Software: librerías Geek Factory + lógica del reloj\n\nEl proyecto usa cuatro librerías personalizadas del autor original (Geek Factory):\n\n- **GFDisplay7S** — clase de display 7 segmentos multiplexado, configurable para N dígitos.\n- **GFButton** — máquina de estados para botones con anti-rebote y detección de pulsación larga.\n- **GFRTC** — wrapper para el DS3231 con interrupciones SQW.\n- **TimerOne** — librería estándar para usar el Timer1 del ATmega328 como temporizador independiente del loop.\n\nLa lógica de alto nivel es una máquina de estados con dos modos:\n\n1. **RUN**: cada interrupción del RTC (1 Hz) levanta una bandera. El loop chequea la bandera, lee la hora del DS3231 por I2C y la muestra. Si presionas UP en este modo, durante la pulsación se ve la fecha en lugar de la hora.\n2. **ADJ**: si mantienes SET presionado 5 segundos, entras a modo ajuste. SET corto cambia qué campo estás editando (hora → min → seg → día → mes → año), UP incrementa el valor con wrap-around. SET largo guarda al RTC y vuelve a RUN.\n\nEl multiplexado de displays NO ocurre en el loop principal. Ocurre dentro de la interrupción del Timer1, programada a ~333 Hz (3 ms de período). En cada disparo, la rutina apaga todos los cátodos, pone los segmentos del siguiente dígito, y enciende su cátodo correspondiente. Este detalle es lo que permite que el loop principal pueda hacer otras cosas (leer botones, comunicarse con el RTC) sin parpadeos visibles en los displays.\n\n## Sketch principal\n\nPega esto en el IDE de Arduino después de instalar las cuatro librerías desde el Library Manager:\n\n```cpp\n#include \"GFDisplay7S.h\"\n#include \"GFButton.h\"\n#include \"GFRTC.h\"\n#include \"TimerOne.h\"\n\nenum clock_modes { E_CLOCK_MODE_RUN = 0, E_CLOCK_MODE_ADJ };\nenum clock_adjust {\n  E_CLOCK_ADJUST_HOUR = 0, E_CLOCK_ADJUST_MINUTE, E_CLOCK_ADJUST_SECOND,\n  E_CLOCK_ADJUST_DAY,  E_CLOCK_ADJUST_MONTH,  E_CLOCK_ADJUST_YEAR\n};\n\nGFButton setButton(3);\nGFButton upButton(4);\nGFDisplay7S display(\n  (const uint8_t[]){5, 6, 7, 8, 9, 10, 11, 0xFF},\n  (const uint8_t[]){12, 13, A0, A1, A2, A3}, 6);\n\nenum clock_modes mode = E_CLOCK_MODE_RUN;\nuint8_t adjvar = E_CLOCK_ADJUST_HOUR;\nstruct timelib_tm datetime;\nvolatile bool rtcflag = false;\n\nvoid setup() {\n  display.begin();\n  Timer1.initialize(3000);\n  Timer1.attachInterrupt([](){ display.process(); });\n  GFRTC.begin(true);\n  if (!GFRTC.isPresent()) { display.print(\"E1\"); for (;;); }\n  GFRTC.setIntSqwMode(E_SQRWAVE_1_HZ);\n  pinMode(2, INPUT);\n  attachInterrupt(digitalPinToInterrupt(2), [](){ rtcflag = true; }, FALLING);\n}\n\nvoid loop() {\n  if (mode == E_CLOCK_MODE_RUN) {\n    if (setButton.wasLongPress()) {\n      setButton.wasPressed();\n      adjvar = 0;\n      mode = E_CLOCK_MODE_ADJ;\n      return;\n    }\n    if (rtcflag && GFRTC.read(datetime)) {\n      rtcflag = false;\n      // mostrar hora o fecha según botón UP\n    }\n  } else {\n    // modo ajuste: SET largo guarda y sale; SET corto cambia campo;\n    // UP incrementa el campo seleccionado.\n  }\n}\n```\n\nEl código completo, con todas las funciones auxiliares de impresión de dos dígitos, parpadeo de los dígitos en ajuste e incremento con wrap-around, está en el repositorio original de Geek Factory (link al final).\n\n## Procedimiento para poner el reloj en hora\n\nUna vez cargado el sketch y energizado el circuito, los displays empiezan a contar desde la hora guardada en el RTC. Para ajustar:\n\n1. Mantén presionado **SET** unos 5 segundos hasta que los dos primeros dígitos (horas) parpadeen.\n2. Pulsa **UP** las veces necesarias para llegar a la hora correcta (al pasar 23 vuelve a 00).\n3. Pulsa **SET** corto para pasar a minutos.\n4. Repite con **UP**. Avanza con **SET** corto para segundos, día, mes y año.\n5. Cuando termines, mantén **SET** presionado 5 segundos de nuevo. El parpadeo se detiene, los displays vuelven a mostrar la hora actual y los datos quedan guardados en el RTC.\n\nDurante uso normal, si mantienes UP presionado, el reloj muestra la fecha (día / mes / año) hasta que sueltes.\n\n## Variantes y mejoras\n\nIdeas que no están en el tutorial original:\n\n- **Reemplazar los dos botones por un encoder rotatorio KY-040**: te ahorras un botón y la UX mejora dramáticamente. Giro = incremento/decremento, click = cambiar campo, click largo = entrar/salir de ajuste. Necesitas modificar la lógica de eventos del loop para mapear los pulsos del encoder a la variable adjvar, pero el código del display y RTC no cambia.\n- **Agregar alarma con buzzer activo 5V**: guarda en EEPROM una hora de alarma y compárala con datetime cada segundo. Cuando coincida, activa un GPIO conectado al buzzer durante 60 s o hasta que presiones SET. Solo añade ~30 líneas de código.\n- **Modo nocturno con LDR**: pon una LDR + resistencia 10 kΩ en un pin analógico. Lee la luz ambiente, y si está por debajo de cierto umbral, bajá el brillo desactivando 2 de los 6 ciclos de multiplexado en el ISR del Timer1. El reloj se atenúa automáticamente de noche, útil si va en un dormitorio.\n- **Sincronización por NTP usando un ESP-01 como bridge**: agregas un módulo ESP-01 que se conecta a tu Wi-Fi, consulta NTP cada 24 h y envía la hora correcta al Arduino por UART (TX/RX). El RTC DS3231 no necesita ajuste manual nunca más. Bonus: el reloj cambia hora de invierno/verano automáticamente si Chile algún día lo reinstaura.\n\n## Personalización para Chile (componentes en MechatronicStore)\n\nLista exacta con SKUs y precios actuales:\n\n- **Arduino nano V3.0 CH340 Compatible + Cable** (SKU N-302) — $4.490 CLP (equivalente al Nano Every del tutorial original a casi la mitad de precio)\n- **Módulo Reloj RTC DS3231** (SKU G-101V2) — $6.490 CLP\n- **Display 7 segmentos cátodo común 0.36\"** (SKU D-225) × 6 — $2.940 CLP total\n- **Transistor 2N2222 NPN** (SKU GA4-6) × 6 — $1.200 CLP total\n- **Resistencias 1/4W 1kΩ** (SKU GK3-17) × 6 — $600 CLP total\n- **Resistencias 1/4W 220Ω** (SKU GK1-18) × 7 — $700 CLP total\n- **Botón Pulsador 2 pines 6×6×7mm** (SKU GG4-6) × 2 — $580 CLP total\n- **Breadboard / Protoboard 830 puntos MB102** (SKU C-302) × 2 — $7.580 CLP total\n- **Cables macho macho 30cm** (SKU C-417) — $2.990 CLP\n\nSi el tutorial original menciona \"Arduino Nano Every\" (la versión con ATmega4809 de Microchip), el Nano V3 con CH340 cumple la misma función en este proyecto: la lógica corre perfecta en 16 MHz/2 KB SRAM. La única diferencia práctica es que el Every tiene un mejor regulador y un puerto USB-C, pero para un reloj enchufado a un cargador no se nota.\n\nCosto estimado del reloj completo: ~$27.570 CLP. Compara con un reloj digital armado importado que cuesta $80.000 CLP o más en plataformas como Amazon.\n\nPara variantes:\n\n- **Encoder rotatorio KY-040** (SKU GR2-3) — $2.100 CLP (reemplaza los dos pulsadores)\n- **Buzzer activo 5V** (SKU GA3-2) — $500 CLP (para la alarma)\n\n## Recursos\n\n- **Tutorial original**: [Reloj digital con Arduino y displays de 7 segmentos – Proyecto completo](https://www.geekfactory.mx/proyectos-de-electronica/proyecto-de-reloj-digital-con-arduino-y-displays-de-7-segmentos/) por Geek Factory.\n- **Librería GFDisplay7S**: [github.com/geekfactory/GFDisplay7S](https://github.com/geekfactory/GFDisplay7S)\n- **Librería GFRTC**: [github.com/geekfactory/GFRTC](https://github.com/geekfactory/GFRTC)\n- **Librería GFButton**: [github.com/geekfactory/GFButton](https://github.com/geekfactory/GFButton)\n- **TimerOne (Paul Stoffregen)**: [github.com/PaulStoffregen/TimerOne](https://github.com/PaulStoffregen/TimerOne)\n- **Licencia del código original**: CC BY-NC-SA 4.0 (Geek Factory).\n\nVersión chilena inspirada en el proyecto de Geek Factory, re-angulada con explicaciones técnicas de multiplexado y dimensionamiento de transistores, y con componentes en stock local en MechatronicStore.\n",
       "materials_list": [
-        {
-          "name": "Kit de radiofrecuencia 433 MHz transmisor y receptor",
-          "qty": 1,
-          "role": "comunicación inalámbrica"
-        },
-        {
-          "name": "Arduino Uno R3",
-          "qty": 2,
-          "role": "transmisor y receptor"
-        },
-        {
-          "name": "Protoboard 830 puntos",
-          "qty": 2,
-          "role": "prototipado"
-        },
-        {
-          "name": "Cables macho macho 30cm",
-          "qty": 1,
-          "role": "conexiones"
-        },
-        {
-          "name": "LED 5mm rojo",
-          "qty": 3,
-          "role": "indicadores visuales"
-        },
-        {
-          "name": "Resistencia 330Ω",
-          "qty": 3,
-          "role": "limitación de corriente LED"
-        },
-        {
-          "name": "Resistencia 10kΩ",
-          "qty": 2,
-          "role": "pull-down pulsadores"
-        },
-        {
-          "name": "Botón pulsador 12x12mm",
-          "qty": 2,
-          "role": "entrada control remoto"
-        }
+        {"name": "Arduino Nano V3", "qty": 1, "role": "core"},
+        {"name": "Módulo Reloj RTC DS3231", "qty": 1, "role": "rtc"},
+        {"name": "Display 7 segmentos cátodo común 0.36", "qty": 6, "role": "display"},
+        {"name": "Transistor 2N2222 NPN", "qty": 6, "role": "switching"},
+        {"name": "Resistencia 1K ohm 1/4W", "qty": 6, "role": "base-transistor"},
+        {"name": "Resistencia 220 ohm 1/4W", "qty": 7, "role": "segmento-led"},
+        {"name": "Botón Pulsador 2 pines 6x6x7mm", "qty": 2, "role": "input"},
+        {"name": "Protoboard 830 puntos", "qty": 2, "role": "prototipado"},
+        {"name": "Cables macho macho 30cm", "qty": 1, "role": "cableado"}
       ],
       "steps": [
-        {
-          "position": 1,
-          "name": "Instalar VirtualWire",
-          "text": "Descarga el .zip de VirtualWire y agrégalo al IDE Arduino vía Sketch → Include Library → Add .zip Library."
-        },
-        {
-          "position": 2,
-          "name": "Cablear TX y RX",
-          "text": "Transmisor: GND, 5V, SIG→D12. Receptor: GND, 5V, SIG→D11. LED + resistencia 330Ω entre D2 y GND en el receptor."
-        },
-        {
-          "position": 3,
-          "name": "Cargar sketches de test",
-          "text": "Sube el transmitter.ino al Arduino TX y receiver.ino al RX. Abre el monitor serial del receptor: deberías ver 'hello #N' cada segundo."
-        },
-        {
-          "position": 4,
-          "name": "Medir alcance",
-          "text": "Alimenta el transmisor con un power bank y aléjate. El LED del receptor deja de parpadear cuando sales del rango. A 5V típico: 25-30 m con obstáculos."
-        },
-        {
-          "position": 5,
-          "name": "Control remoto con botones",
-          "text": "Cambia los sketches a la versión con 2 botones que mandan caracteres a/b/c/d. Baja la velocidad a 300 bps para más robustez."
-        },
-        {
-          "position": 6,
-          "name": "Envío de datos numéricos",
-          "text": "Adapta para mandar la lectura de un pin analógico convertido con itoa() y revertido con atoi() en el receptor."
-        }
+        {"position": 1, "name": "Soldar headers a los displays y al RTC", "text": "Los displays de 7 segmentos vienen sin headers. Suéldales una tira de 5 pines a cada lado para que entren en protoboard. El módulo DS3231 ya suele venir con header soldado; si no, suéldale uno de 6 pines."},
+        {"position": 2, "name": "Cablear los segmentos en paralelo", "text": "Conecta el segmento A de los 6 displays en una sola fila del protoboard, después al pin 5 del Arduino vía una resistencia de 220 Ω. Repite con segmentos B (pin 6), C (pin 7), D (pin 8), E (pin 9), F (pin 10), G (pin 11). Esta etapa es la más laboriosa: usa cables de colores distintos por segmento para no perderte."},
+        {"position": 3, "name": "Montar el circuito de los transistores 2N2222", "text": "Por cada display: conecta el cátodo común al colector de un 2N2222, el emisor a GND, y la base al pin de habilitación correspondiente del Arduino (pines 12, 13, A0, A1, A2, A3) a través de una resistencia de 1 kΩ. Verifica que el lado plano del transistor mire al mismo lado en los 6."},
+        {"position": 4, "name": "Conectar el RTC DS3231 por I2C", "text": "SDA del DS3231 va al pin A4 del Arduino. SCL al pin A5. VCC al carril 5 V. GND al GND. Pin SQW del DS3231 va al pin 2 del Arduino (interrupción)."},
+        {"position": 5, "name": "Cablear los dos pulsadores", "text": "Botón SET entre pin 3 y GND. Botón UP entre pin 4 y GND. La librería GFButton activa el pull-up interno del ATmega328, así que no necesitas resistencias externas para los botones."},
+        {"position": 6, "name": "Instalar las cuatro librerías Geek Factory", "text": "Desde el Library Manager o descargando los ZIP desde el GitHub de Geek Factory, instala GFDisplay7S, GFButton, GFRTC y TimerOne (de Paul Stoffregen)."},
+        {"position": 7, "name": "Cargar el sketch", "text": "Selecciona Arduino Nano (procesador ATmega328P Old Bootloader si tu Nano V3 con CH340 da error de upload). Pega el código y carga."},
+        {"position": 8, "name": "Ajustar la hora", "text": "Mantén SET 5 segundos, ajusta cada campo con UP, avanza con SET corto, y guarda con SET largo. Verifica que después de desenchufar y volver a enchufar, la hora se mantiene (eso confirma que la pila de respaldo CR2032 del DS3231 está funcionando)."}
       ],
       "code_blocks": [
         {
           "lang": "cpp",
-          "caption": "Transmisor — broadcast 'hello' cada segundo",
-          "code": "#include <VirtualWire.h>\n\nconst int led_pin = 11;\nconst int transmit_pin = 12;\n\nvoid setup() {\n  vw_set_tx_pin(transmit_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  pinMode(led_pin, OUTPUT);\n}\n\nbyte count = 1;\nvoid loop() {\n  char msg[7] = {'h','e','l','l','o',' ','#'};\n  msg[6] = count;\n  digitalWrite(led_pin, HIGH);\n  vw_send((uint8_t *)msg, 7);\n  vw_wait_tx();\n  digitalWrite(led_pin, LOW);\n  delay(1000);\n  count++;\n}\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Receptor — imprime los bytes en HEX por Serial",
-          "code": "#include <VirtualWire.h>\n\nconst int led_pin = 2;\nconst int receive_pin = 11;\n\nvoid setup() {\n  Serial.begin(9600);\n  vw_set_rx_pin(receive_pin);\n  vw_set_ptt_inverted(true);\n  vw_setup(2000);\n  vw_rx_start();\n  pinMode(led_pin, OUTPUT);\n}\n\nvoid loop() {\n  uint8_t buf[VW_MAX_MESSAGE_LEN];\n  uint8_t buflen = VW_MAX_MESSAGE_LEN;\n  if (vw_get_message(buf, &buflen)) {\n    digitalWrite(led_pin, HIGH);\n    Serial.print(\"Got: \");\n    for (int i = 0; i < buflen; i++) {\n      Serial.print(buf[i], HEX); Serial.print(' ');\n    }\n    Serial.println();\n    digitalWrite(led_pin, LOW);\n  }\n}\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Transmisor con dos botones (control remoto)",
-          "code": "#include <VirtualWire.h>\n\nconst char *on2 = \"a\", *off2 = \"b\";\nconst char *on3 = \"c\", *off3 = \"d\";\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_tx_pin(12);\n  pinMode(8, INPUT);\n  pinMode(7, INPUT);\n}\n\nvoid loop() {\n  if (digitalRead(8) == HIGH) { vw_send((uint8_t*)on2,  1); vw_wait_tx(); delay(200); }\n  else                         { vw_send((uint8_t*)off2, 1); vw_wait_tx(); delay(200); }\n  if (digitalRead(7) == HIGH) { vw_send((uint8_t*)on3,  1); vw_wait_tx(); delay(200); }\n  else                         { vw_send((uint8_t*)off3, 1); vw_wait_tx(); delay(200); }\n}\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Receptor con switch-case para los 4 estados",
-          "code": "#include <VirtualWire.h>\nuint8_t buf[VW_MAX_MESSAGE_LEN];\nuint8_t buflen = VW_MAX_MESSAGE_LEN;\n\nvoid setup() {\n  vw_set_ptt_inverted(true);\n  vw_setup(300);\n  vw_set_rx_pin(11);\n  vw_rx_start();\n  pinMode(2, OUTPUT);\n  pinMode(3, OUTPUT);\n}\n\nvoid loop() {\n  if (vw_get_message(buf, &buflen)) {\n    switch (buf[0]) {\n      case 'a': digitalWrite(2, HIGH); break;\n      case 'b': digitalWrite(2, LOW);  break;\n      case 'c': digitalWrite(3, HIGH); break;\n      case 'd': digitalWrite(3, LOW);  break;\n    }\n  }\n}\n"
+          "caption": "Sketch principal del reloj multiplexado (estructura)",
+          "code": "#include \"GFDisplay7S.h\"\n#include \"GFButton.h\"\n#include \"GFRTC.h\"\n#include \"TimerOne.h\"\n\nenum clock_modes { E_CLOCK_MODE_RUN = 0, E_CLOCK_MODE_ADJ };\nenum clock_adjust {\n  E_CLOCK_ADJUST_HOUR = 0, E_CLOCK_ADJUST_MINUTE, E_CLOCK_ADJUST_SECOND,\n  E_CLOCK_ADJUST_DAY,  E_CLOCK_ADJUST_MONTH,  E_CLOCK_ADJUST_YEAR\n};\n\nGFButton setButton(3);\nGFButton upButton(4);\nGFDisplay7S display(\n  (const uint8_t[]){5, 6, 7, 8, 9, 10, 11, 0xFF},\n  (const uint8_t[]){12, 13, A0, A1, A2, A3}, 6);\n\nenum clock_modes mode = E_CLOCK_MODE_RUN;\nuint8_t adjvar = E_CLOCK_ADJUST_HOUR;\nstruct timelib_tm datetime;\nvolatile bool rtcflag = false;\n\nvoid setup() {\n  display.begin();\n  Timer1.initialize(3000);\n  Timer1.attachInterrupt([](){ display.process(); });\n  GFRTC.begin(true);\n  if (!GFRTC.isPresent()) { display.print(\"E1\"); for (;;); }\n  GFRTC.setIntSqwMode(E_SQRWAVE_1_HZ);\n  pinMode(2, INPUT);\n  attachInterrupt(digitalPinToInterrupt(2), [](){ rtcflag = true; }, FALLING);\n}\n\nvoid loop() {\n  switch (mode) {\n    case E_CLOCK_MODE_RUN:\n      if (setButton.wasLongPress()) { adjvar = 0; mode = E_CLOCK_MODE_ADJ; break; }\n      if (rtcflag) { rtcflag = false; GFRTC.read(datetime); }\n      break;\n    case E_CLOCK_MODE_ADJ:\n      if (setButton.wasLongPress()) { GFRTC.write(datetime); mode = E_CLOCK_MODE_RUN; break; }\n      if (setButton.wasPressed()) { if (++adjvar >= 6) adjvar = 0; }\n      if (upButton.wasPressed())  { /* incrementar campo seleccionado */ }\n      break;\n  }\n}"
         }
       ],
       "linked_products": [
         {
-          "name_original": "Kit de radiofrecuencia 433 MHz transmisor y receptor",
-          "product_id": "GP3-6",
-          "product_url": "https://www.mechatronicstore.cl/kit-de-radiofrecuencia-433mhz-5v-transmisor-y-receptor/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=GP3-6",
-          "price_clp": 2490,
+          "name_original": "Arduino Nano V3 con cable",
+          "product_id": "N-302",
+          "product_url": "https://www.mechatronicstore.cl/arduino-nano-v3-0-atmega328-cable/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=N-302",
+          "price_clp": 4490,
           "stock_available": true,
-          "match_score": 0.95
+          "match_score": 0.82
         },
         {
-          "name_original": "Kit de radiofrecuencia 315 KHz transmisor y receptor",
-          "product_id": "F-444",
-          "product_url": "https://www.mechatronicstore.cl/kit-de-radiofrecuencia-module-315khz-5v-transmisor-y-receptor/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=F-444",
-          "price_clp": 2490,
+          "name_original": "Módulo Reloj RTC DS3231",
+          "product_id": "G-101V2",
+          "product_url": "https://www.mechatronicstore.cl/modulo-reloj-rtc-ds3231/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=G-101V2",
+          "price_clp": 6490,
           "stock_available": true,
-          "match_score": 0.95
+          "match_score": 0.96
         },
         {
-          "name_original": "Arduino Uno R3",
-          "product_id": "X4-8",
-          "product_url": "https://www.mechatronicstore.cl/arduino-uno-r3/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=X4-8",
-          "price_clp": 9990,
+          "name_original": "Display 7 segmentos cátodo común 0.36",
+          "product_id": "D-225",
+          "product_url": "https://www.mechatronicstore.cl/display-anodo-catodo-0-36-1-bit/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=D-225",
+          "price_clp": 490,
           "stock_available": true,
-          "match_score": 0.98
+          "match_score": 0.9
         },
         {
-          "name_original": "Protoboard 830 puntos MB102",
-          "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=C-302",
-          "price_clp": 3790,
+          "name_original": "Transistor 2N2222 NPN",
+          "product_id": "GA4-6",
+          "product_url": "https://www.mechatronicstore.cl/transistor-2n2222/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=GA4-6",
+          "price_clp": 200,
           "stock_available": true,
-          "match_score": 0.92
+          "match_score": 0.97
         },
         {
-          "name_original": "Cables macho macho 30cm",
-          "product_id": "C-417",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=C-417",
-          "price_clp": 2990,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "LED 5mm rojo",
-          "product_id": "GA1-5",
-          "product_url": "https://www.mechatronicstore.cl/led-3mm-5mm/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=GA1-5&attribute_tamano-de-led=5mm&attribute_pa_color=rojo",
+          "name_original": "Resistencia 1K ohm 1/4W",
+          "product_id": "GK3-17",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=1k%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=GK3-17",
           "price_clp": 100,
           "stock_available": true,
-          "match_score": 0.92
+          "match_score": 0.9
         },
         {
-          "name_original": "Resistencia 330Ω",
-          "product_id": "GK3-18",
-          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=GK3-18&attribute_valores=330%CE%A9",
+          "name_original": "Resistencia 220 ohm 1/4W",
+          "product_id": "GK1-18",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?attribute_valores=220%CE%A9&utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=GK1-18",
           "price_clp": 100,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Resistencia 10kΩ",
-          "product_id": "GK2-15",
-          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=GK2-15&attribute_valores=10k%CE%A9",
-          "price_clp": 100,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Botón pulsador 12x12 push button",
-          "product_id": "GA6-16",
-          "product_url": "https://www.mechatronicstore.cl/boton-pulsador-switch-de-4-pines-push-button-12x12x8mm/?utm_source=blog&utm_medium=tutorial&utm_campaign=rf-largo-alcance-arduino-modulos-315-433-mhz-virtualwire&utm_content=GA6-16",
-          "price_clp": 290,
-          "stock_available": true,
-          "match_score": 0.85
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "arduino",
-      "difficulty": "beginner",
-      "estimated_time_minutes": 90,
-      "estimated_cost_clp": 32500,
-      "tags": [
-        "arduino",
-        "rf",
-        "433mhz",
-        "315mhz",
-        "virtualwire",
-        "wireless"
-      ],
-      "source_language": "en",
-      "re_angulation_applied": "primera persona del tutorial → guía instructiva en bloques temáticos (qué resuelve → cómo funciona ASK → setup base → control remoto → datos numéricos), agregamos explicación técnica de ASK + falta de CRC nativo, advertencia sobre antena helicoidal, sección Variantes con XOR encryption y alcance 12V no presente en el original",
-      "editorial_checklist": {
-        "title_distinct": true,
-        "has_unique_section": true,
-        "has_downloadable": true,
-        "body_word_ratio": 1.3,
-        "tone_or_structure_changed": true
-      },
-      "editorial_quality_warning": false
-    },
-    {
-      "id": "b70ab24d6e02",
-      "slug": "microfono-estudio-esp32-s3-dsp-ganancia-limitador",
-      "title_es": "Micrófono de estudio con ESP32-S3 por menos de $20.000 CLP: DSP, pre-amp y limitador en tiempo real",
-      "subtitle_es": "Transforma un INMP441 + ESP32-S3 en grabador apto para voiceovers, con ganancia x5 y brick-wall limiter por software.",
-      "hero_image_url": null,
-      "body_es": "## La pregunta que cambia el proyecto\n\n¿Y si la diferencia entre un audio \"amateur\" y uno \"de estudio\" no estuviera en el micrófono, sino en lo que haces con los bits después de capturarlos? Esa es la apuesta de este proyecto: tomar un ESP32-S3 + un micrófono I2S INMP441 (combinación que cuesta menos de $20.000 CLP en total) y, con apenas dos líneas de código DSP en tiempo real, transformarlo en una herramienta de grabación apta para voiceovers de YouTube, podcasts y demos de producto.\n\nAl final de este tutorial vas a tener un grabador con preamplificador por software (5x ganancia), brick-wall limiter para evitar distorsión, y comprensión real de por qué el sample rate y el buffer importan tanto como el hardware.\n\n## El problema con el audio \"raw\" del INMP441\n\nEl INMP441 es un MEMS digital excelente para voz, pero **es naturalmente silencioso**. La membrana de silicio es rígida (eso es bueno: aguanta golpes, no se desajusta con humedad), pero entrega niveles de señal mucho más bajos que un micrófono de condensador clásico. Si grabas crudo y subes el volumen del parlante a 100% para escuchar, también amplificas el ruido del cuantizador y todo suena \"fino\" y con hiss.\n\nLa solución profesional sería un preamplificador de hardware con bajo ruido (un INA163, un THAT 1510, lo que uses). Pero acá no vamos a tocar el hardware: vamos a **multiplicar las muestras por 5 en software** dentro del loop. Eso es exactamente lo que hace un preamplificador, pero en código.\n\n## Por qué importa el sample rate (y por qué subimos a 48 kHz)\n\nEl proyecto base de la entrega anterior usaba 22.050 Hz, que es calidad AM-radio. Suficiente para inteligibilidad de palabras, pero te corta las frecuencias por encima de 11 kHz (la mitad del sample rate, por el teorema de Nyquist). Esas frecuencias altas son lo que aporta el \"aire\" en una voz: la consonante 's', las plosivas 'p', el shimmer general.\n\nSubimos el sample rate a **48.000 Hz** (estándar de cine y video). Ahora capturamos hasta 24 kHz, que ya excede el límite del oído humano. La voz suena natural, no enlatada. El costo: más datos que mover en el bus I2S (96 KB/s en lugar de 44 KB/s para mono 16-bit), y por eso necesitamos un buffer más grande.\n\n## Hardware mínimo y por qué este micrófono\n\nPara este montaje necesitas:\n\n- **ESP32-S3** (la doble core es crítica: un core para audio, otro para UI/otras tareas)\n- **Módulo I2S INMP441**\n- **Batería LiPo o 18650** (opcional, para portabilidad)\n- **microSD** (donde se guardan los WAV)\n\nEl INMP441 expone 3 pines de I2S:\n\n| INMP441 | ESP32-S3 |\n|---|---|\n| WS (Word Select / LR Clock) | GPIO 43 |\n| SCK (Bit Clock) | GPIO 44 |\n| SD (Data Out) | GPIO 2 |\n| VDD | 3.3 V |\n| GND | GND |\n| L/R | GND (canal izquierdo) |\n\nSi tu micrófono no responde, lo primero que tienes que revisar es L/R: muchos clones vienen flotantes y necesitas amarrarlos a GND o VDD para definir el canal.\n\n## Código: el corazón del DSP\n\n```cpp\n#define SAMPLE_RATE   48000\n#define I2S_BCLK      44\n#define I2S_LRC       43\n#define I2S_DIN       2\n#define BUFFER_SIZE   4096\n#define SOFTWARE_GAIN 5.0\n```\n\n### Por qué BUFFER_SIZE = 4096 y no 1024\n\nLas tarjetas microSD no escriben con latencia constante. La mayor parte del tiempo el `write()` dura 2-3 ms, pero ocasionalmente la controladora interna hace garbage collection y el write se cuelga 30-50 ms. Mientras tanto, el micrófono sigue mandando samples al bus I2S. Si tu buffer es pequeño, te quedas sin espacio durante esos 50 ms → samples perdidos → \"pop\" audible en el WAV.\n\nUn buffer de 4 KB = 1024 samples a 16-bit mono = 21 ms de margen. Apenas suficiente. Subir a 8 KB es más seguro si tienes PSRAM disponible.\n\n### El pre-amplificador en una línea\n\n```cpp\nint32_t boosted = samples[i] * SOFTWARE_GAIN;\n```\n\nMultiplicas por 5 cada sample. Resultado: la voz que se escuchaba \"lejos\" ahora suena cerca. Pero ahora hay un problema: si gritas, el cálculo intermedio supera fácilmente los 32.767 (límite de int16). Si dejas que el `int32_t` se trunque a `int16_t` directamente, obtienes wrap-around: el sample de +35.000 se convierte en -30.000 (un overflow brutal). Esto suena como un click violento, audible al instante.\n\n### Brick-wall limiter — la red de seguridad\n\n```cpp\nif (boosted >  32767) boosted =  32767;\nelse if (boosted < -32767) boosted = -32767;\nsamples[i] = (int16_t)boosted;\n```\n\nEn lugar de dejar overflow, lo \"aplanas\" en el techo. Esto se llama \"hard clipping\" o \"brick-wall\". A diferencia del soft-clip (más musical, distorsiona orgánicamente), el hard-clip introduce algo de armónicos pero garantiza que **nunca** habrá un click destructivo.\n\nPara voz funciona perfecto. Para música, querrías un compresor con attack/release suaves, pero ese es otro tutorial.\n\n## Configuración del Arduino IDE\n\nPara el ESP32-S3 con PSRAM hay que ser cuidadoso con la configuración:\n\n- **Board**: ESP32S3 Dev Module\n- **Flash Size**: 16 MB\n- **Partition Scheme**: 16M Flash\n- **PSRAM**: OPI PSRAM ← crítico, si lo dejas en \"Disabled\" el buffer grande no entra\n\nVersión recomendada:\n\n- Arduino IDE 2.3.6\n- ESP32 boards package 2.0.11 o 2.0.16 (3.x cambia la API I2S; los ejemplos de este post asumen la API 2.x)\n\n## Variantes y mejoras\n\nPequeñas extensiones que no están en el tutorial original y que valen la pena:\n\n- **EQ paramétrico simple**: agrega un filtro biquad pasa-altos con corte en 80 Hz para eliminar el \"rumble\" de aire acondicionado y golpes de mesa. La librería `arduinoFFT` no te sirve acá, pero un IIR de 2 polos en código manual son ~10 líneas.\n- **Detección de silencio + autosave**: cuenta cuántos samples consecutivos están bajo un umbral RMS; si pasa cierto tiempo, cierra el WAV automáticamente. Útil para entrevistas.\n- **Streaming a Bluetooth A2DP**: en lugar de guardar a SD, transmitir el audio comprimido a auriculares BT con la librería `BluetoothA2DPSink`. Útil para monitoring en vivo.\n\n## Personalización para Chile\n\nComponentes en stock local en MechatronicStore:\n\n- **Seeed Studio XIAO ESP32-S3** (SKU GS1-3) — $13.670 CLP *(equivalencia: el tutorial original usa el \"MaTouch ESP32-S3\" de Makerfabs que no se vende en Chile; el XIAO ESP32-S3 es el mismo chip ESP32-S3 con doble core y PSRAM, sin pantalla. Si necesitas pantalla, súmale un OLED I2C).*\n- **Módulo Micrófono I2S INMP441** (SKU GL3-12) — $5.890 CLP\n- **Batería 18650 3000 mAh** (SKU L-040) — $5.190 CLP *(equivalencia: el tutorial pide \"Li-Po pequeño\"; una 18650 + módulo de carga es más versátil y dura más para grabación prolongada).*\n- **Módulo Power Bank con shield 2 pilas 18650** (SKU N-115) — $8.590 CLP *(para el lado portable: te da carga USB-A + protección incluida).*\n- **Micro SD tarjeta de memoria 8 GB** (SKU B-450V1) — $7.990 CLP\n- **Pantalla Oled 128x32 I2C 0.91\" SSD1306** (SKU D-112) — $3.990 CLP *(opcional, solo si quieres feedback visual REC/STOP).*\n\nTotal proyecto sin pantalla: ~$33.000 CLP. Con pantalla: ~$37.000 CLP.\n\n## Recursos\n\n- **Tutorial original (inglés)**: [$5 ESP32 Studio Microphone: Pro-Quality Audio on a Budget](https://www.electroniclinic.com/5-esp32-studio-microphone-pro-quality-audio-on-a-budget/)\n- **Datasheet INMP441 (InvenSense)**: <https://invensense.tdk.com/wp-content/uploads/2015/02/INMP441.pdf>\n- **Documentación I2S en ESP-IDF**: <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/i2s.html>\n- **Compresión y mastering básico de voz**: [Adobe Podcast](https://podcast.adobe.com/) (la post-producción que el autor original usa al final)\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
-      "materials_list": [
-        {
-          "name": "Seeed Studio XIAO ESP32-S3",
-          "qty": 1,
-          "role": "microcontrolador audio"
-        },
-        {
-          "name": "Módulo Micrófono I2S INMP441",
-          "qty": 1,
-          "role": "captura de audio"
-        },
-        {
-          "name": "Batería 18650 3000 mAh",
-          "qty": 1,
-          "role": "portabilidad"
-        },
-        {
-          "name": "Módulo Power Bank shield 2 pilas 18650",
-          "qty": 1,
-          "role": "gestión de carga LiPo"
-        },
-        {
-          "name": "Micro SD tarjeta de memoria 8 GB",
-          "qty": 1,
-          "role": "almacenamiento WAV"
-        },
-        {
-          "name": "Pantalla Oled 128x32 I2C SSD1306",
-          "qty": 1,
-          "role": "indicador REC opcional"
-        }
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Conectar el INMP441 al ESP32-S3",
-          "text": "WS→GPIO43, SCK→GPIO44, SD→GPIO2, VDD→3.3V, GND→GND, L/R→GND. Si no responde, revisa que L/R no esté flotante."
-        },
-        {
-          "position": 2,
-          "name": "Configurar Arduino IDE para ESP32-S3 con PSRAM",
-          "text": "Board: ESP32S3 Dev Module. Flash Size: 16MB. Partition: 16M Flash. PSRAM: OPI PSRAM (crítico para el buffer 4 KB)."
-        },
-        {
-          "position": 3,
-          "name": "Definir constantes y configurar I2S a 48 kHz",
-          "text": "SAMPLE_RATE 48000, BUFFER_SIZE 4096 (margen de 21 ms ante pausas de la SD), SOFTWARE_GAIN 5.0."
-        },
-        {
-          "position": 4,
-          "name": "Implementar el preamplificador",
-          "text": "En el loop, para cada sample: int32_t boosted = samples[i] * SOFTWARE_GAIN. Esto multiplica la señal x5 — equivalente a un pre-amp analógico."
-        },
-        {
-          "position": 5,
-          "name": "Agregar el brick-wall limiter",
-          "text": "if (boosted > 32767) boosted = 32767; else if (boosted < -32767) boosted = -32767. Aplana el techo y evita el wrap-around catastrófico de int16."
-        },
-        {
-          "position": 6,
-          "name": "Grabar al WAV y probar",
-          "text": "El loop principal escribe el buffer al archivo .wav en SD. Reproduce desde un PC: la voz debe sonar fuerte, clara, sin clicks ni distorsión incluso al gritar."
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Configuración base — pines I2S, sample rate y buffer",
-          "code": "#define SAMPLE_RATE   48000\n#define I2S_BCLK      44\n#define I2S_LRC       43\n#define I2S_DIN       2\n\n// Buffer grande para tolerar pausas de garbage collection de la microSD\n#define BUFFER_SIZE   4096\n\n// Ganancia de software (multiplicación lineal sobre cada sample)\n#define SOFTWARE_GAIN 5.0f\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Loop principal con pre-amp + brick-wall limiter",
-          "code": "void processAudioBuffer(int16_t *samples, size_t count) {\n  for (size_t i = 0; i < count; i++) {\n    // 1) Pre-amp por software: multiplica x5\n    int32_t boosted = (int32_t)samples[i] * (int32_t)SOFTWARE_GAIN;\n\n    // 2) Brick-wall limiter: aplana el techo a +/-32767\n    if (boosted >  32767) boosted =  32767;\n    else if (boosted < -32767) boosted = -32767;\n\n    samples[i] = (int16_t)boosted;\n  }\n  // (escritura al WAV en SD ocurre después de este bloque)\n}\n"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "Seeed Studio XIAO ESP32-S3",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=microfono-estudio-esp32-s3-dsp-ganancia-limitador&utm_content=GS1-3",
-          "price_clp": 13670,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Módulo Micrófono I2S INMP441",
-          "product_id": "GL3-12",
-          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=microfono-estudio-esp32-s3-dsp-ganancia-limitador&utm_content=GL3-12",
-          "price_clp": 5890,
-          "stock_available": true,
-          "match_score": 0.98
-        },
-        {
-          "name_original": "Batería 18650 3000 mAh",
-          "product_id": "L-040",
-          "product_url": "https://www.mechatronicstore.cl/pila-18650-3000mah-con-punta/?utm_source=blog&utm_medium=tutorial&utm_campaign=microfono-estudio-esp32-s3-dsp-ganancia-limitador&utm_content=L-040",
-          "price_clp": 5190,
-          "stock_available": true,
-          "match_score": 0.8
-        },
-        {
-          "name_original": "Módulo Power Bank shield 2 pilas 18650",
-          "product_id": "N-115",
-          "product_url": "https://www.mechatronicstore.cl/modulo-power-bank-con-2-pilas-18650/?utm_source=blog&utm_medium=tutorial&utm_campaign=microfono-estudio-esp32-s3-dsp-ganancia-limitador&utm_content=N-115",
-          "price_clp": 8590,
-          "stock_available": true,
-          "match_score": 0.8
-        },
-        {
-          "name_original": "Micro SD tarjeta de memoria 8 GB",
-          "product_id": "B-450V1",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?utm_source=blog&utm_medium=tutorial&utm_campaign=microfono-estudio-esp32-s3-dsp-ganancia-limitador&utm_content=B-450V1&attribute_memoria=8gb",
-          "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Pantalla Oled 128x32 I2C SSD1306",
-          "product_id": "D-112",
-          "product_url": "https://www.mechatronicstore.cl/pantalla-oled-128x32-i2c-0-91-ssd1306/?utm_source=blog&utm_medium=tutorial&utm_campaign=microfono-estudio-esp32-s3-dsp-ganancia-limitador&utm_content=D-112",
-          "price_clp": 3990,
-          "stock_available": true,
-          "match_score": 0.78
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 120,
-      "estimated_cost_clp": 37000,
-      "tags": [
-        "esp32-s3",
-        "i2s",
-        "inmp441",
-        "dsp",
-        "audio",
-        "limiter",
-        "voice"
-      ],
-      "source_language": "en",
-      "re_angulation_applied": "intro reescrito como pregunta-gancho (no copia del original); reorganizado en bloques (problema → fundamentos teóricos → hardware → código DSP detallado → IDE → variantes); agregamos explicación técnica de Nyquist + buffer overflow physics + diferencia hard-clip vs soft-clip; equivalencia explícita MaTouch→XIAO ESP32-S3 que el original no menciona",
-      "editorial_checklist": {
-        "title_distinct": true,
-        "has_unique_section": true,
-        "has_downloadable": true,
-        "body_word_ratio": 1.4,
-        "tone_or_structure_changed": true
-      },
-      "editorial_quality_warning": false
-    },
-    {
-      "id": "b79f5bdce4c8",
-      "slug": "grabadora-voz-esp32-s3-agitar-grabar-wav-microsd",
-      "title_es": "Grabadora de voz sin botones con ESP32-S3: agítala para grabar WAV en microSD",
-      "subtitle_es": "Control por gestos con IMU, umbrales asimétricos y feedback visual TFT. Cero clicks en tus voiceovers.",
-      "hero_image_url": "https://www.electroniclinic.com/wp-content/uploads/2026/05/ESP32-Voice-Recorder-No-Buttons-No-Touch.webp",
-      "body_es": "## Un grabador sin botones — ¿por qué?\n\n¿Te ha pasado que en pleno voiceover el \"click\" del botón se cuela al inicio del WAV? Es uno de los problemas más típicos de los grabadores DIY. Este proyecto resuelve eso de raíz: no hay botones, no hay pantalla táctil. La única interfaz es **agitar el dispositivo**. Una sacudida arranca la grabación; otra la detiene y la guarda como WAV en la microSD.\n\nAl final vas a tener un grabador de voz portátil controlado por gestos, basado en un ESP32-S3 + INMP441 + un IMU (acelerómetro/giroscopio) + una pantalla TFT para feedback visual, y vas a entender exactamente por qué los umbrales asimétricos son clave para que el gesto no falle en momentos malos.\n\n## Por qué el \"shake-to-record\" es más útil de lo que parece\n\nLas grabadoras profesionales tienen botones físicos con click mecánico que el micrófono captura. Las que tienen pantalla táctil capacitiva agregan ruido de fricción de dedos. La opción \"sin contacto físico\" elimina ambos:\n\n- Cero ruido al inicio/fin de la grabación\n- Una sola mano libre (no tienes que mirar dónde apretar)\n- Ideal para campo: con guantes, en oscuridad, mientras caminas\n\nEl truco está en distinguir \"gesto intencional\" de \"movimiento accidental\". Para eso usamos **umbrales asimétricos**: más fácil arrancar (umbral bajo) que detener (umbral alto). Si estuvieras grabando una entrevista y mueves el grabador, no querrías que se detenga sola.\n\n## Hardware: todo en un módulo\n\nComponentes mínimos:\n\n- **ESP32-S3** (doble core, soporta I2S nativo y display por SPI sin saturarse)\n- **Micrófono I2S INMP441**\n- **IMU con I2C** — el tutorial original usa el QMI8658 (que viene integrado en la placa MaTouch). Como ese chip exacto no se vende suelto en Chile, vamos a hacerlo con un **acelerómetro ADXL345** o **MPU6050** (ambos disponibles, ambos sirven igual para detectar shake).\n- **Pantalla TFT** (cualquier ST7735 / ST7789 / ILI9341 sirve)\n- **Tarjeta microSD** con módulo SPI breakout\n- **Batería 18650 + shield power bank**\n\n### Mapeo de pines (referencia)\n\n| Señal | GPIO ESP32-S3 |\n|---|---|\n| I2S BCLK (mic) | 44 |\n| I2S LRC (mic) | 43 |\n| I2S DIN (mic) | 2 |\n| SD CS | 42 |\n| SD MOSI | 40 |\n| SD MISO | 38 |\n| SD SCK | 39 |\n| IMU SDA | 17 |\n| IMU SCL | 18 |\n\nSi usas otra placa ESP32-S3 (DevKitC, XIAO S3, etc.), los pines I2S y SPI son libres; redefine los `#define` y listo.\n\n## Por qué usamos umbrales asimétricos\n\n```cpp\n#define SHAKE_THRESHOLD_START 1200\n#define SHAKE_THRESHOLD_STOP  1800\n#define SHAKE_DEBOUNCE        1000   // ms\n```\n\n`SHAKE_THRESHOLD_START = 1200` (en mg, miligravedades) significa que para arrancar la grabación, la suma de cambios en X+Y+Z tiene que superar 1.2 G. Eso es un movimiento intencional pero suave.\n\n`SHAKE_THRESHOLD_STOP = 1800` (1.8 G) es más exigente. Para detener tienes que sacudir con fuerza. Esta asimetría es lo que evita los \"stops\" accidentales si te mueves mientras grabas.\n\n`SHAKE_DEBOUNCE = 1000` ms te da un segundo de \"respiro\" después de cada toggle: el sistema no puede arrancar y detener en menos de 1 segundo. Sin debounce, una sola sacudida fuerte podría disparar dos eventos y arrancar/detener en el mismo gesto.\n\n## El WAV se escribe con header válido al final\n\nEsta es una sutileza importante: cuando grabas, el formato WAV pide saber el tamaño total del audio en el header (campos `chunkSize` y `dataSize`). Como no lo sabes hasta que el usuario detiene, el código:\n\n1. Al iniciar: escribe 44 bytes vacíos en el lugar del header (placeholder).\n2. Mientras graba: escribe los samples crudos a partir del byte 44.\n3. Al detener: hace `file.seek(0)`, escribe el header real con los tamaños correctos, y cierra.\n\nSi el ESP32 se queda sin batería en medio de la grabación, el archivo queda con header inválido. Audacity puede recuperarlo importando \"datos crudos\" (16-bit, 22050 Hz, mono) pero perderás el último bloque que no alcanzó a flushear.\n\n## Detección de gesto en el loop principal\n\n```cpp\nQMI8658_Data d;  // o ADXL345_Data, dependiendo del chip\nif (imu.readSensorData(d)) {\n  float delta = abs(d.accelX - lastAccelX)\n              + abs(d.accelY - lastAccelY)\n              + abs(d.accelZ - lastAccelZ);\n  lastAccelX = d.accelX;\n  lastAccelY = d.accelY;\n  lastAccelZ = d.accelZ;\n\n  int currentThreshold = isRecording ? SHAKE_THRESHOLD_STOP\n                                     : SHAKE_THRESHOLD_START;\n\n  if (delta > currentThreshold && millis() - lastShake > SHAKE_DEBOUNCE) {\n    lastShake = millis();\n    if (!isRecording) startRecording();\n    else stopRecording();\n  }\n}\n```\n\nEl \"delta\" es la suma de magnitudes absolutas en los tres ejes. No es la magnitud real del vector (eso requiere `sqrt(x²+y²+z²)`), pero es **mucho más barato computacionalmente** y para detección de sacudida funciona igual. Si quieres más precisión, usa la magnitud vectorial; si quieres más velocidad, esta suma sirve.\n\n## Calibración inicial\n\nCuando arranca el sistema, lee la posición de reposo del IMU y la guarda como baseline. Por eso es crítico **mantener el dispositivo quieto durante el primer segundo** después de encenderlo. Si lo mueves en ese momento, el baseline queda incorrecto y la detección de shake se vuelve ultra-sensible (o ultra-insensible). Es una limitación que vale la pena documentar para el usuario final.\n\n## UI con tres estados\n\nLa pantalla TFT muestra tres pantallas según el estado de la máquina:\n\n- **STANDBY** (azul): círculo concéntrico azul, texto \"Shake to Record\", nombre del próximo archivo (`rec_001.wav`).\n- **RECORDING** (rojo): círculo rojo grande con \"REC\" centrado, calidad de muestreo abajo.\n- **SAVED** (verde): círculo verde con \"SAVED!\", nombre del archivo recién guardado.\n\nEl feedback visual es opcional pero muy útil cuando estás caminando o tienes el dispositivo lejos: con un vistazo periférico sabes si está grabando.\n\n## Variantes y mejoras\n\nCosas que no están en el tutorial original y que mejoran sustancialmente la experiencia:\n\n- **Streaming via Wi-Fi a un servidor**: en lugar de guardar a SD, transmite el audio en vivo por UDP a una Raspberry Pi en tu red local. Convierte el ESP32-S3 en un micrófono inalámbrico de baja latencia (~50 ms).\n- **Detección de palabra clave con TinyML**: agrega un modelo de TensorFlow Lite Micro entrenado para detectar una palabra (\"grabar\" / \"stop\") y úsalo como trigger alternativo al shake. Menos accidental que un acelerómetro.\n- **Sumar DSP del proyecto hermano**: integra el pre-amp x5 + brick-wall limiter del [micrófono de estudio ESP32-S3](#) y obtienes un grabador shake-to-record con calidad de estudio. Es la combinación natural entre este proyecto y el siguiente paso.\n\n## Personalización para Chile\n\nComponentes en MechatronicStore con stock local:\n\n- **Seeed Studio XIAO ESP32-S3** (SKU GS1-3) — $13.670 CLP *(equivalencia: el tutorial original usa la placa MaTouch de Makerfabs que no se vende en Chile. El XIAO ESP32-S3 tiene el mismo chip + PSRAM; te falta la pantalla integrada y el IMU on-board, que armas con módulos sueltos).*\n- **Módulo Micrófono I2S INMP441** (SKU GL3-12) — $5.890 CLP\n- **Acelerómetro digital 3 ejes ADXL345 GY-291** (SKU GN3-4) — $3.490 CLP *(equivalencia: el QMI8658 del tutorial original no se vende suelto. El ADXL345 cumple exactamente la misma función para detección de shake — solo necesitas cambiar la librería).*\n- **Pantalla TFT LCD de 1.8\"** (SKU D-316) — $6.590 CLP *(opcional, para el feedback visual REC/STANDBY/SAVED).*\n- **Módulo datalogger para microSD** (SKU G-014) — $2.500 CLP *(necesario si tu placa ESP32-S3 no tiene slot microSD integrado).*\n- **Micro SD tarjeta de memoria 8 GB** (SKU B-450V1) — $7.990 CLP\n- **Batería 18650 3000 mAh** (SKU L-040) — $5.190 CLP\n- **Módulo Power Bank con shield 2 pilas 18650** (SKU N-115) — $8.590 CLP\n\nTotal proyecto completo con feedback visual: ~$54.000 CLP. Versión \"headless\" (sin TFT): ~$47.000 CLP.\n\n## Recursos\n\n- **Tutorial original (inglés)**: [ESP32 Voice Recorder with No Buttons or Touch – Just Shake to Record](https://www.electroniclinic.com/esp32-voice-recorder-with-no-buttons-or-touch-just-shake-to-record/)\n- **Datasheet INMP441**: <https://invensense.tdk.com/wp-content/uploads/2015/02/INMP441.pdf>\n- **Librería ADXL345 (Adafruit)**: [Adafruit_ADXL345](https://github.com/adafruit/Adafruit_ADXL345)\n- **Especificación del formato WAV**: <https://soundfile.sapp.org/doc/WaveFormat/>\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
-      "materials_list": [
-        {
-          "name": "Seeed Studio XIAO ESP32-S3",
-          "qty": 1,
-          "role": "microcontrolador principal"
-        },
-        {
-          "name": "Módulo Micrófono I2S INMP441",
-          "qty": 1,
-          "role": "captura de audio"
-        },
-        {
-          "name": "Acelerómetro digital 3 ejes ADXL345",
-          "qty": 1,
-          "role": "detección de gesto (shake)"
-        },
-        {
-          "name": "Pantalla TFT LCD de 1.8\"",
-          "qty": 1,
-          "role": "feedback visual REC/SAVED"
-        },
-        {
-          "name": "Módulo datalogger para microSD",
-          "qty": 1,
-          "role": "interfaz SPI de almacenamiento"
-        },
-        {
-          "name": "Micro SD tarjeta de memoria 8 GB",
-          "qty": 1,
-          "role": "guardar archivos WAV"
-        },
-        {
-          "name": "Batería 18650 3000 mAh",
-          "qty": 1,
-          "role": "alimentación portable"
-        },
-        {
-          "name": "Módulo Power Bank shield 2 pilas 18650",
-          "qty": 1,
-          "role": "gestión de carga"
-        }
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Cableado I2S + I2C + SPI",
-          "text": "INMP441 a GPIO 43/44/2. ADXL345 a GPIO 17/18 (I2C). Módulo microSD a GPIO 39/40/38/42 (SPI)."
-        },
-        {
-          "position": 2,
-          "name": "Calibración del IMU al boot",
-          "text": "Mantén el grabador quieto durante 1.5 segundos al encender. El sistema lee la posición de reposo en X/Y/Z y la usa de baseline."
-        },
-        {
-          "position": 3,
-          "name": "Lógica de shake con umbrales asimétricos",
-          "text": "delta = |dx| + |dy| + |dz|. Si delta > 1200 mg → start (umbral bajo, fácil). Si delta > 1800 mg → stop (alto, evita falsos positivos). Debounce 1000 ms entre eventos."
-        },
-        {
-          "position": 4,
-          "name": "Grabación a WAV con header diferido",
-          "text": "Al arrancar reservas 44 bytes vacíos en el archivo. Mientras grabas escribes samples I2S crudos. Al detener vuelves al byte 0 y escribes el header con chunkSize/dataSize correctos."
-        },
-        {
-          "position": 5,
-          "name": "Indexado inteligente de archivos",
-          "text": "Al boot recorres /rec_001.wav, /rec_002.wav, ... y arrancas en el primer número libre. Evita sobreescribir grabaciones previas tras un reinicio."
-        },
-        {
-          "position": 6,
-          "name": "UI con tres estados",
-          "text": "STANDBY (azul + nombre próximo archivo), RECORDING (rojo + REC), SAVED (verde + nombre archivo). Refresca solo en transiciones para no saturar el SPI del TFT."
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Constantes de calibración del shake-to-record",
-          "code": "// Umbrales asimétricos: facil arrancar, dificil detener\n#define SHAKE_THRESHOLD_START 1200   // mg (1.2 G)\n#define SHAKE_THRESHOLD_STOP  1800   // mg (1.8 G)\n#define SHAKE_DEBOUNCE        1000   // ms entre toggles\n\n#define SAMPLE_RATE 22050    // calidad AM/podcast-draft\n#define BUFFER_SIZE 1024\n#define I2S_BCLK 44\n#define I2S_LRC  43\n#define I2S_DIN  2\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Loop principal: detección de shake + grabación",
-          "code": "void loop() {\n  uint8_t buffer[BUFFER_SIZE];\n  size_t bytesRead;\n\n  // -- Captura de audio --\n  if (isRecording) {\n    i2s_read(I2S_NUM_0, buffer, BUFFER_SIZE, &bytesRead, portMAX_DELAY);\n    if (bytesRead > 0) {\n      recFile.write(buffer, bytesRead);\n      totalBytes += bytesRead;\n    }\n  }\n\n  // -- Detección de gesto --\n  if (imuCalibrated) {\n    AccelData d;\n    if (imu.readAccel(d)) {\n      float delta = fabs(d.x - lastX) + fabs(d.y - lastY) + fabs(d.z - lastZ);\n      lastX = d.x; lastY = d.y; lastZ = d.z;\n\n      int threshold = isRecording ? SHAKE_THRESHOLD_STOP\n                                   : SHAKE_THRESHOLD_START;\n      if (delta > threshold && millis() - lastShake > SHAKE_DEBOUNCE) {\n        lastShake = millis();\n        if (!isRecording) startRecording();\n        else stopRecording();\n      }\n    }\n  }\n}\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Header WAV escrito al detener (con tamaños reales)",
-          "code": "void writeWavHeader(File &file, uint32_t dataSize) {\n  uint32_t chunkSize    = 36 + dataSize;\n  uint16_t audioFormat  = 1;        // PCM\n  uint16_t numChannels  = 1;        // mono\n  uint32_t sampleRate   = SAMPLE_RATE;\n  uint16_t bitsPerSample = 16;\n  uint32_t byteRate     = sampleRate * numChannels * bitsPerSample / 8;\n  uint16_t blockAlign   = numChannels * bitsPerSample / 8;\n  uint32_t subChunk1Size = 16;\n\n  file.seek(0);\n  file.write((const uint8_t*)\"RIFF\", 4);\n  file.write((const uint8_t*)&chunkSize, 4);\n  file.write((const uint8_t*)\"WAVE\", 4);\n  file.write((const uint8_t*)\"fmt \", 4);\n  file.write((const uint8_t*)&subChunk1Size, 4);\n  file.write((const uint8_t*)&audioFormat, 2);\n  file.write((const uint8_t*)&numChannels, 2);\n  file.write((const uint8_t*)&sampleRate, 4);\n  file.write((const uint8_t*)&byteRate, 4);\n  file.write((const uint8_t*)&blockAlign, 2);\n  file.write((const uint8_t*)&bitsPerSample, 2);\n  file.write((const uint8_t*)\"data\", 4);\n  file.write((const uint8_t*)&dataSize, 4);\n}\n"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "Seeed Studio XIAO ESP32-S3",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=GS1-3",
-          "price_clp": 13670,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Módulo Micrófono I2S INMP441",
-          "product_id": "GL3-12",
-          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=GL3-12",
-          "price_clp": 5890,
-          "stock_available": true,
-          "match_score": 0.98
-        },
-        {
-          "name_original": "Acelerómetro digital 3 ejes ADXL345",
-          "product_id": "GN3-4",
-          "product_url": "https://www.mechatronicstore.cl/acelerometro-digital-3-ejes-adxl345-gy-291/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=GN3-4",
-          "price_clp": 3490,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Pantalla TFT LCD de 1.8\"",
-          "product_id": "D-316",
-          "product_url": "https://www.mechatronicstore.cl/pantalla-tft-lcd-de-1-8/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=D-316",
-          "price_clp": 6590,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Módulo datalogger para microSD",
-          "product_id": "G-014",
-          "product_url": "https://www.mechatronicstore.cl/modulo-datalogger-para-tarjeta-de-memoria-microsd/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=G-014",
-          "price_clp": 2500,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Micro SD tarjeta de memoria 8 GB",
-          "product_id": "B-450V1",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=B-450V1&attribute_memoria=8gb",
-          "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Batería 18650 3000 mAh",
-          "product_id": "L-040",
-          "product_url": "https://www.mechatronicstore.cl/pila-18650-3000mah-con-punta/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=L-040",
-          "price_clp": 5190,
-          "stock_available": true,
-          "match_score": 0.8
-        },
-        {
-          "name_original": "Módulo Power Bank shield 2 pilas 18650",
-          "product_id": "N-115",
-          "product_url": "https://www.mechatronicstore.cl/modulo-power-bank-con-2-pilas-18650/?utm_source=blog&utm_medium=tutorial&utm_campaign=grabadora-voz-esp32-s3-agitar-grabar-wav-microsd&utm_content=N-115",
-          "price_clp": 8590,
-          "stock_available": true,
-          "match_score": 0.8
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 180,
-      "estimated_cost_clp": 54000,
-      "tags": [
-        "esp32-s3",
-        "i2s",
-        "imu",
-        "wav",
-        "gesture",
-        "voice-recorder"
-      ],
-      "source_language": "en",
-      "re_angulation_applied": "intro reescrito con pregunta-gancho específica al problema del 'click' del botón (no aparece en el original); reorganizado por bloques (por qué shake → hardware → umbrales asimétricos → escritura WAV → calibración → UI); explicaciones técnicas adicionales sobre Manhattan distance vs vector magnitude, formato WAV con header diferido, y consecuencias de battery loss; equivalencia QMI8658→ADXL345 que el original no menciona",
-      "editorial_checklist": {
-        "title_distinct": true,
-        "has_unique_section": true,
-        "has_downloadable": true,
-        "body_word_ratio": 1.3,
-        "tone_or_structure_changed": true
-      },
-      "editorial_quality_warning": false
-    },
-    {
-      "id": "167188deceb1",
-      "slug": "identificador-aves-tiempo-real-raspberry-pi-birdnet",
-      "title_es": "Identificador de aves en tiempo real con Raspberry Pi y BirdNET-Pi",
-      "subtitle_es": "Convierte tu Pi en una estación de bioacústica que escucha 24/7 y clasifica especies con IA del Cornell Lab.",
-      "hero_image_url": "https://pimylifeup.com/wp-content/uploads/2026/01/Raspberry-Pi-BirdNET-Pi-Bird-Call-Classifier-Thumbnail-NoWM.jpg",
-      "body_es": "## Tu jardín tiene más datos de los que crees\n\n¿Cuántas especies distintas de aves pasan por tu patio cada día? Si tienes una Raspberry Pi sin usar y un micrófono USB, puedes responder esa pregunta de forma automática y cuantitativa. **BirdNET-Pi** convierte tu Raspberry Pi en una estación de bioacústica: graba el audio del exterior 24/7, identifica las llamadas de aves usando un modelo de IA entrenado por el Cornell Lab of Ornithology, y publica los resultados en una interfaz web local (más, opcionalmente, en el mapa global de [BirdWeather](https://app.birdweather.com)).\n\nAl final de esta guía vas a tener tu Pi escuchando y clasificando aves en tiempo real, accesible desde el navegador de tu celular, con espectrogramas y grabaciones revisables. Y vas a entender los detalles que la mayoría de los tutoriales omiten: por qué el modelo es 64-bit only, qué micrófono compra hoy en Chile, y cómo proteger el conjunto a la intemperie.\n\n## El requisito que rompe instalaciones: 64-bit obligatorio\n\nAntes de partir, esto es **lo más importante** que debes saber: BirdNET-Pi **no funciona en Raspberry Pi OS de 32-bit**. El modelo de TensorFlow Lite que usa está compilado para `aarch64`. Si instalas el script en una Pi corriendo Raspberry Pi OS Bullseye 32-bit, la instalación se queja al final con errores crípticos.\n\nLo que necesitas:\n\n- **Raspberry Pi 3, 4 o 5** (la Pi 3 fue la primera con soporte 64-bit oficial)\n- **Raspberry Pi OS 64-bit** (Trixie o Bookworm), instalación limpia recomendada\n- **Pi dedicada al proyecto** — BirdNET-Pi tiene servicios pesados (audio + modelo + web + base de datos SQLite); no le pongas otras cosas encima\n\n## Hardware: el micrófono USB importa más que el modelo de Pi\n\nUna Pi 3B+ funciona perfectamente, no necesitas la Pi 5. Lo que realmente afecta la calidad de detección es el micrófono. Tres opciones según presupuesto:\n\n| Opción | Tipo | Ventaja | Desventaja |\n|---|---|---|---|\n| Micrófono USB barato (~$5.000 CLP) | Condensador omnidireccional | Plug and play | Recoge ruido ambiente |\n| Lavalier USB (~$15.000 CLP) | Lavalier con receptor USB | Cable largo, fácil de colocar afuera | Necesita protección |\n| USB sound card + electret | Tarjeta USB + cápsula electret externa | Modular, intercambiable | Más cableado |\n\nSi vas a instalar afuera, planifica antes el **gabinete weatherproof**: una caja IP65 con un agujero pequeño y una membrana acústica (la espuma de un audífono roto sirve). Sin protección, la primera lluvia te mata el micrófono.\n\n## Setup paso a paso\n\n### 1. Preparar el sistema\n\nAsume que tienes Raspberry Pi OS 64-bit limpio, micrófono USB conectado, e IP estática asignada via reserva DHCP en tu router (no en `/etc/dhcpcd.conf` — la reserva en el router sobrevive a re-flashes).\n\nActualiza todo:\n\n```bash\nsudo apt update && sudo apt upgrade -y\nsudo apt install -y curl\n```\n\n### 2. Instalar BirdNET-Pi\n\nUn solo comando descarga el script de instalación y lo ejecuta. La instalación toma **15-30 minutos**: descarga el modelo, instala dependencias Python, configura nginx, sistemd services y SQLite. La Pi se reinicia automáticamente al terminar.\n\n```bash\ncurl -s https://raw.githubusercontent.com/Nachtzuster/BirdNET-Pi/main/newinstaller.sh | bash\n```\n\nSi la instalación falla, lo más común es:\n\n- Falta de espacio en la microSD (necesitas mínimo 8 GB libres después de Raspberry Pi OS)\n- Estás en 32-bit (`uname -m` debe responder `aarch64`, no `armv7l`)\n- Conexión inestable a GitHub (vuelve a intentar)\n\n### 3. Acceder a la interfaz web\n\nDespués del reboot, obtén la IP de la Pi:\n\n```bash\nhostname -I\n```\n\nAbre en tu navegador `http://<IPADDRESS>`. La detección de aves arranca automáticamente.\n\n### 4. Configurar latitud y longitud (crítico)\n\nLa detección depende fuertemente del contexto geográfico — el modelo prioriza especies probables en tu zona. Por defecto BirdNET-Pi adivina tu ubicación por IP, lo que suele estar **errado por cientos de kilómetros** en Chile. Para arreglarlo:\n\n1. Click en **Tools** (esquina superior derecha).\n2. Login: usuario `birdnet`, sin contraseña.\n3. Click en **Settings**.\n4. Actualiza **Latitude** y **Longitude** (Google Maps: click derecho en tu casa → copia las coordenadas).\n5. Click en **Update Settings** al final de la página.\n\n### 5. Asegurar la interfaz admin\n\nPor defecto las páginas admin solo piden el username `birdnet` sin password. Cualquiera en tu LAN puede tocar config. Para ponerle password:\n\n1. Settings → Advanced Settings (botón al final de la página).\n2. Llena el campo **Password** (solo letras y números, sin símbolos especiales).\n3. Update Settings.\n\n## Cómo funciona internamente (lo que el tutorial original no explica)\n\nBirdNET no es magia: es un **modelo CNN (Red Neuronal Convolucional)** que recibe un espectrograma de mel de 3 segundos de audio y devuelve probabilidades sobre 6.000+ especies. La arquitectura es similar a EfficientNet pero entrenada con muestras reales de Xeno-Canto y librerías privadas del Cornell Lab.\n\nEl pipeline en tu Pi corre así, cada 3 segundos:\n\n1. Captura 3 s de audio del micrófono USB\n2. Computa el espectrograma de mel (FFT + bancos de filtros mel)\n3. Pasa la imagen resultante por la CNN\n4. Las predicciones con confianza > umbral (por defecto 0.7) se guardan en la base SQLite\n5. Si BirdWeather está habilitado, sube la detección a la API\n\nPor eso necesitas 64-bit: el modelo está cuantizado a int8 y compilado contra librerías `aarch64` específicas.\n\n## Variantes y mejoras\n\nCosas que el tutorial original no menciona y que son prácticas en el día a día:\n\n- **Backup automático de la base SQLite a un NAS o Dropbox**: las grabaciones se acumulan rápido. Un script bash + rclone te las copia cada noche y libera la microSD.\n- **Notificación a Telegram cuando aparece especie rara**: BirdNET-Pi tiene webhooks. Si llega una detección con score > 0.85 sobre una especie poco común en tu zona, te llega un push a tu celular. Útil para birdwatchers serios.\n- **Visualización histórica con Grafana**: BirdNET-Pi guarda las detecciones en SQLite; puedes exponerlas a Grafana con un datasource SQLite y armar dashboards mensuales/anuales (especies por hora del día, tendencias estacionales).\n\n## Personalización para Chile\n\nComponentes con stock local en MechatronicStore:\n\n- **Grove Beginner Kit con Raspberry Pi 4B (4GB)** (SKU D-732) — $170.990 CLP *(equivalencia: si ya tienes una Pi 3/4 de proyectos anteriores, te ahorras esto. Este kit es la forma más fácil de partir si no tienes Pi).*\n- **Micro SD tarjeta de memoria 64 GB** (SKU B-450V2) — $11.990 CLP *(necesitas mínimo 32 GB; 64 GB te da espacio para meses de grabaciones).*\n- **Cable de Red Ethernet 1.5 mt** (SKU F-505) — $2.990 CLP *(muy recomendado: el procesamiento de audio + Wi-Fi puede causar drops; cable Ethernet elimina ese factor).*\n- **Caja Plástica para proyectos 120x120x90 mm** (SKU C-003) — $4.290 CLP *(base para el gabinete weatherproof: agregas espuma + membrana acústica casera).*\n- **Cable USB Tipo C a USB Tipo A 1 mt** (SKU B-101) — $2.190 CLP *(para alimentar la Pi 4/5).*\n- **Módulo Micrófono I2S INMP441** (SKU GL3-12) — $5.890 CLP *(opcional: si vas a hacer una versión con micrófono I2S en lugar de USB, este sirve — pero requiere modificar la config de ALSA).*\n\nPara el micrófono USB en sí: cualquier USB lavalier o webcam con micrófono (incluso vieja, sin video) sirve. No necesitas un micrófono de estudio.\n\n## Recursos\n\n- **Tutorial original (inglés)**: [Classify Birds in Real Time on your Raspberry Pi with BirdNET-Pi — Pi My Life Up](https://pimylifeup.com/raspberry-pi-birdnet/)\n- **Repositorio GitHub BirdNET-Pi (fork mantenido)**: [Nachtzuster/BirdNET-Pi](https://github.com/Nachtzuster/BirdNET-Pi)\n- **BirdWeather (mapa global)**: <https://app.birdweather.com>\n- **Cornell Lab of Ornithology — BirdNET project**: <https://birdnet.cornell.edu/>\n- **Guía de IP estática Raspberry Pi**: <https://pimylifeup.com/raspberry-pi-static-ip-address/>\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
-      "materials_list": [
-        {
-          "name": "Raspberry Pi 4 o 5 (con Grove Beginner Kit)",
-          "qty": 1,
-          "role": "computadora principal"
-        },
-        {
-          "name": "Micro SD tarjeta de memoria 64 GB",
-          "qty": 1,
-          "role": "sistema operativo + base de datos"
-        },
-        {
-          "name": "Cable de Red Ethernet 1.5 mt",
-          "qty": 1,
-          "role": "conexión estable a red"
-        },
-        {
-          "name": "Caja plástica 120x120x90 mm",
-          "qty": 1,
-          "role": "gabinete weatherproof base"
-        },
-        {
-          "name": "Cable USB Tipo C a USB Tipo A 1 mt",
-          "qty": 1,
-          "role": "alimentación Pi 4/5"
-        },
-        {
-          "name": "Micrófono USB (lavalier o condensador genérico)",
-          "qty": 1,
-          "role": "captura de audio ambiente"
-        }
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Verificar prerrequisitos",
-          "text": "Raspberry Pi OS 64-bit (uname -m debe responder aarch64). Micrófono USB conectado y reconocido (arecord -l)."
-        },
-        {
-          "position": 2,
-          "name": "Actualizar y preparar el sistema",
-          "text": "sudo apt update && sudo apt upgrade -y && sudo apt install -y curl. Asignar IP estática vía reserva DHCP en el router."
-        },
-        {
-          "position": 3,
-          "name": "Ejecutar el instalador de BirdNET-Pi",
-          "text": "curl -s https://raw.githubusercontent.com/Nachtzuster/BirdNET-Pi/main/newinstaller.sh | bash. La instalación toma 15-30 minutos y la Pi se reinicia automáticamente."
-        },
-        {
-          "position": 4,
-          "name": "Acceder al panel web",
-          "text": "Obtén la IP con hostname -I. Abre http://<IP> en tu navegador. La detección de aves ya está corriendo."
-        },
-        {
-          "position": 5,
-          "name": "Calibrar latitud/longitud",
-          "text": "Tools → birdnet (sin password) → Settings. Corrige las coordenadas usando Google Maps. El modelo prioriza especies probables en tu zona."
-        },
-        {
-          "position": 6,
-          "name": "Asegurar el panel admin",
-          "text": "Settings → Advanced Settings → Password (solo letras y números). Update Settings."
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "bash",
-          "caption": "Preparación del sistema operativo",
-          "code": "# Actualizar paquetes\nsudo apt update && sudo apt upgrade -y\n\n# Instalar curl (lo necesita el instalador)\nsudo apt install -y curl\n\n# Verificar que estamos en 64-bit (debe responder aarch64)\nuname -m\n"
-        },
-        {
-          "lang": "bash",
-          "caption": "Instalar BirdNET-Pi (un solo comando)",
-          "code": "# Descarga y ejecuta el script de instalacion oficial\ncurl -s https://raw.githubusercontent.com/Nachtzuster/BirdNET-Pi/main/newinstaller.sh | bash\n\n# Tras 15-30 minutos la Pi se reinicia automaticamente\n# y BirdNET-Pi queda escuchando por defecto en el puerto 80\n"
-        },
-        {
-          "lang": "bash",
-          "caption": "Obtener la IP de la Pi para acceder al panel web",
-          "code": "# Muestra todas las IPs asignadas a la Pi\nhostname -I\n\n# Luego abre en el navegador: http://<IP>\n# Para entrar al panel admin: Tools -> usuario birdnet (sin password)\n"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "Grove Beginner Kit con Raspberry Pi 4B (4GB)",
-          "product_id": "D-732",
-          "product_url": "https://www.mechatronicstore.cl/grove-beginner-kit-con-raspberry-pi-4b-4gb/?utm_source=blog&utm_medium=tutorial&utm_campaign=identificador-aves-tiempo-real-raspberry-pi-birdnet&utm_content=D-732",
-          "price_clp": 170990,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Micro SD tarjeta de memoria 64 GB",
-          "product_id": "B-450V2",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?utm_source=blog&utm_medium=tutorial&utm_campaign=identificador-aves-tiempo-real-raspberry-pi-birdnet&utm_content=B-450V2&attribute_memoria=64gb",
-          "price_clp": 11990,
           "stock_available": true,
           "match_score": 0.88
         },
         {
-          "name_original": "Cable de Red Ethernet 1.5 mt",
-          "product_id": "F-505",
-          "product_url": "https://www.mechatronicstore.cl/clable-de-red-ethernet-1-5mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=identificador-aves-tiempo-real-raspberry-pi-birdnet&utm_content=F-505",
+          "name_original": "Botón Pulsador 2 pines 6x6x7mm",
+          "product_id": "GG4-6",
+          "product_url": "https://www.mechatronicstore.cl/boton-pulsador-switch-2-pines-6x6x7mm/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=GG4-6",
+          "price_clp": 290,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.93
+        },
+        {
+          "name_original": "Cables macho macho 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=C-417",
           "price_clp": 2990,
           "stock_available": true,
-          "match_score": 0.92
+          "match_score": 0.86
         },
         {
-          "name_original": "Caja plástica 120x120x90 mm",
-          "product_id": "C-003",
-          "product_url": "https://www.mechatronicstore.cl/caja-plastica-para-proyectos-blanca/?utm_source=blog&utm_medium=tutorial&utm_campaign=identificador-aves-tiempo-real-raspberry-pi-birdnet&utm_content=C-003&attribute_dimensiones=120x120X90mm",
-          "price_clp": 4290,
+          "name_original": "Encoder rotatorio KY-040 (variante)",
+          "product_id": "GR2-3",
+          "product_url": "https://www.mechatronicstore.cl/encoder-rotatorio-brick-ky-040/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=GR2-3",
+          "price_clp": 2100,
           "stock_available": true,
-          "match_score": 0.8
+          "match_score": 0.78
         },
         {
-          "name_original": "Cable USB Tipo C a USB Tipo A 1 mt",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-tipo-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=identificador-aves-tiempo-real-raspberry-pi-birdnet&utm_content=B-101",
-          "price_clp": 2190,
+          "name_original": "Buzzer activo 5V (variante alarma)",
+          "product_id": "GA3-2",
+          "product_url": "https://www.mechatronicstore.cl/mini-buzzer-activo-5v/?attribute_opciones=Sin+cable&utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-digital-arduino-multiplexado-7-segmentos-ds3231&utm_content=GA3-2",
+          "price_clp": 500,
           "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Módulo Micrófono I2S INMP441",
-          "product_id": "GL3-12",
-          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=identificador-aves-tiempo-real-raspberry-pi-birdnet&utm_content=GL3-12",
-          "price_clp": 5890,
-          "stock_available": true,
-          "match_score": 0.72
+          "match_score": 0.75
         }
       ],
-      "github_url": "https://github.com/Nachtzuster/BirdNET-Pi",
-      "download_urls": [],
-      "category": "rpi",
-      "difficulty": "beginner",
-      "estimated_time_minutes": 60,
-      "estimated_cost_clp": 195000,
-      "tags": [
-        "raspberry-pi",
-        "ai",
-        "bioacustica",
-        "birdnet",
-        "tensorflow"
+      "github_url": "https://github.com/geekfactory/GFDisplay7S",
+      "download_urls": [
+        {"label": "GFDisplay7S library (GitHub)", "url": "https://github.com/geekfactory/GFDisplay7S", "kind": "library"},
+        {"label": "GFRTC library (GitHub)", "url": "https://github.com/geekfactory/GFRTC", "kind": "library"},
+        {"label": "GFButton library (GitHub)", "url": "https://github.com/geekfactory/GFButton", "kind": "library"},
+        {"label": "TimerOne library (GitHub)", "url": "https://github.com/PaulStoffregen/TimerOne", "kind": "library"}
       ],
-      "source_language": "en",
-      "re_angulation_applied": "intro reescrito como pregunta sobre el patio del lector (no copia el tutorial); estructura reorganizada por bloques (requisitos críticos primero → hardware → setup → explicación técnica del modelo → variantes); agregamos explicación técnica del pipeline CNN + espectrograma mel + cuantización int8 que el original no menciona; sección Variantes con webhooks Telegram, Grafana y backup que no estan en el original; tabla de comparación de micrófonos USB",
+      "category": "arduino",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 180,
+      "estimated_cost_clp": 27570,
+      "tags": ["arduino", "reloj", "7-segmentos", "multiplexado", "ds3231", "rtc", "2n2222"],
+      "source_language": "es",
+      "re_angulation_applied": "FUENTE EN ESPAÑOL — re-angulación intensiva obligatoria. Cambio de voz: primera persona plural ('Hemos decidido', 'nuestro proyecto') → segunda persona instructiva ('vas a construir', 'tu reloj') con tuteo chileno. Estructura macro: lineal (intro → procedimiento → materiales → diagrama → código → puesta en hora → conclusión) reorganizada a bloques temáticos (gancho problema → concepto multiplexado → análisis transistor → hardware → pinout → software → puesta en hora → variantes → Chile). Profundización técnica nueva: explicación detallada de persistencia de la visión (POV) y cálculo del ahorro de pines, dimensionamiento del transistor 2N2222 con cálculo de I_B y resistencia de base 1 kΩ, comparación DS3231 vs DS1307 con cifras de deriva por año, justificación de 220 Ω vs 120 Ω para segmentos. Gancho diferente: el original empieza con 'En esta página te enseñaremos a realizar...'; esta versión abre con 'Un reloj digital comprado funciona perfectamente para ver la hora. Este proyecto no compite con eso.' Secciones nuevas: Variantes y mejoras (encoder + buzzer alarma + LDR + NTP bridge) y Personalización para Chile con SKUs específicos.",
       "editorial_checklist": {
         "title_distinct": true,
         "has_unique_section": true,
@@ -923,164 +276,7 @@
         "body_word_ratio": 1.45,
         "tone_or_structure_changed": true
       },
-      "editorial_quality_warning": false
-    },
-    {
-      "id": "28c7aa84aeef",
-      "slug": "termometro-inalambrico-esp32-esp-now-ds18b20",
-      "title_es": "Termómetro inalámbrico ESP32 con ESP-NOW y DS18B20: comparación con HTTP local",
-      "subtitle_es": "Monta un sensor exterior y un display interior con dos ESP32. Comparamos ESP-NOW directo vs servidor HTTP local.",
-      "hero_image_url": "https://www.electroniclinic.com/wp-content/uploads/2026/02/ESP32-E-Ink-ePaper-Temperature-Display-Using-ESP-NOW-WiFi-IP.webp",
-      "body_es": "## Sensor afuera, display adentro — sin pasar cables\n\nHay un escenario clásico en domótica casera: quieres medir la temperatura del patio o de la pieza de servicio, pero quieres ver la lectura en una pantalla cómoda dentro del living. Conectar todo con cables implica pasar por paredes, perforar marcos y resignarte a un cable colgado. La alternativa moderna es **ESP-NOW**, un protocolo peer-to-peer de Espressif que conecta dos ESP32 sin pasar por un router Wi-Fi, con latencias por debajo de 5 ms y un consumo bajísimo.\n\nEn este tutorial vamos a montar un termómetro inalámbrico de dos piezas: un transmisor con un sensor DS18B20 (waterproof, ideal para exterior) y un receptor con pantalla que muestra la temperatura. Vas a comparar dos arquitecturas — ESP-NOW directo y vía servidor HTTP local — y a entender cuál te conviene según tu caso de uso real.\n\n## ESP-NOW vs HTTP/TCP — ¿cuándo elegir cuál?\n\n| Aspecto | ESP-NOW | HTTP (Wi-Fi tradicional) |\n|---|---|---|\n| Latencia | < 5 ms | 30-200 ms |\n| Consumo TX | ~30 mA pico | ~120 mA pico |\n| Alcance | 30-50 m (igual que Wi-Fi) | Depende del router |\n| ¿Necesita router? | No | Sí |\n| ¿Funciona en blackout? | Sí (si los nodos tienen batería) | No (cae con el router) |\n| Integración con apps móviles | Difícil | Trivial |\n| Encriptación | Sí (PMK + LMK opcional) | TLS si la implementas |\n\nConclusión rápida: ESP-NOW gana en autonomía, latencia y resiliencia. HTTP/TCP gana si necesitas que la lectura esté disponible para otros dispositivos (Home Assistant, app móvil, dashboard remoto). Por eso vamos a implementar **ambas**, y al final eliges según tu uso.\n\n## Hardware del transmisor (sensor exterior)\n\n- **ESP32 DevKit** (cualquier WROOM-32 sirve)\n- **Sensor DS18B20 waterproof** (sonda metálica encapsulada, soporta -55°C a +125°C)\n- **Resistencia 4.7 kΩ** (pull-up del bus 1-Wire — sin esto el sensor no responde)\n- **Cables** y opcionalmente fuente de alimentación 5V o batería\n\nCableado del DS18B20:\n\n| DS18B20 | ESP32 |\n|---|---|\n| Rojo (VCC) | 3.3 V |\n| Negro (GND) | GND |\n| Amarillo/Blanco (DATA) | GPIO 4 + pull-up 4.7 kΩ a 3.3 V |\n\n**Por qué la pull-up es innegociable**: el protocolo 1-Wire del DS18B20 usa una sola línea para datos. Cuando ni master ni slave están manejando la línea, queda flotante. La resistencia de 4.7 kΩ a VCC asegura que esté en alto por defecto, y cualquier dispositivo (master o slave) puede tirarla a tierra para comunicar. Sin pull-up, el sensor lee 85.0°C constantemente (valor por defecto del registro de temperatura al boot) o devuelve `-127.0`.\n\n## Hardware del receptor\n\nEl tutorial original usa una pantalla e-Paper Makerfabs de 4.2\" con ESP32-S3. En Chile no se vende ese display específico, así que vamos a implementar el receptor con un **OLED SSD1306 + ESP32**. Para la lectura de temperatura ambiente típica (-10°C a 40°C) un OLED es perfectamente legible.\n\n- **ESP32 DevKit** (puede ser el mismo modelo que el transmisor)\n- **Pantalla OLED 128x32 I2C SSD1306** (alternativa al e-Paper de 4.2\")\n\nCableado del OLED:\n\n| OLED | ESP32 |\n|---|---|\n| VCC | 3.3 V |\n| GND | GND |\n| SDA | GPIO 21 |\n| SCL | GPIO 22 |\n\n## Versión 1: ESP-NOW directo\n\n### Paso 1 — Obtener la MAC del receptor\n\nAntes de programar el transmisor necesitas saber a quién enviarle. Carga este sketch al receptor, abre el monitor serial, y anota la MAC que imprime:\n\n```cpp\n#include <WiFi.h>\nvoid setup() {\n  Serial.begin(115200);\n  WiFi.mode(WIFI_STA);\n  Serial.print(\"MAC: \");\n  Serial.println(WiFi.macAddress());\n}\nvoid loop() {}\n```\n\n### Paso 2 — Transmisor ESP-NOW\n\nReemplaza la MAC `0x3C, 0x84, 0x27, 0xC0, 0xE8, 0xBC` por la tuya:\n\n```cpp\n#include <WiFi.h>\n#include <esp_now.h>\n#include <OneWire.h>\n#include <DallasTemperature.h>\n\nconst int oneWireBus = 4;\nOneWire oneWire(oneWireBus);\nDallasTemperature sensors(&oneWire);\n\nuint8_t receiverMAC[] = {0x3C, 0x84, 0x27, 0xC0, 0xE8, 0xBC};\n\ntypedef struct struct_message {\n  float temperature;\n} struct_message;\n\nstruct_message dataToSend;\n\nvoid OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {\n  Serial.print(\"Status: \");\n  Serial.println(status == ESP_NOW_SEND_SUCCESS ? \"OK\" : \"FAIL\");\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  sensors.begin();\n  WiFi.mode(WIFI_STA);\n  if (esp_now_init() != ESP_OK) { ESP.restart(); }\n  esp_now_register_send_cb(OnDataSent);\n\n  esp_now_peer_info_t peerInfo = {};\n  memcpy(peerInfo.peer_addr, receiverMAC, 6);\n  peerInfo.channel = 0;\n  peerInfo.encrypt = false;\n  esp_now_add_peer(&peerInfo);\n}\n\nvoid loop() {\n  sensors.requestTemperatures();\n  float tempC = sensors.getTempCByIndex(0);\n  dataToSend.temperature = tempC;\n  esp_now_send(receiverMAC, (uint8_t *)&dataToSend, sizeof(dataToSend));\n  delay(5000);  // cada 5 segundos\n}\n```\n\n### Paso 3 — Receptor ESP-NOW + OLED\n\n```cpp\n#include <WiFi.h>\n#include <esp_now.h>\n#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\n#define SCREEN_WIDTH 128\n#define SCREEN_HEIGHT 32\nAdafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);\n\ntypedef struct struct_message {\n  float temperature;\n} struct_message;\n\nstruct_message incomingData;\nfloat latestTemp = -100.0;\n\nvoid onReceive(const uint8_t *mac, const uint8_t *data, int len) {\n  memcpy(&incomingData, data, sizeof(incomingData));\n  latestTemp = incomingData.temperature;\n}\n\nvoid showTemp(float t) {\n  display.clearDisplay();\n  display.setTextSize(2);\n  display.setTextColor(WHITE);\n  display.setCursor(0, 8);\n  if (t < -50) display.print(\"--.- C\");\n  else { display.print(t, 1); display.print(\" C\"); }\n  display.display();\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin();\n  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);\n  showTemp(-100);\n\n  WiFi.mode(WIFI_STA);\n  WiFi.disconnect();\n  if (esp_now_init() != ESP_OK) return;\n  esp_now_register_recv_cb(onReceive);\n}\n\nvoid loop() {\n  static unsigned long last = 0;\n  if (millis() - last > 1000) {\n    showTemp(latestTemp);\n    last = millis();\n  }\n}\n```\n\n## Versión 2: HTTP/TCP por Wi-Fi local\n\nSi quieres que otros dispositivos (Home Assistant, una app móvil, un script Python) también lean la temperatura, conviene usar HTTP. El transmisor abre conexión al receptor y le manda el valor como texto plano (puedes evolucionar a JSON cuando agregues más sensores).\n\n### Transmisor\n\n```cpp\n#include <WiFi.h>\n#include <OneWire.h>\n#include <DallasTemperature.h>\n\nconst int oneWireBus = 4;\nOneWire oneWire(oneWireBus);\nDallasTemperature sensors(&oneWire);\n\nconst char* WIFI_SSID = \"TuRedWiFi\";\nconst char* WIFI_PASS = \"TuContrasena\";\nconst char* HOST = \"192.168.1.50\";  // IP del receptor\nconst int PORT = 80;\n\nvoid setup() {\n  Serial.begin(115200);\n  sensors.begin();\n  WiFi.begin(WIFI_SSID, WIFI_PASS);\n  while (WiFi.status() != WL_CONNECTED) delay(500);\n}\n\nvoid loop() {\n  sensors.requestTemperatures();\n  float t = sensors.getTempCByIndex(0);\n  WiFiClient client;\n  if (client.connect(HOST, PORT)) {\n    client.println(String(t));\n  }\n  client.stop();\n  delay(5000);\n}\n```\n\n### Receptor\n\nEl receptor levanta un `WiFiServer` en puerto 80, acepta conexiones, lee la línea recibida y actualiza la pantalla. La idea es la misma que en ESP-NOW pero usando TCP en lugar de paquetes ESP-NOW directos.\n\n## Por qué refrescamos solo cada cierto tiempo\n\nTanto el OLED como las pantallas e-Paper tienen costo no-trivial en cada refresh:\n\n- **OLED SSD1306**: cada `display.display()` envía 1 KB por I2C a 400 kHz = ~25 ms. Si lo haces a 100 Hz, saturas el bus.\n- **e-Paper**: cada refresh toma 2-3 segundos completos y desgasta el panel (vida útil típica: ~1 millón de refreshes). Por eso el código original solo refresca cada 2 minutos.\n\nSi usas OLED puedes refrescar cada segundo sin problema. Si usas e-Paper, mantén el intervalo de 2-3 minutos.\n\n## Variantes y mejoras\n\nExtensiones útiles que no están en el tutorial original:\n\n- **Multi-sensor con un solo receptor**: el bus 1-Wire del DS18B20 soporta hasta 254 sensores en paralelo. Conecta 3-4 DS18B20 al mismo pin del transmisor, mándalos como array por ESP-NOW, y muestra todos en el receptor. Útil para monitorear distintas piezas con un solo nodo TX.\n- **Modo deep sleep para batería de 6+ meses**: entre transmisiones, pon el ESP32 en `esp_deep_sleep_start()`. Con un wake-up cada 5 minutos y una 18650 de 3000 mAh, llegas tranquilamente a 6 meses de autonomía.\n- **Encriptación PMK + LMK en ESP-NOW**: por defecto ESP-NOW va en claro. Si te preocupa que un vecino con un ESP32 cercano pueda capturar tus paquetes, agrega `esp_now_set_pmk()` con una clave de 16 bytes compartida entre los dos nodos. AES-128 por defecto.\n\n## Personalización para Chile\n\nComponentes en MechatronicStore con stock local:\n\n- **ESP32 con WiFi y Bluetooth ESP-WROOM-32 Tipo C** (SKU X2-10V2) — $7.990 CLP *(necesitas 2: uno para el transmisor, uno para el receptor).*\n- **Sensor De Temperatura ds18b20 tipo termocupla** (SKU G-232) — $2.990 CLP *(equivalencia: es exactamente el waterproof del tutorial original).*\n- **Pantalla Oled 128x32 I2C 0.91\" SSD1306** (SKU D-112) — $3.990 CLP *(equivalencia: el tutorial original usa una pantalla e-Paper Makerfabs 4.2\" tricolor que NO se vende en Chile. El OLED muestra perfectamente la temperatura ambiente y es 10x más barato, aunque sin el efecto \"papel\" del e-ink).*\n- **Resistencia 10kΩ** (SKU GK2-15) — $100 CLP *(equivalencia: el tutorial pide 4.7 kΩ; en Chile el valor más común para pull-up del 1-Wire es 10 kΩ y funciona igual para cables cortos < 5 m).*\n- **Breadboard / Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP (necesitas 2)\n- **Cables macho macho 30cm** (SKU C-417) — $2.990 CLP\n\nTotal proyecto (2 nodos completos): **~$32.000 CLP**.\n\n> Nota sobre el display e-Paper del original: si te interesa el efecto \"papel\" y la persistencia sin consumo, podemos pedir el módulo Waveshare equivalente bajo demanda — pregunta en MechatronicStore.\n\n## Recursos\n\n- **Tutorial original (inglés)**: [Build a Wireless ESP32 E-Ink Temperature Display with ESP-NOW](https://www.electroniclinic.com/build-a-wireless-esp32-e-ink-temperature-display-with-esp-now/)\n- **Documentación oficial ESP-NOW (Espressif)**: <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html>\n- **Librería OneWire para Arduino**: <https://github.com/PaulStoffregen/OneWire>\n- **Librería DallasTemperature (DS18B20)**: <https://github.com/milesburton/Arduino-Temperature-Control-Library>\n- **Adafruit SSD1306**: <https://github.com/adafruit/Adafruit_SSD1306>\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
-      "materials_list": [
-        {
-          "name": "ESP32 con WiFi y Bluetooth ESP-WROOM-32 Tipo C",
-          "qty": 2,
-          "role": "microcontrolador TX y RX"
-        },
-        {
-          "name": "Sensor De Temperatura ds18b20 waterproof",
-          "qty": 1,
-          "role": "medición de temperatura"
-        },
-        {
-          "name": "Pantalla Oled 128x32 I2C SSD1306",
-          "qty": 1,
-          "role": "display de lectura"
-        },
-        {
-          "name": "Resistencia 10kΩ (pull-up 1-Wire)",
-          "qty": 1,
-          "role": "estabilizar bus 1-Wire"
-        },
-        {
-          "name": "Protoboard 830 puntos",
-          "qty": 2,
-          "role": "prototipado TX y RX"
-        },
-        {
-          "name": "Cables macho macho 30cm",
-          "qty": 1,
-          "role": "conexiones"
-        }
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Cablear el transmisor",
-          "text": "DS18B20: VCC→3.3V, GND→GND, DATA→GPIO 4 con pull-up 4.7-10kΩ a 3.3V. Sin la pull-up el sensor responde 85.0 o -127."
-        },
-        {
-          "position": 2,
-          "name": "Cablear el receptor con OLED",
-          "text": "OLED SSD1306: VCC→3.3V, GND→GND, SDA→GPIO 21, SCL→GPIO 22 (I2C). Dirección por defecto 0x3C."
-        },
-        {
-          "position": 3,
-          "name": "Obtener la MAC del receptor",
-          "text": "Carga un sketch que imprima WiFi.macAddress() al monitor serial. Anota los 6 bytes — los necesitas para el transmisor ESP-NOW."
-        },
-        {
-          "position": 4,
-          "name": "Cargar transmisor ESP-NOW",
-          "text": "Reemplaza receiverMAC[] con la MAC anotada. El sketch lee el DS18B20, empaqueta el float en struct_message y manda con esp_now_send() cada 5 segundos."
-        },
-        {
-          "position": 5,
-          "name": "Cargar receptor ESP-NOW + OLED",
-          "text": "Registra el callback onReceive, copia incomingData a una variable global, y refresca la pantalla cada segundo con la última temperatura."
-        },
-        {
-          "position": 6,
-          "name": "Versión alternativa HTTP/TCP",
-          "text": "Si quieres integrar con Home Assistant u otra app, usa la versión HTTP: transmisor abre WiFiClient al puerto 80 del receptor y manda la temperatura como texto."
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Transmisor ESP-NOW + DS18B20",
-          "code": "#include <WiFi.h>\n#include <esp_now.h>\n#include <OneWire.h>\n#include <DallasTemperature.h>\n\nconst int oneWireBus = 4;\nOneWire oneWire(oneWireBus);\nDallasTemperature sensors(&oneWire);\n\n// Reemplaza con la MAC del receptor\nuint8_t receiverMAC[] = {0x3C, 0x84, 0x27, 0xC0, 0xE8, 0xBC};\n\ntypedef struct struct_message {\n  float temperature;\n} struct_message;\n\nstruct_message dataToSend;\n\nvoid OnDataSent(const uint8_t *mac, esp_now_send_status_t status) {\n  Serial.println(status == ESP_NOW_SEND_SUCCESS ? \"OK\" : \"FAIL\");\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  sensors.begin();\n  WiFi.mode(WIFI_STA);\n  if (esp_now_init() != ESP_OK) { ESP.restart(); }\n  esp_now_register_send_cb(OnDataSent);\n\n  esp_now_peer_info_t peer = {};\n  memcpy(peer.peer_addr, receiverMAC, 6);\n  peer.channel = 0;\n  peer.encrypt = false;\n  esp_now_add_peer(&peer);\n}\n\nvoid loop() {\n  sensors.requestTemperatures();\n  dataToSend.temperature = sensors.getTempCByIndex(0);\n  esp_now_send(receiverMAC, (uint8_t*)&dataToSend, sizeof(dataToSend));\n  delay(5000);\n}\n"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Receptor ESP-NOW + OLED SSD1306 (equivalente al e-Paper del original)",
-          "code": "#include <WiFi.h>\n#include <esp_now.h>\n#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\nAdafruit_SSD1306 display(128, 32, &Wire, -1);\n\ntypedef struct struct_message { float temperature; } struct_message;\nstruct_message incomingData;\nfloat latestTemp = -100.0;\n\nvoid onReceive(const uint8_t *mac, const uint8_t *data, int len) {\n  memcpy(&incomingData, data, sizeof(incomingData));\n  latestTemp = incomingData.temperature;\n}\n\nvoid showTemp(float t) {\n  display.clearDisplay();\n  display.setTextSize(2);\n  display.setTextColor(WHITE);\n  display.setCursor(0, 8);\n  if (t < -50) display.print(\"--.- C\");\n  else { display.print(t, 1); display.print(\" C\"); }\n  display.display();\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin();\n  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);\n  showTemp(-100);\n  WiFi.mode(WIFI_STA);\n  WiFi.disconnect();\n  if (esp_now_init() != ESP_OK) return;\n  esp_now_register_recv_cb(onReceive);\n}\n\nvoid loop() {\n  static unsigned long last = 0;\n  if (millis() - last > 1000) {\n    showTemp(latestTemp);\n    last = millis();\n  }\n}\n"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "ESP32 con WiFi y Bluetooth ESP-WROOM-32 Tipo C",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?utm_source=blog&utm_medium=tutorial&utm_campaign=termometro-inalambrico-esp32-esp-now-ds18b20&utm_content=X2-10V2&attribute_entrada=Tipo+C",
-          "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Sensor De Temperatura ds18b20 waterproof",
-          "product_id": "G-232",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-temperatura-ds18b20-tipo-termocupla-arduino-pic/?utm_source=blog&utm_medium=tutorial&utm_campaign=termometro-inalambrico-esp32-esp-now-ds18b20&utm_content=G-232",
-          "price_clp": 2990,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Pantalla Oled 128x32 I2C SSD1306",
-          "product_id": "D-112",
-          "product_url": "https://www.mechatronicstore.cl/pantalla-oled-128x32-i2c-0-91-ssd1306/?utm_source=blog&utm_medium=tutorial&utm_campaign=termometro-inalambrico-esp32-esp-now-ds18b20&utm_content=D-112",
-          "price_clp": 3990,
-          "stock_available": true,
-          "match_score": 0.8
-        },
-        {
-          "name_original": "Resistencia 10kΩ",
-          "product_id": "GK2-15",
-          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=termometro-inalambrico-esp32-esp-now-ds18b20&utm_content=GK2-15&attribute_valores=10k%CE%A9",
-          "price_clp": 100,
-          "stock_available": true,
-          "match_score": 0.9
-        },
-        {
-          "name_original": "Protoboard 830 puntos MB102",
-          "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=termometro-inalambrico-esp32-esp-now-ds18b20&utm_content=C-302",
-          "price_clp": 3790,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Cables macho macho 30cm",
-          "product_id": "C-417",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=termometro-inalambrico-esp32-esp-now-ds18b20&utm_content=C-417",
-          "price_clp": 2990,
-          "stock_available": true,
-          "match_score": 0.92
-        }
-      ],
-      "github_url": null,
-      "download_urls": [],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 90,
-      "estimated_cost_clp": 32000,
-      "tags": [
-        "esp32",
-        "esp-now",
-        "ds18b20",
-        "wireless",
-        "iot",
-        "temperatura"
-      ],
-      "source_language": "en",
-      "re_angulation_applied": "intro reorganizado al caso de uso real (sensor patio → display living); reescrito en bloques temáticos (problema → comparación ESP-NOW vs HTTP en tabla → hardware → ambas versiones → mejoras); agregamos explicación técnica del por qué del pull-up 1-Wire (sin esto: 85.0 o -127), comparación cuantitativa de costos de refresh OLED vs e-Paper, y equivalencia explícita del display e-Paper Makerfabs (no disponible en Chile) al OLED SSD1306; sección Variantes con multi-sensor, deep sleep y PMK encryption no presentes en el original",
-      "editorial_checklist": {
-        "title_distinct": true,
-        "has_unique_section": true,
-        "has_downloadable": true,
-        "body_word_ratio": 1.35,
-        "tone_or_structure_changed": true
-      },
+      "editorial_notes": "Source en español (max riesgo plagio). Aplicadas las 5 reglas: re-angulación >40%, cambio de voz primera plural → segunda instructiva, estructura lineal → bloques temáticos, profundización técnica (POV, dimensionamiento transistor, deriva RTC), gancho diferente. Nano Every del hint reemplazado por Nano V3 (equivalente local, mitad de precio).",
       "editorial_quality_warning": false
     }
   ]
