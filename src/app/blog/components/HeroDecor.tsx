@@ -9,17 +9,48 @@
  *   4. SVG circuit-traces decorativas (líneas que vibran levemente
  *      con animación CSS).
  *
+ * Pablo 23-may-2026 fix FOUC v2: TODO está inline. Antes del fix, en el
+ * primer paint del HTML server-rendered (cuando el browser todavía no
+ * aplicó las clases Tailwind como `overflow-hidden`, `opacity-[0.07]`,
+ * `opacity-50`), pasaba esto durante 16–80ms:
+ *   - El wrapper outer no tenía overflow:hidden → los blobs (560×560
+ *     posicionados en top:-120, left:-180) se ESCAPABAN del header y
+ *     se veían como una mancha purpura cubriendo área del viewport
+ *     fuera del bounding del header. Ese era el "recuadro purpura"
+ *     que Pablo veía.
+ *   - El <svg> de circuit traces tenía opacity:1 default (en lugar de
+ *     0.07) → las líneas con gradient purple→yellow se veían bien
+ *     marcadas, contribuyendo al "recuadro".
+ *   - El dot-grid tenía opacity:1 → no aporta a flash visible porque
+ *     su background depende de class CSS (sin class no hay dots), pero
+ *     se inlinea por defensa en cuanto la class entre.
+ *
  * Server component — sin JS runtime. Solo CSS animations.
  */
 export default function HeroDecor() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: -10,
+        overflow: "hidden",
+      }}
     >
-      {/* Dot grid con fade radial — solo se ve en el centro */}
+      {/* Dot grid con fade radial — solo se ve en el centro. El
+          background-image / mask-image quedan en la CSS class (usan
+          color-mix con var, son complejos). Sin CSS cargado, el div
+          no tiene background → invisible → no flashea. La opacity se
+          inlinea por defensa. */}
       <div
-        className="absolute inset-0 bg-dot-grid bg-dot-grid-fade opacity-50"
+        className="bg-dot-grid bg-dot-grid-fade"
+        style={{
+          position: "absolute",
+          inset: 0,
+          opacity: 0.5,
+        }}
       />
 
       {/* Blob purple top-left — vibe orgánico.
@@ -63,12 +94,22 @@ export default function HeroDecor() {
       />
 
       {/* SVG circuit traces — líneas decorativas estilo PCB.
-          Animadas con stroke-dashoffset para sensación "de movimiento".
-       */}
+          Pablo 23-may-2026 fix FOUC v2: opacity inline (era class
+          `opacity-[0.07]`). Sin esta línea, antes de que Tailwind
+          aplique la clase, el SVG aparece a opacity:1 — el gradient
+          purple→yellow de las traces se ve grueso y marcado, lo que
+          combinado con el blob purple sin overflow:hidden producía
+          el "recuadro purple" que se veía al recargar. */}
       <svg
         viewBox="0 0 1200 600"
         preserveAspectRatio="xMidYMid slice"
-        className="absolute inset-0 h-full w-full opacity-[0.07]"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0.07,
+        }}
         fill="none"
       >
         <defs>
