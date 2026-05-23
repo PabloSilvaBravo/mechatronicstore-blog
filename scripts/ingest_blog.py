@@ -99,6 +99,17 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
         filter_result = apply_all(body_for_filter, excluded_keywords=excluded_kw)
         body = body_for_store  # Store body_text en DB (más compacto)
 
+        # Pablo 23-may-2026 fase 1.2 — persistir también body_html y la
+        # lista de extras. Sin esto el translate solo veía texto plano y
+        # los tutoriales terminaban con 1 sola imagen (hero). Cap body_html
+        # a 200KB para no explotar la DB con artículos super largos.
+        body_html_for_store = (page.body_html or "")[:200000] or None
+        extra_images_json = (
+            json.dumps(page.extra_images[:20], ensure_ascii=False)
+            if page.extra_images
+            else None
+        )
+
         if not filter_result["passed"]:
             reasons = ",".join(filter_result["reasons"])
             print(f"  ✗ {cand.title_en[:50]} — {reasons[:60]}")
@@ -106,8 +117,9 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
             db.execute(
                 """INSERT OR IGNORE INTO tutorials
                    (id, slug, source_id, source_url, title_en, subtitle_en,
-                    body_en, status, rejected_reason, ingested_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, 'rejected', ?, ?)""",
+                    body_en, body_html_en, extra_images_json,
+                    status, rejected_reason, ingested_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'rejected', ?, ?)""",
                 [
                     tid,
                     gen_slug(cand.title_en, tid),
@@ -116,6 +128,8 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
                     page.title or cand.title_en,
                     cand.summary_en[:500],
                     body[:50000],
+                    body_html_for_store,
+                    extra_images_json,
                     f"hard_filter:{reasons[:200]}",
                     utc_now_sqlite(),
                 ],
@@ -138,8 +152,9 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
         db.execute(
             """INSERT INTO tutorials
                (id, slug, source_id, source_url, title_en, subtitle_en,
-                body_en, hero_image_url, status, ingested_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)""",
+                body_en, body_html_en, extra_images_json,
+                hero_image_url, status, ingested_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)""",
             [
                 tid,
                 gen_slug(cand.title_en, tid),
@@ -148,6 +163,8 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
                 page.title or cand.title_en,
                 cand.summary_en[:500],
                 body[:50000],
+                body_html_for_store,
+                extra_images_json,
                 hero_url,
                 utc_now_sqlite(),
             ],
