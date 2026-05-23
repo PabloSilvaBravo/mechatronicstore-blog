@@ -29,10 +29,10 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   return (
     <div
       style={{
-        background: "var(--brand-purple)",
-        opacity: 0.85,
-        height: "38px",
-        borderRadius: "6px",
+        background: "#d1eaff",
+        border: "1px solid var(--border-subtle)",
+        height: "40px",
+        borderRadius: "12px",
         maxWidth: "477px",
       }}
       aria-hidden
