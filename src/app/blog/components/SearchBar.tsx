@@ -336,24 +336,23 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   // (#6017b1) con texto blanco. Para que el usuario sienta que blog y
   // tienda son un solo sitio, replicamos ese estilo:
   //
-  // Pablo 23-may-2026 v4 — REFACTOR FUNDAMENTAL después de auditoría real.
-  // El store NO usa search bar morado entero — usa search bar de fondo CLARO
-  // (`rgb(209, 234, 255)` celeste muy desaturado, casi blanco, según
-  // medición del wrapper `.asp_w` del Ajax Search Pro) con borde sutil y
-  // un BOTÓN SUBMIT CUADRADO MORADO a la derecha que contiene la lupa
-  // blanca. Eso es lo que vio Pablo y la diferencia que más se notaba.
+  // Pablo 23-may-2026 v5 — CORRECCIÓN tras feedback de Pablo. El v4
+  // estaba equivocado: confié en medir `.asp_w` del Ajax Search Pro que
+  // mide rgb(209,234,255) celeste — pero ese es el contenedor INTERIOR
+  // que NO se ve porque está embebido sobre el background morado del
+  // header del store. El search bar VISIBLE del store es MORADO entero
+  // (mismo bg del header) con una lupa cuadrada blanca/transparent a
+  // la derecha conteniendo el icono morado o blanco según contraste.
   //
-  // Cambios vs v3:
-  //   - bg form: morado sólido → celeste muy claro (#d1eaff = rgb 209,234,255)
-  //   - text color input: blanco → var(--text) (oscuro)
-  //   - placeholder color: blanco translúcido → var(--text-muted)
-  //   - radius: 10px → 12px (matchea .asp_w del store)
-  //   - height: 44px → 40px (closer al 32-44 medido en store)
-  //   - border: ninguno → 1px solid var(--border-subtle) (sutil)
-  //   - lupa button: transparent → bg morado sólido con icono blanco
-  //   - lupa button: 36px → 40px (match Ajax Search Pro submit shape)
-  //   - lupa button radius: 0 → 8px
-  //   - removidos paddingLeft/paddingRight inline — usar gap interno
+  // v5 (corregido):
+  //   - bg form: VUELVE a var(--brand-purple) morado sólido
+  //   - text color input: VUELVE a #ffffff (blanco sobre morado)
+  //   - placeholder color: VUELVE a blanco translúcido (via .search-input-white)
+  //   - radius: 12px (consistente con store border-radius)
+  //   - height: 40px
+  //   - border: 1px solid rgba(255,255,255,0.15) (sutil sobre morado)
+  //   - lupa button: bg #ffffff (cuadrado blanco visible sobre morado),
+  //     icono var(--brand-purple) adentro
   return (
     <div
       ref={containerRef}
@@ -364,8 +363,8 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
         onSubmit={handleSubmit}
         className="group flex items-center transition-all overflow-hidden"
         style={{
-          background: "#d1eaff",
-          border: "1px solid var(--border-subtle)",
+          background: "var(--brand-purple)",
+          border: "1px solid rgba(255, 255, 255, 0.15)",
           borderRadius: "12px",
           height: "40px",
           paddingLeft: "16px",
@@ -398,9 +397,9 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
             }
           }}
           placeholder="Buscar..."
-          className="flex-1 text-sm outline-none bg-transparent search-input-store"
+          className="flex-1 text-sm outline-none bg-transparent search-input-white"
           style={{
-            color: "var(--text)",
+            color: "#ffffff",
             border: "none",
             minWidth: 0,
             fontWeight: 500,
@@ -410,8 +409,9 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           autoComplete="off"
           readOnly={overlay !== null}
         />
-        {/* Botón submit cuadrado MORADO a la derecha — replica el submit
-            del Ajax Search Pro del store. Lupa blanca dentro. */}
+        {/* Botón submit cuadrado BLANCO a la derecha — replica el submit
+            del Ajax Search Pro del store. Lupa morada dentro (contraste
+            sobre el bg blanco). */}
         <button
           type="submit"
           aria-label="Buscar"
@@ -419,11 +419,11 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           style={{
             width: "40px",
             height: "32px",
-            background: "var(--brand-purple)",
+            background: "#ffffff",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
-            color: "#ffffff",
+            color: "var(--brand-purple)",
           }}
         >
           <svg

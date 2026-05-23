@@ -29,8 +29,9 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   return (
     <div
       style={{
-        background: "#d1eaff",
-        border: "1px solid var(--border-subtle)",
+        background: "var(--brand-purple)",
+        border: "1px solid rgba(255, 255, 255, 0.15)",
+        opacity: 0.85,
         height: "40px",
         borderRadius: "12px",
         maxWidth: "477px",
@@ -60,12 +61,15 @@ function ShippingTriggerStub() {
       title="Cambiar ubicación de envío"
       aria-label="Cambiar ubicación de envío"
     >
+      {/* Pablo 23-may-2026 v5 — sobre fondo morado del header, todo va
+          en colores claros (icono blanco, "Enviar a" blanco translúcido,
+          "Elegir ubicación" blanco sólido). */}
       <svg
         width="22"
         height="22"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="var(--brand-purple)"
+        stroke="#ffffff"
         strokeWidth={2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -78,13 +82,13 @@ function ShippingTriggerStub() {
       <span className="flex flex-col leading-tight">
         <span
           className="text-[10px] font-semibold uppercase tracking-wide"
-          style={{ color: "var(--text-dim)" }}
+          style={{ color: "rgba(255, 255, 255, 0.7)" }}
         >
           Enviar a
         </span>
         <span
           className="text-[13px] font-bold"
-          style={{ color: "var(--text)" }}
+          style={{ color: "#ffffff" }}
         >
           Elegir ubicación
         </span>
@@ -209,10 +213,13 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
     <header
       className="sticky top-0 z-40"
       style={{
-        backgroundColor: "var(--bg-overlay)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--border-subtle)",
+        // Pablo 23-may-2026 v5 fix: el store mechatronicstore.cl tiene
+        // header ENTERAMENTE morado (no blanco con overlay). Cambiamos a
+        // bg morado sólido + sombra inferior sutil. El backdrop-blur ya
+        // no aplica porque el bg es opaco.
+        backgroundColor: "var(--brand-purple)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+        color: "#ffffff",
       }}
     >
       {/* ─── Row 2: Main bar ──────────────────────────────────────
@@ -220,13 +227,14 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
           Replica el main bar del store. */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-5 py-3">
-          {/* Logo */}
+          {/* Logo — variant="white" sobre header bg morado para que el
+              SVG "mechatronic" sea visible (Pablo 23-may-2026 v5). */}
           <Link
             href="/blog"
             className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0"
             aria-label="Blog MechatronicStore"
           >
-            <Logo size="md" />
+            <Logo size="md" variant="white" />
           </Link>
 
           {/* Search bar — grande, ocupa espacio disponible.
@@ -260,8 +268,9 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
               onClick={() => setMobileOpen((v) => !v)}
               className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
               style={{
-                backgroundColor: mobileOpen ? "var(--bg-hover)" : "transparent",
-                color: "var(--text)",
+                // Pablo 23-may-2026 v5 — burger blanco sobre header morado
+                backgroundColor: mobileOpen ? "rgba(255,255,255,0.15)" : "transparent",
+                color: "#ffffff",
               }}
               aria-label="Menú"
               aria-expanded={mobileOpen}

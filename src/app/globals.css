@@ -562,7 +562,10 @@ input, textarea, select {
   text-decoration: none !important;
   white-space: nowrap;
   line-height: 1;
-  color: var(--text);
+  /* Pablo 23-may-2026 v5 — el header del blog ahora es morado entero,
+   * el texto va en blanco para contrastar (no `var(--text)` que se ve
+   * oscuro sobre morado). */
+  color: #ffffff;
 }
 
 .ms-kl-btn .ms-dot {

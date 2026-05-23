@@ -41,12 +41,17 @@ function handleScrollToNewsletter(e: React.MouseEvent<HTMLAnchorElement>) {
   }
 }
 
+// Pablo 23-may-2026 v5 fix — el header ahora es morado completo, por lo
+// que los iconos cart/user (que ya eran morados) se hacían invisibles.
+// Agregamos border sutil blanco + fondo morado ligeramente más claro
+// para que tengan presencia sobre el header morado.
 const ICON_BUTTON_STYLE: React.CSSProperties = {
   width: "32px",
   height: "33px",
-  background: "var(--brand-purple)",
+  background: "rgba(255, 255, 255, 0.12)",
   color: "#ffffff",
   borderRadius: "12px",
+  border: "1px solid rgba(255, 255, 255, 0.15)",
 };
 
 export default function HeaderActions() {
@@ -63,10 +68,10 @@ export default function HeaderActions() {
         <span className="ms-kl-text">Suscríbete</span>
       </a>
 
-      {/* Divider sutil */}
+      {/* Divider sutil — blanco translúcido sobre el header morado */}
       <span
         className="hidden lg:inline-block w-px h-5"
-        style={{ background: "var(--border-subtle)" }}
+        style={{ background: "rgba(255, 255, 255, 0.2)" }}
         aria-hidden
       />
 
