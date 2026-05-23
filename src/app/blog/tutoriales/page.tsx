@@ -153,8 +153,7 @@ export default async function TutorialesIndexPage({ searchParams }: Props) {
           </p>
         </div>
       ) : (
-        <RevealOnScroll>
-          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{/* Pablo 23-may-2026: sin RevealOnScroll — observer no dispara en grids altos */}
             {tutorials.map((t) => (
               <li key={t.slug}>
                 <Link href={`/blog/${t.slug}`} className="card-luis group block">
@@ -217,8 +216,7 @@ export default async function TutorialesIndexPage({ searchParams }: Props) {
                 </Link>
               </li>
             ))}
-          </ul>
-        </RevealOnScroll>
+        </ul>
       )}
     </div>
   );

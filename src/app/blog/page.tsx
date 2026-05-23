@@ -335,23 +335,28 @@ export default async function BlogHomePage() {
         </section>
       </RevealOnScroll>
 
-      {/* Featured (2 next) */}
+      {/* Featured (2 next) — Pablo 23-may-2026 sin RevealOnScroll.
+          Estaba arrancando a top:1188 (fuera de viewport inicial 910),
+          el observer no disparaba hasta scroll de varios cientos de px
+          dentro del bloque. Las cards quedaban con opacity:0 hasta que
+          el user "se acercaba demasiado". Mejor mostrar siempre. */}
       {featured.length > 0 && (
         <section
           className="mb-12 sm:mb-16 pt-10 border-t"
           style={{ borderColor: "var(--border-subtle)" }}
         >
-          <RevealOnScroll>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {featured.map((t) => (
-                <TutorialCard key={t.slug} t={t} variant="feature" />
-              ))}
-            </div>
-          </RevealOnScroll>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {featured.map((t) => (
+              <TutorialCard key={t.slug} t={t} variant="feature" />
+            ))}
+          </div>
         </section>
       )}
 
-      {/* Resto */}
+      {/* Resto — idem sin RevealOnScroll. El grid puede tener 2912px
+          de altura; con observer + threshold:0 + rootMargin +240px aún
+          requería ~700px de scroll antes de disparar — bug "página en
+          blanco" que reportó Pablo. */}
       {remaining.length > 0 && (
         <section
           className="pt-10 border-t"
@@ -363,13 +368,11 @@ export default async function BlogHomePage() {
           >
             Más tutoriales
           </h2>
-          <RevealOnScroll>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {remaining.map((t) => (
-                <TutorialCard key={t.slug} t={t} variant="compact" />
-              ))}
-            </div>
-          </RevealOnScroll>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {remaining.map((t) => (
+              <TutorialCard key={t.slug} t={t} variant="compact" />
+            ))}
+          </div>
         </section>
       )}
     </div>

@@ -168,39 +168,38 @@ export default async function TagPage({ params }: PageProps) {
         </div>
       </header>
 
-      <RevealOnScroll>
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {items.map((t) => (
-            <li key={t.slug}>
-              <Link href={`/blog/${t.slug}`} className="card-luis group block">
-                {t.hero_image_url && (
-                  <img
-                    src={t.hero_image_url}
-                    alt={t.title_es}
-                    className="card-img w-full h-44 object-cover"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                  />
-                )}
-                <div className="p-4">
-                  <h2
-                    className="font-headline font-bold leading-tight mb-1 line-clamp-2 group-hover:text-[color:var(--text-accent)] transition-colors"
-                    style={{ color: "var(--text)" }}
-                  >
-                    {t.title_es}
-                  </h2>
-                  <p
-                    className="text-sm line-clamp-2"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {t.subtitle_es}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </RevealOnScroll>
+      {/* Pablo 23-may-2026: sin RevealOnScroll, observer no dispara en grids altos */}
+      <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {items.map((t) => (
+          <li key={t.slug}>
+            <Link href={`/blog/${t.slug}`} className="card-luis group block">
+              {t.hero_image_url && (
+                <img
+                  src={t.hero_image_url}
+                  alt={t.title_es}
+                  className="card-img w-full h-44 object-cover"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                />
+              )}
+              <div className="p-4">
+                <h2
+                  className="font-headline font-bold leading-tight mb-1 line-clamp-2 group-hover:text-[color:var(--text-accent)] transition-colors"
+                  style={{ color: "var(--text)" }}
+                >
+                  {t.title_es}
+                </h2>
+                <p
+                  className="text-sm line-clamp-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t.subtitle_es}
+                </p>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
       {related.length >= 3 && (
         <section

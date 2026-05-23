@@ -200,8 +200,7 @@ export default async function CategoryPage({ params }: Props) {
           </p>
         </div>
       ) : (
-        <RevealOnScroll>
-          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{/* sin RevealOnScroll, ver page.tsx */}
             {tutorials.map((t) => (
               <li key={t.slug}>
                 <Link href={`/blog/${t.slug}`} className="card-luis group block">
@@ -229,8 +228,7 @@ export default async function CategoryPage({ params }: Props) {
                 </Link>
               </li>
             ))}
-          </ul>
-        </RevealOnScroll>
+        </ul>
       )}
     </div>
   );
