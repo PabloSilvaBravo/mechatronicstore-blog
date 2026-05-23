@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
 import Logo from "../../components/Logo";
 import SearchBar from "./SearchBar";
 import HeaderActions from "./HeaderActions";
-import CategoryIcon from "./CategoryIcon";
 
 /**
  * Placeholder visual de SearchBar mientras Suspense resuelve. Mismo
@@ -114,36 +113,9 @@ interface BlogHeaderProps {
  */
 export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [catsOpen, setCatsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLLIElement>(null);
-  // Total de tutoriales (suma de todas las categorías) — para el
-  // header del mega menú.
-  const totalTutorials = Object.values(categoryCounts).reduce(
-    (s, n) => s + n,
-    0,
-  );
-
-  // Click-outside para cerrar dropdown
-  useEffect(() => {
-    if (!catsOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setCatsOpen(false);
-      }
-    };
-    const escHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCatsOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("keydown", escHandler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("keydown", escHandler);
-    };
-  }, [catsOpen]);
+  // Pablo 23-may-2026 v10 — removido catsOpen/dropdownRef/totalTutorials
+  // junto con el dropdown del mega menú. Las categorías ahora son links
+  // inline en la nav row, una sola interacción para llegar a cada una.
 
   // Cerrar mobile menu al cambiar de ruta
   useEffect(() => {
@@ -267,205 +239,84 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
       </div>
 
       {/* ─── Row 3: Nav menu ─────────────────────────────────────
-          Pablo 23-may-2026 v7 — auditoría Playwright confirmó que el
-          store usa bg TRANSPARENTE (no gris) y h ~30px (vs 55px del
-          v6). Texto level mantenido 12px porque ya quedaba balanceado.
-          Quitado el bg gris para match con store. */}
+          Pablo 23-may-2026 v10 — REDISEÑO completo. v7 era "feísima,
+          poco funcional, mal estructurada". Replica el estilo del
+          store (.header-bottom-nav): cápsulas hover morado translúcido,
+          font-weight 500, centered + extras a la derecha.
+
+          Estructura nueva:
+            [Inicio] [Tutoriales] [arduino] [ESP32] [Raspberry Pi]
+            [Robótica] [Sensores] [3D] ····················
+            ················· [Noticias↗] [Tienda↗]
+
+          Categorías inline en lugar de dropdown — UX más directa, un
+          click va a la categoría. Si necesitás todas, "Tutoriales"
+          lleva al index global.
+       */}
       <div
-        className="hidden md:block border-t"
+        className="hidden md:block border-t blog-nav-row"
         style={{
           borderColor: "var(--border-subtle)",
           background: "transparent",
         }}
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
-          <ul className="flex items-center gap-6 text-xs font-bold uppercase tracking-[0.08em] py-1">
+          <ul className="flex items-center gap-1 lg:gap-1.5 py-1.5">
             <li>
-              <Link
-                href="/blog"
-                className="underlink py-1"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <Link href="/blog" className="blog-nav-link">
                 Inicio
               </Link>
             </li>
             <li>
-              <Link
-                href="/blog/tutoriales"
-                className="underlink py-1"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <Link href="/blog/tutoriales" className="blog-nav-link">
                 Tutoriales
               </Link>
             </li>
-            <li className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setCatsOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 underlink py-1 whitespace-nowrap"
+            {/* Separador sutil entre principales y categorías */}
+            <li className="mx-1.5" aria-hidden>
+              <span
                 style={{
-                  color: catsOpen ? "var(--text)" : "var(--text-muted)",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                  fontSize: "0.75rem",
-                  letterSpacing: "0.08em",
-                  fontFamily: "inherit",
+                  display: "inline-block",
+                  width: "1px",
+                  height: "16px",
+                  background: "rgba(0, 0, 0, 0.08)",
                 }}
-                aria-expanded={catsOpen}
-                aria-haspopup="menu"
-              >
-                <span>Categorías</span>
-                <svg
-                  className={`flex-shrink-0 transition-transform ${catsOpen ? "rotate-180" : ""}`}
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                  aria-hidden
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                  />
-                </svg>
-              </button>
-              {catsOpen && (
-                <div
-                  role="menu"
-                  className="absolute top-full left-0 mt-2 rounded-xl border shadow-2xl z-50 overflow-hidden"
-                  style={{
-                    width: "min(640px, calc(100vw - 2rem))",
-                    borderColor: "var(--border)",
-                    backgroundColor: "var(--bg-elevated)",
-                    boxShadow: "0 20px 60px var(--shadow-color)",
-                  }}
-                >
-                  {/* Header del mega menú */}
-                  <div
-                    className="px-5 py-3 border-b flex items-center justify-between gap-4"
-                    style={{
-                      borderColor: "var(--border-subtle)",
-                      backgroundColor:
-                        "color-mix(in srgb, var(--brand-purple) 6%, transparent)",
-                    }}
-                  >
-                    <div>
-                      <div
-                        className="text-[10px] font-bold uppercase tracking-[0.14em]"
-                        style={{ color: "var(--brand-yellow)" }}
-                      >
-                        Explorar por temática
-                      </div>
-                      <div
-                        className="text-sm font-semibold mt-0.5"
-                        style={{ color: "var(--text)" }}
-                      >
-                        Categorías del blog
-                      </div>
-                    </div>
-                    {totalTutorials > 0 && (
-                      <div
-                        className="text-[11px] font-mono tabular-nums"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {totalTutorials}{" "}
-                        {totalTutorials === 1 ? "tutorial" : "tutoriales"}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Grid 2-cols con cards de categoría */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
-                    {CATEGORIES.map((c) => {
-                      const n = categoryCounts[c.slug] || 0;
-                      return (
-                        <Link
-                          key={c.slug}
-                          href={`/blog/categoria/${c.slug}`}
-                          role="menuitem"
-                          onClick={() => setCatsOpen(false)}
-                          className="group flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-[color:var(--bg-hover)]"
-                          style={{ color: "var(--text)" }}
-                        >
-                          {/* Icon container con bg sutil purple */}
-                          <div
-                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
-                            style={{
-                              backgroundColor:
-                                "color-mix(in srgb, var(--brand-purple) 10%, transparent)",
-                              color: "var(--text-accent)",
-                            }}
-                          >
-                            <CategoryIcon slug={c.slug} size={22} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span
-                                className="font-semibold text-sm normal-case tracking-normal group-hover:text-[color:var(--text-accent)] transition-colors"
-                                style={{ color: "var(--text)" }}
-                              >
-                                {c.label}
-                              </span>
-                              {n > 0 && (
-                                <span
-                                  className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded normal-case tracking-normal"
-                                  style={{
-                                    color: "var(--text-muted)",
-                                    backgroundColor: "var(--bg-hover)",
-                                  }}
-                                >
-                                  {n}
-                                </span>
-                              )}
-                            </div>
-                            <div
-                              className="text-[12px] normal-case tracking-normal font-normal leading-snug line-clamp-1"
-                              style={{ color: "var(--text-dim)" }}
-                            >
-                              {c.description}
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-
-                  {/* Footer: Ver todos los tutoriales → */}
-                  <div
-                    className="border-t px-5 py-3 flex items-center justify-between"
-                    style={{ borderColor: "var(--border-subtle)" }}
-                  >
-                    <Link
-                      href="/blog/tutoriales"
-                      onClick={() => setCatsOpen(false)}
-                      className="underlink text-xs font-bold uppercase tracking-[0.08em]"
-                      style={{ color: "var(--text-accent)" }}
-                    >
-                      Ver todos los tutoriales →
-                    </Link>
-                    <span
-                      className="text-[10px] font-mono"
-                      style={{ color: "var(--text-dim)" }}
-                    >
-                      ESC para cerrar
-                    </span>
-                  </div>
-                </div>
-              )}
+              />
             </li>
-            {/* External links — Mecha Noticias + Tienda con flecha ↗ */}
-            <li className="ml-auto flex items-center gap-6">
+            {/* Categorías inline — un click directo a cada una */}
+            {CATEGORIES.map((c) => {
+              const n = categoryCounts[c.slug] || 0;
+              return (
+                <li key={c.slug}>
+                  <Link
+                    href={`/blog/categoria/${c.slug}`}
+                    className="blog-nav-link inline-flex items-center gap-1"
+                  >
+                    <span>{c.label}</span>
+                    {n > 0 && (
+                      <span
+                        className="blog-nav-count tabular-nums"
+                        aria-label={`${n} tutoriales`}
+                      >
+                        {n}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+            {/* Spacer + external links a la derecha */}
+            <li className="ml-auto flex items-center gap-1">
               <a
                 href="https://noticias.mechatronicstore.cl/?utm_source=blog&utm_medium=header_nav"
-                className="inline-flex items-center gap-1 underlink py-1"
-                style={{ color: "var(--text-muted)" }}
+                className="blog-nav-link blog-nav-external inline-flex items-center gap-1"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                Mecha Noticias
+                <span>Noticias</span>
                 <svg
-                  className="w-2.5 h-2.5"
+                  width="10"
+                  height="10"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -477,12 +328,12 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
               </a>
               <a
                 href="https://www.mechatronicstore.cl/?utm_source=blog&utm_medium=header_nav"
-                className="inline-flex items-center gap-1 underlink py-1"
-                style={{ color: "var(--text-muted)" }}
+                className="blog-nav-link blog-nav-external inline-flex items-center gap-1"
               >
-                Tienda
+                <span>Tienda</span>
                 <svg
-                  className="w-2.5 h-2.5"
+                  width="10"
+                  height="10"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
