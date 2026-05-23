@@ -336,23 +336,26 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   // (#6017b1) con texto blanco. Para que el usuario sienta que blog y
   // tienda son un solo sitio, replicamos ese estilo:
   //
-  // Pablo 23-may-2026 v5 — CORRECCIÓN tras feedback de Pablo. El v4
-  // estaba equivocado: confié en medir `.asp_w` del Ajax Search Pro que
-  // mide rgb(209,234,255) celeste — pero ese es el contenedor INTERIOR
-  // que NO se ve porque está embebido sobre el background morado del
-  // header del store. El search bar VISIBLE del store es MORADO entero
-  // (mismo bg del header) con una lupa cuadrada blanca/transparent a
-  // la derecha conteniendo el icono morado o blanco según contraste.
+  // Pablo 23-may-2026 v6 — REVERT del v5 (que estaba todo morado, mal)
+  // y CORRECCIÓN del v4. Auditoría JS confirmó:
+  //   - .asp_w (search bar visible del store): 477×32, bg rgb(209,234,255)
+  //     = #d1eaff celeste muy claro, radius 12px, sin border externo
+  //   - .promagnifier (botón lupa del store): 28×28 bg TRANSPARENT (no
+  //     cuadrado morado/amarillo distinto), icono SVG fill #f9f9f9 gris
+  //     claro. Sutilísimo, casi invisible.
   //
-  // v5 (corregido):
-  //   - bg form: VUELVE a var(--brand-purple) morado sólido
-  //   - text color input: VUELVE a #ffffff (blanco sobre morado)
-  //   - placeholder color: VUELVE a blanco translúcido (via .search-input-white)
-  //   - radius: 12px (consistente con store border-radius)
+  // El v4 estaba bien en bg pero MAL en la lupa (cuadrado morado externo
+  // — el store NO tiene cuadrado, la lupa está embebida en el mismo bg).
+  // Esta versión arregla la lupa: bg transparent, color icon var(--text-muted)
+  // (más oscuro que #f9f9f9 del store para que sea VISIBLE).
+  //
+  // v6 (corregido):
+  //   - bg form: #d1eaff celeste muy claro (como .asp_w del store) ✓
+  //   - border: ninguno (store no tiene border en .asp_w)
+  //   - radius: 12px
   //   - height: 40px
-  //   - border: 1px solid rgba(255,255,255,0.15) (sutil sobre morado)
-  //   - lupa button: bg #ffffff (cuadrado blanco visible sobre morado),
-  //     icono var(--brand-purple) adentro
+  //   - text input: var(--text), placeholder var(--text-muted)
+  //   - lupa: bg transparent, sin cuadrado distinto, icono morado visible
   return (
     <div
       ref={containerRef}
@@ -363,12 +366,12 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
         onSubmit={handleSubmit}
         className="group flex items-center transition-all overflow-hidden"
         style={{
-          background: "var(--brand-purple)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
+          background: "#d1eaff",
+          border: "none",
           borderRadius: "12px",
           height: "40px",
           paddingLeft: "16px",
-          paddingRight: "4px",
+          paddingRight: "8px",
         }}
       >
         <input
@@ -397,9 +400,9 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
             }
           }}
           placeholder="Buscar..."
-          className="flex-1 text-sm outline-none bg-transparent search-input-white"
+          className="flex-1 text-sm outline-none bg-transparent search-input-store"
           style={{
-            color: "#ffffff",
+            color: "var(--text)",
             border: "none",
             minWidth: 0,
             fontWeight: 500,
@@ -409,19 +412,19 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           autoComplete="off"
           readOnly={overlay !== null}
         />
-        {/* Botón submit cuadrado BLANCO a la derecha — replica el submit
-            del Ajax Search Pro del store. Lupa morada dentro (contraste
-            sobre el bg blanco). */}
+        {/* Botón submit lupa — sin cuadrado externo (replica .promagnifier
+            del store que es transparent). Icono morado para visibilidad
+            sobre el bg celeste claro. */}
         <button
           type="submit"
           aria-label="Buscar"
-          className="flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-90"
+          className="flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
           style={{
-            width: "40px",
-            height: "32px",
-            background: "#ffffff",
+            width: "28px",
+            height: "28px",
+            background: "transparent",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: "6px",
             cursor: "pointer",
             color: "var(--brand-purple)",
           }}

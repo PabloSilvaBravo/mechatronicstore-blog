@@ -29,9 +29,7 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   return (
     <div
       style={{
-        background: "var(--brand-purple)",
-        border: "1px solid rgba(255, 255, 255, 0.15)",
-        opacity: 0.85,
+        background: "#d1eaff",
         height: "40px",
         borderRadius: "12px",
         maxWidth: "477px",
@@ -61,15 +59,13 @@ function ShippingTriggerStub() {
       title="Cambiar ubicación de envío"
       aria-label="Cambiar ubicación de envío"
     >
-      {/* Pablo 23-may-2026 v5 — sobre fondo morado del header, todo va
-          en colores claros (icono blanco, "Enviar a" blanco translúcido,
-          "Elegir ubicación" blanco sólido). */}
+      {/* v6 revert: header outer es claro, textos vuelven a oscuros */}
       <svg
         width="22"
         height="22"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#ffffff"
+        stroke="var(--brand-purple)"
         strokeWidth={2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -82,13 +78,13 @@ function ShippingTriggerStub() {
       <span className="flex flex-col leading-tight">
         <span
           className="text-[10px] font-semibold uppercase tracking-wide"
-          style={{ color: "rgba(255, 255, 255, 0.7)" }}
+          style={{ color: "var(--text-dim)" }}
         >
           Enviar a
         </span>
         <span
           className="text-[13px] font-bold"
-          style={{ color: "#ffffff" }}
+          style={{ color: "var(--text)" }}
         >
           Elegir ubicación
         </span>
@@ -213,13 +209,13 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
     <header
       className="sticky top-0 z-40"
       style={{
-        // Pablo 23-may-2026 v5 fix: el store mechatronicstore.cl tiene
-        // header ENTERAMENTE morado (no blanco con overlay). Cambiamos a
-        // bg morado sólido + sombra inferior sutil. El backdrop-blur ya
-        // no aplica porque el bg es opaco.
-        backgroundColor: "var(--brand-purple)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-        color: "#ffffff",
+        // Pablo 23-may-2026 v6 — REVERT del v5. Auditoría JS confirmó:
+        // header, header-main, header-wrapper, header-inner del store son
+        // TODOS transparentes (`rgba(0,0,0,0)`) sobre `#wrapper` blanco
+        // puro. El v5 puso todo morado, opuesto al store. Vuelve al bg
+        // del card original (blanco/oscuro según tema).
+        backgroundColor: "var(--bg-card)",
+        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
       {/* ─── Row 2: Main bar ──────────────────────────────────────
@@ -227,14 +223,14 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
           Replica el main bar del store. */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-5 py-3">
-          {/* Logo — variant="white" sobre header bg morado para que el
-              SVG "mechatronic" sea visible (Pablo 23-may-2026 v5). */}
+          {/* Logo — variant default morado original sobre header bg
+              claro (v6 revert del v5). */}
           <Link
             href="/blog"
             className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0"
             aria-label="Blog MechatronicStore"
           >
-            <Logo size="md" variant="white" />
+            <Logo size="md" />
           </Link>
 
           {/* Search bar — grande, ocupa espacio disponible.
@@ -268,9 +264,8 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
               onClick={() => setMobileOpen((v) => !v)}
               className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
               style={{
-                // Pablo 23-may-2026 v5 — burger blanco sobre header morado
-                backgroundColor: mobileOpen ? "rgba(255,255,255,0.15)" : "transparent",
-                color: "#ffffff",
+                backgroundColor: mobileOpen ? "var(--bg-hover)" : "transparent",
+                color: "var(--text)",
               }}
               aria-label="Menú"
               aria-expanded={mobileOpen}
