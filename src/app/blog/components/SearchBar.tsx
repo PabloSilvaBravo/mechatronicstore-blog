@@ -57,17 +57,10 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   const [dropdownOpen, setDropdownOpen] = useState(false); // dropdown desktop / dentro del modal
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isMac, setIsMac] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Detectamos Mac client-side para mostrar ⌘K vs Ctrl K en el hint.
-  // No usamos navigator.platform en SSR para evitar hydration mismatch.
-  useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      setIsMac(/Mac|iPhone|iPad|iPod/i.test(navigator.platform));
-    }
-  }, []);
+  // Pablo 23-may-2026: removido useState `isMac` — el badge ⌘K/Ctrl K que
+  // lo usaba se quitó al alinear con store (que no muestra ese hint).
 
   // Sync query con URL (back/forward, link share)
   useEffect(() => {
@@ -338,13 +331,22 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   // mechatronicstore.cl usa una barra de búsqueda PÚRPURA SÓLIDA
   // (#6017b1) con texto blanco. Para que el usuario sienta que blog y
   // tienda son un solo sitio, replicamos ese estilo:
+  //
+  // Pablo 23-may-2026 v3 — alineado AÚN MÁS con el store. Cambios vs
+  // v2 (que dejaba detalles distintos):
+  //   - height 38px → 44px (store mide ~44-48 visible)
+  //   - border-radius 6px → 10px (store usa 10-12px, parece pill suave)
+  //   - lupa MOVIDA de izquierda a DERECHA (store la tiene a la der)
+  //   - lupa tamaño 16x16 → 20x20 (más visible, match store)
+  //   - lupa AHORA es <button type="submit"> (interactivo, store usa
+  //     botón submit clickable a la derecha)
+  //   - eliminado el <kbd> ⌘K (store no tiene ese badge)
+  //   - eliminado el botón submit sr-only (la lupa AHORA hace eso)
+  //
+  // Mantiene:
   //   - bg purple sólido var(--brand-purple)
-  //   - placeholder + texto blanco (rgba(255,255,255,0.75) placeholder)
-  //   - lupa a la izquierda en blanco
-  //   - radius 6px (no 10px pill — match con store)
-  //   - height 38px
+  //   - placeholder + texto blanco
   //   - max-width ~477px (constraint visual del store)
-  //   - kbd hint blanco translúcido (legible sobre el púrpura)
   return (
     <div
       ref={containerRef}
@@ -353,29 +355,16 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
     >
       <form
         onSubmit={handleSubmit}
-        className="group flex items-center gap-2.5 px-3.5 transition-all"
+        className="group flex items-center gap-2 transition-all"
         style={{
           background: "var(--brand-purple)",
           border: "none",
-          borderRadius: "6px",
-          height: "38px",
+          borderRadius: "10px",
+          height: "44px",
+          paddingLeft: "16px",
+          paddingRight: "6px",
         }}
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-          style={{ color: "#ffffff", flexShrink: 0, opacity: 0.9 }}
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3-3" />
-        </svg>
         <input
           type="search"
           value={query}
@@ -413,36 +402,35 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
           autoComplete="off"
           readOnly={overlay !== null}
         />
-        {/* Hint visual — Pablo 21-may-2026 (alignment con store):
-            Sobre fondo púrpura sólido. El kbd queda translúcido blanco
-            para no romper la jerarquía visual (la lupa + placeholder ya
-            indican que es input de búsqueda).
-            Si el provider del SearchOverlay está montado, mostramos
-            ⌘K (Mac) / Ctrl K (otros). Si no, fallback a ↵. */}
-        <kbd
-          className="hidden md:inline-flex items-center justify-center text-[10px] font-bold tabular-nums gap-0.5"
-          aria-hidden
-          style={{
-            color: "#ffffff",
-            background: "rgba(255, 255, 255, 0.18)",
-            border: "1px solid rgba(255, 255, 255, 0.25)",
-            borderRadius: "4px",
-            padding: "2px 6px",
-            minWidth: "22px",
-            height: "20px",
-            letterSpacing: "0.04em",
-          }}
-        >
-          {overlay ? (isMac ? "⌘K" : "Ctrl K") : "↵"}
-        </kbd>
-        {/* Botón submit invisible (Enter en input lo dispara igual; mantenemos
-            type=submit para form semantics + accessibility) */}
+        {/* Lupa submit a la derecha — match store. Botón interactivo, no
+            decorativo: click → submit form → /blog?search=... */}
         <button
           type="submit"
           aria-label="Buscar"
-          className="sr-only"
+          className="flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-80"
+          style={{
+            width: "36px",
+            height: "36px",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "#ffffff",
+          }}
         >
-          Buscar
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3-3" />
+          </svg>
         </button>
       </form>
       {renderDropdown()}

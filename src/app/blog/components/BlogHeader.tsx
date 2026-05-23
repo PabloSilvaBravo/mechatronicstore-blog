@@ -41,6 +41,59 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
 }
 
 /**
+ * ShippingTriggerStub — réplica visual del trigger "Enviar a / Elegir
+ * ubicación" del store (li.header-shipping-trigger). En el blog NO
+ * tenemos checkout ni cart con shipping, así que es decorativo y
+ * linkea al store home. Pablo 23-may-2026 paridad header.
+ *
+ * Visualmente match con store:
+ *   - pin SVG morado a la izquierda
+ *   - "Enviar a" 10px gris dim arriba
+ *   - "Elegir ubicación" 13px texto principal abajo
+ *   - hidden en mobile (queda en mobile drawer)
+ */
+function ShippingTriggerStub() {
+  return (
+    <a
+      href="https://www.mechatronicstore.cl/?utm_source=blog&utm_medium=header&utm_campaign=shipping"
+      className="hidden md:flex items-center gap-2 hover:opacity-80 transition-opacity"
+      title="Cambiar ubicación de envío"
+      aria-label="Cambiar ubicación de envío"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--brand-purple)"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        style={{ flexShrink: 0 }}
+      >
+        <path d="M20 10c0 7-8 12-8 12s-8-5-8-12a8 8 0 0 1 16 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+      <span className="flex flex-col leading-tight">
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wide"
+          style={{ color: "var(--text-dim)" }}
+        >
+          Enviar a
+        </span>
+        <span
+          className="text-[13px] font-bold"
+          style={{ color: "var(--text)" }}
+        >
+          Elegir ubicación
+        </span>
+      </span>
+    </a>
+  );
+}
+
+/**
  * Categorías del blog — definición compartida con descripción corta
  * para el mega menú (Pablo 18-may-2026 Fase 2 header). El icono
  * dinámico viene del componente CategoryIcon (SVG outline).
@@ -196,7 +249,12 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
               </Suspense>
             </div>
             <HeaderActions />
-            <ThemeToggle />
+            {/* Pablo 23-may-2026 paridad header con store: el store NO
+                tiene ThemeToggle aquí — tiene "Enviar a / Elegir ubicación".
+                Para mantener paridad visual, reemplazamos. El blog ya
+                respeta prefers-color-scheme del OS (CSS vars). Si Pablo
+                quiere el toggle de vuelta, está en el mobile drawer. */}
+            <ShippingTriggerStub />
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
@@ -538,6 +596,17 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
             >
               Visitar la tienda →
             </a>
+            {/* Pablo 23-may-2026: ThemeToggle vive solo en el mobile drawer
+                ahora — del desktop header lo sacamos para paridad con store. */}
+            <div className="mt-3 flex items-center justify-between px-3 py-2.5">
+              <span
+                className="text-sm font-medium"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Tema
+              </span>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}
