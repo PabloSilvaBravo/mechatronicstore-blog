@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-23T06:37:08.408996+00:00",
+  "checked_at": "2026-05-23T08:21:23.082907+00:00",
   "metrics": {
-    "drafts_pending": 0,
+    "drafts_pending": 1,
     "published_24h": 0,
     "ranked_stuck": 2,
-    "rejected_ratio_48h": 0.876,
+    "rejected_ratio_48h": 0.772,
     "published_48h": 34,
-    "rejected_48h": 241,
+    "rejected_48h": 115,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,7 +17,15 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
       },
       {
         "status": 403,
@@ -25,7 +33,7 @@
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
       },
       {
         "status": 403,
@@ -41,29 +49,22 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
-      },
-      {
-        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
       }
     ],
-    "ranked_aging_hours": 11,
+    "ranked_aging_hours": 13,
     "published_7d": 34,
     "rank_runs_24h": 1,
     "translate_runs_24h": 0,
     "counts_by_status": {
+      "draft": 1,
       "published": 34,
       "ranked": 2,
-      "rejected": 475
+      "rejected": 499
     }
   },
   "alerts": [
