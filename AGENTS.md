@@ -14,6 +14,14 @@ Notas operativas para agentes Claude trabajando en este repo.
 
 **Sin esto**, Cloudflare retiene el HTML cacheado 4+ horas (a pesar del `cache-control: max-age=3600`) y los cambios visuales del blog no se ven hasta varias horas después del deploy. Pablo NO debería tener que pedirlo cada vez — es tarea automática del agente que hace el push.
 
+### IMPORTANTE — qué purga el script
+
+El script (v2, 23-may-2026) ahora purga **HTML core + TODOS los chunks `_next/static/*` referenciados por el HTML actual** (típicamente ~25-30 URLs por batch). Esto es crítico porque:
+
+- Los SVG inline (iconos cart/user, etc.), inline styles del JSX, todo el código React, vive en los **chunks JS** de Next.js (`_next/static/chunks/*.js`).
+- Si solo purgás el HTML (versión v1 del script), el navegador recibe HTML fresh pero los chunks JS vienen del cache viejo → no se ven los cambios visuales.
+- Pablo descubrió este bug el 23-may: tras un commit de iconos, el script v1 purgó solo el HTML, los iconos seguían viéndose viejos hasta que Pablo hizo "Purge Everything" desde el dashboard Cloudflare. v2 detecta automáticamente los chunks del HTML y los incluye.
+
 ### Flujo completo de un cambio visual al blog
 
 ```bash
