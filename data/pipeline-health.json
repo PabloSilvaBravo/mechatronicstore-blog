@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-23T17:05:30.306759+00:00",
+  "checked_at": "2026-05-23T18:32:36.964069+00:00",
   "metrics": {
-    "drafts_pending": 1,
+    "drafts_pending": 0,
     "published_24h": 2,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.707,
+    "rejected_ratio_48h": 0.71,
     "published_48h": 36,
-    "rejected_48h": 87,
+    "rejected_48h": 88,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,11 +17,7 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
       },
       {
         "status": 403,
@@ -29,7 +25,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
       },
       {
         "status": 403,
@@ -41,6 +41,10 @@
       },
       {
         "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
+      },
+      {
+        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
       },
       {
@@ -49,21 +53,16 @@
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
-      },
-      {
-        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
       }
     ],
     "ranked_aging_hours": 0,
     "published_7d": 36,
-    "rank_runs_24h": 1,
+    "rank_runs_24h": 2,
     "translate_runs_24h": 1,
     "counts_by_status": {
-      "draft": 1,
       "published": 36,
-      "rejected": 499
+      "rejected": 500
     }
   },
   "alerts": [
