@@ -1,5 +1,6 @@
 import type { TutorialPublished } from "@/lib/db/queries";
 import TrackableLink from "./TrackableLink";
+import MaterialThumb from "./MaterialThumb";
 
 interface Props {
   materials: TutorialPublished["materials_list"];
@@ -282,21 +283,9 @@ export default function MaterialsList({
                     background: "var(--bg-elevated)",
                   }}
                 >
-                  <img
-                    src={toThumb(product.image_url, 100)}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      // Si la cropeada -100x100 no existe (raro), cae a la
-                      // versión original guardada en linked_products_json.
-                      const img = e.currentTarget;
-                      if (!img.dataset.fb && product.image_url) {
-                        img.dataset.fb = "1";
-                        img.src = product.image_url;
-                      }
-                    }}
+                  <MaterialThumb
+                    thumbUrl={toThumb(product.image_url, 100)}
+                    fallbackUrl={product.image_url}
                   />
                 </div>
               ) : (
