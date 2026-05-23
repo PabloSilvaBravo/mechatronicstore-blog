@@ -12,6 +12,7 @@ Pablo 17-may-2026 audit-blog B9: el persist no estaba capturando
 hero_image_url, dejando tutoriales sin foto.
 """
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,21 @@ sys.path.insert(0, str(Path(__file__).parent))
 import db
 from hero_picker import select_best_hero
 import re as _re
+
+# Pablo 23-may-2026 fase 1.5 — opcional R2 rehost de imágenes inline
+# del body_es markdown y steps[].image_url. Inmuniza contra hotlink
+# protection de sources externas (studiopieters, hackaday, etc.).
+# Si R2_REHOST_ENABLED=1, hace el rehost; sino deja URLs externas.
+_R2_INLINE_ENABLED = os.environ.get("R2_REHOST_ENABLED", "1") == "1"
+try:
+    from r2_uploader import rehost_hero as _r2_rehost  # type: ignore
+except Exception:
+    _r2_rehost = None  # type: ignore
+    _R2_INLINE_ENABLED = False
+
+# Regex para extraer URLs de markdown ![alt](url) y de plain URLs en src.
+# Captura el grupo 1 (URL) con alt opcional antes.
+_MD_IMAGE_RE = _re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 # Pablo 22-may-2026: helper inverso de to_thumb_url (enrich_linked_products.py).
 # Los thumbs de productos vienen como `foto-100x100.webp` (cropeado para card).
@@ -56,6 +72,62 @@ def is_generic_placeholder(url: str) -> bool:
 
 ROOT = Path(__file__).parent.parent
 INPUT = ROOT / "data" / "blog-translate-output.json"
+
+
+def rehost_inline_images(body_es: str, steps: list, tid: str) -> tuple[str, list, int]:
+    """
+    Pablo 23-may-2026 fase 1.5 — rehospede todas las URLs externas de
+    imágenes inline (en body_es markdown y steps[].image_url) a R2.
+
+    Inmuniza contra hotlink protection de sources externas. Si R2 no
+    está habilitado o el rehost individual falla, deja la URL externa
+    como fallback (mejor imagen rota visible que imagen ausente).
+
+    Returns: (body_es_new, steps_new, n_rehosted)
+    """
+    if not _R2_INLINE_ENABLED or _r2_rehost is None:
+        return body_es, steps, 0
+
+    n_rehosted = 0
+    # Cache local: misma URL en múltiples steps/body → 1 sola subida.
+    url_cache: dict[str, str] = {}
+
+    def rehost(url: str) -> str:
+        nonlocal n_rehosted
+        if not url or not url.startswith(("http://", "https://")):
+            return url
+        if url in url_cache:
+            return url_cache[url]
+        try:
+            r2_url = _r2_rehost(url, tutorial_id=tid)
+        except Exception as e:
+            print(f"    ⚠ R2 rehost inline falló para {url[:60]}: {e}")
+            return url
+        if r2_url and r2_url != url:
+            n_rehosted += 1
+        url_cache[url] = r2_url or url
+        return url_cache[url]
+
+    # 1. Rehost imágenes en body_es markdown ![alt](url)
+    def replace_md(m: _re.Match) -> str:
+        alt = m.group(1)
+        url = m.group(2)
+        new_url = rehost(url)
+        return f"![{alt}]({new_url})"
+
+    new_body_es = _MD_IMAGE_RE.sub(replace_md, body_es) if body_es else body_es
+
+    # 2. Rehost steps[].image_url
+    new_steps = []
+    for step in (steps or []):
+        if isinstance(step, dict) and step.get("image_url"):
+            new_step = dict(step)
+            new_step["image_url"] = rehost(step["image_url"])
+            new_steps.append(new_step)
+        else:
+            new_steps.append(step)
+
+    return new_body_es, new_steps, n_rehosted
 
 
 def fetch_og_image(source_url: str) -> str | None:
@@ -273,6 +345,17 @@ def main():
         if existing_published_at and target_status == "published":
             print(f"    ↻ preservando published_at original: {existing_published_at}")
 
+        # Pablo 23-may-2026 fase 1.5 — rehospede inline images a R2 antes
+        # de persistir. Procesa ![alt](url) en body_es y steps[].image_url.
+        body_es_final = tr.get("body_es") or ""
+        steps_final = tr.get("steps") or []
+        if target_status == "published":
+            body_es_final, steps_final, n_rehosted = rehost_inline_images(
+                body_es_final, steps_final, tid,
+            )
+            if n_rehosted > 0:
+                print(f"    ✓ R2 rehost inline: {n_rehosted} imágenes")
+
         try:
             db.execute(
                 f"""UPDATE tutorials
@@ -303,10 +386,10 @@ def main():
                     slug_to_use,
                     tr.get("title_es"),
                     tr.get("subtitle_es"),
-                    tr.get("body_es"),
+                    body_es_final,
                     hero_url,
                     json.dumps(tr.get("materials_list") or [], ensure_ascii=False),
-                    json.dumps(tr.get("steps") or [], ensure_ascii=False),
+                    json.dumps(steps_final, ensure_ascii=False),
                     json.dumps(tr.get("code_blocks") or [], ensure_ascii=False),
                     json.dumps(tr.get("linked_products") or [], ensure_ascii=False),
                     tr.get("github_url"),

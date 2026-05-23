@@ -534,23 +534,40 @@ tienen match.
 - `subtitle_es`: 100-150 chars (importante SEO)
 - `body_es`: markdown limpio (NO HTML, NO `<img>` tags), code blocks con
   lang hint. **CRÍTICO — preservar TODAS las imágenes inline del body
-  original** (Pablo 18-may-2026): el `body_en` viene en HTML con `<img
-  src="URL" alt="texto">`. Convertir cada imagen al formato markdown
-  `![alt traducido al español](URL_original_exacta)` y mantenerla en la
-  MISMA posición que tenía en el HTML original (después del párrafo
-  correspondiente, NO al final del body). Excepción: NO repetir la
-  imagen de portada (`hero_image_url`) — si la primera imagen del body
-  es igual o variante del hero, omitirla (la portada se renderea aparte).
+  original** (Pablo 18-may-2026, reforzado 23-may-2026 fase 1.4): el
+  input contiene **`body_html_en_excerpt`** (HTML con `<img src="URL"
+  alt="texto">` tags) — usá ESE como fuente de imágenes inline (no
+  `body_en_excerpt` que es texto plano). Convertir cada `<img>` al
+  formato markdown `![alt traducido al español](URL_original_exacta)`
+  y mantenerla en la MISMA posición que tenía en el HTML original
+  (después del párrafo correspondiente, NO al final del body).
+  Excepción: NO repetir la imagen de portada (`hero_image_url`) — si
+  la primera imagen del body es igual o variante del hero, omitirla
+  (la portada se renderea aparte por el blog).
   Ejemplos:
   - HTML: `<p>Conecta el TM1637 al ESP32.</p><img src="https://x.com/wiring.jpg" alt="diagrama">`
   - Markdown: `Conecta el TM1637 al ESP32.\n\n![Diagrama de conexión TM1637 ESP32](https://x.com/wiring.jpg)`
-  Sin imágenes inline el blog se ve hueco (compare con mecha noticias).
+  Sin imágenes inline el blog se ve hueco — el promedio actual es 1
+  imagen/tutorial (solo hero) y queremos 5-15 (diagramas, screenshots,
+  fotos del montaje, render del resultado).
 - `hero_image_url`: OBLIGATORIO. Buscar en input ingest `main_image_url` o
   re-extraer og:image del `source_url`. Si NO hay og:image, usar la primera
   imagen grande (>800x450) del body. NULL solo si genuinamente no hay imagen.
 - `materials_list` SIEMPRE ≥ 1 item
-- `steps` ≥ 3 (sintetizar si tutorial tiene menos). Cada step puede tener
-  `image_url` opcional si el tutorial original muestra foto del paso.
+- `steps` ≥ 3 (sintetizar si tutorial tiene menos). Cada step **puede y
+  debería** tener `image_url` si hay material visual asociado al paso.
+  **Reglas para poblar `steps[].image_url`** (fase 1.4 23-may-2026):
+  1. Si el HTML del paso tiene un `<img>` específico al lado del texto
+     del paso, usá esa URL.
+  2. Si no hay `<img>` pegado al texto del paso pero el input tiene
+     `extra_images` (lista de URLs adicionales del scrape), asigná
+     una imagen del array por orden heurístico: el paso N recibe
+     `extra_images[N % len(extras)]` solo si visualmente cuadra
+     (ej. step "Conectar cables" + imagen de wiring).
+  3. NO repetir la misma imagen en >1 step.
+  4. NO usar el `hero_image_url` como step image (sería redundante).
+  5. Si no hay material visual razonable, dejá `image_url` null para
+     ese step. Es mejor sin imagen que con una random.
 - `code_blocks`: solo código real
 - `linked_products`: SOLO con `match_score ≥ 0.7`
 - `category` ∈ {"arduino", "esp32", "rpi", "robotica", "sensores", "3d", "otros"}
