@@ -29,67 +29,14 @@ function SearchBarFallback({ variant }: { variant: "full" | "icon" }) {
   return (
     <div
       style={{
-        background: "#d1eaff",
-        height: "40px",
+        background: "var(--brand-purple)",
+        opacity: 0.9,
+        height: "32px",
         borderRadius: "12px",
-        maxWidth: "477px",
+        maxWidth: "654px",
       }}
       aria-hidden
     />
-  );
-}
-
-/**
- * ShippingTriggerStub — réplica visual del trigger "Enviar a / Elegir
- * ubicación" del store (li.header-shipping-trigger). En el blog NO
- * tenemos checkout ni cart con shipping, así que es decorativo y
- * linkea al store home. Pablo 23-may-2026 paridad header.
- *
- * Visualmente match con store:
- *   - pin SVG morado a la izquierda
- *   - "Enviar a" 10px gris dim arriba
- *   - "Elegir ubicación" 13px texto principal abajo
- *   - hidden en mobile (queda en mobile drawer)
- */
-function ShippingTriggerStub() {
-  return (
-    <a
-      href="https://www.mechatronicstore.cl/?utm_source=blog&utm_medium=header&utm_campaign=shipping"
-      className="hidden md:flex items-center gap-2 hover:opacity-80 transition-opacity"
-      title="Cambiar ubicación de envío"
-      aria-label="Cambiar ubicación de envío"
-    >
-      {/* v6 revert: header outer es claro, textos vuelven a oscuros */}
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--brand-purple)"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-        style={{ flexShrink: 0 }}
-      >
-        <path d="M20 10c0 7-8 12-8 12s-8-5-8-12a8 8 0 0 1 16 0z" />
-        <circle cx="12" cy="10" r="3" />
-      </svg>
-      <span className="flex flex-col leading-tight">
-        <span
-          className="text-[10px] font-semibold uppercase tracking-wide"
-          style={{ color: "var(--text-dim)" }}
-        >
-          Enviar a
-        </span>
-        <span
-          className="text-[13px] font-bold"
-          style={{ color: "var(--text)" }}
-        >
-          Elegir ubicación
-        </span>
-      </span>
-    </a>
   );
 }
 
@@ -209,13 +156,11 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
     <header
       className="sticky top-0 z-40"
       style={{
-        // Pablo 23-may-2026 v6 — REVERT del v5. Auditoría JS confirmó:
-        // header, header-main, header-wrapper, header-inner del store son
-        // TODOS transparentes (`rgba(0,0,0,0)`) sobre `#wrapper` blanco
-        // puro. El v5 puso todo morado, opuesto al store. Vuelve al bg
-        // del card original (blanco/oscuro según tema).
+        // Pablo 23-may-2026 v7 — header outer match con store: bg del
+        // body claro (wrapper #ffffff). Mantener var(--bg-card) que en
+        // light theme es blanco, en dark theme adaptable. Sin border
+        // bottom (store no tiene).
         backgroundColor: "var(--bg-card)",
-        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
       {/* ─── Row 2: Main bar ──────────────────────────────────────
@@ -245,20 +190,33 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
           </div>
           <div className="md:hidden flex-1" />
 
+          {/* Divider vertical entre search/center y cluster derecho —
+              replica el `<li class="header-divider">` del store: 1px ×
+              30px con border-left rgba(0,0,0,0.1). Pablo 23-may-2026 v7. */}
+          <span
+            className="hidden md:inline-block flex-shrink-0"
+            style={{
+              width: "1px",
+              height: "30px",
+              background: "rgba(0, 0, 0, 0.1)",
+              marginRight: "7px",
+            }}
+            aria-hidden
+          />
+
           {/* Right cluster: search icon en mobile + actions + theme + burger */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <div className="md:hidden">
               <Suspense fallback={<SearchBarFallback variant="icon" />}>
                 <SearchBar variant="icon" />
               </Suspense>
             </div>
             <HeaderActions />
-            {/* Pablo 23-may-2026 paridad header con store: el store NO
-                tiene ThemeToggle aquí — tiene "Enviar a / Elegir ubicación".
-                Para mantener paridad visual, reemplazamos. El blog ya
-                respeta prefers-color-scheme del OS (CSS vars). Si Pablo
-                quiere el toggle de vuelta, está en el mobile drawer. */}
-            <ShippingTriggerStub />
+            {/* Pablo 23-may-2026 v7 — eliminado ShippingTriggerStub.
+                Auditoría Playwright confirmó que el store NO tiene
+                "Enviar a / Elegir ubicación" en el header — yo lo había
+                inventado. Cluster derecho del store es exactamente:
+                Suscríbete | divider | COTIZAR | cart | user. */}
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
@@ -299,20 +257,19 @@ export default function BlogHeader({ categoryCounts = {} }: BlogHeaderProps) {
       </div>
 
       {/* ─── Row 3: Nav menu ─────────────────────────────────────
-          Desktop only. Replica el nav menu del store: items
-          horizontales con dropdowns sobre un FONDO GRIS CLARO
-          (#f1f1f1 light / #1a1b22 dark) — match exacto con la nav
-          row del header del store mechatronicstore.cl. Pablo 21-may-2026
-          (header alignment). */}
+          Pablo 23-may-2026 v7 — auditoría Playwright confirmó que el
+          store usa bg TRANSPARENTE (no gris) y h ~30px (vs 55px del
+          v6). Texto level mantenido 12px porque ya quedaba balanceado.
+          Quitado el bg gris para match con store. */}
       <div
         className="hidden md:block border-t"
         style={{
           borderColor: "var(--border-subtle)",
-          background: "var(--nav-row-bg)",
+          background: "transparent",
         }}
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
-          <ul className="flex items-center gap-6 text-xs font-bold uppercase tracking-[0.08em] py-2.5">
+          <ul className="flex items-center gap-6 text-xs font-bold uppercase tracking-[0.08em] py-1">
             <li>
               <Link
                 href="/blog"

@@ -336,40 +336,36 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   // (#6017b1) con texto blanco. Para que el usuario sienta que blog y
   // tienda son un solo sitio, replicamos ese estilo:
   //
-  // Pablo 23-may-2026 v6 — REVERT del v5 (que estaba todo morado, mal)
-  // y CORRECCIÓN del v4. Auditoría JS confirmó:
-  //   - .asp_w (search bar visible del store): 477×32, bg rgb(209,234,255)
-  //     = #d1eaff celeste muy claro, radius 12px, sin border externo
-  //   - .promagnifier (botón lupa del store): 28×28 bg TRANSPARENT (no
-  //     cuadrado morado/amarillo distinto), icono SVG fill #f9f9f9 gris
-  //     claro. Sutilísimo, casi invisible.
+  // Pablo 23-may-2026 v7 — DIAGNÓSTICO REAL via Playwright audit:
+  // el `.asp_w` del store tiene `backgroundColor: rgb(209,234,255)` Y
+  // ADEMÁS `backgroundImage: linear-gradient(60deg, rgb(96,23,177),
+  // rgb(96,23,177))` que TAPA el bg base con MORADO SÓLIDO. Yo había
+  // estado midiendo solo backgroundColor (v4 y v6) y descartando el
+  // backgroundImage. Pablo siempre tuvo razón: el search bar ES MORADO.
   //
-  // El v4 estaba bien en bg pero MAL en la lupa (cuadrado morado externo
-  // — el store NO tiene cuadrado, la lupa está embebida en el mismo bg).
-  // Esta versión arregla la lupa: bg transparent, color icon var(--text-muted)
-  // (más oscuro que #f9f9f9 del store para que sea VISIBLE).
-  //
-  // v6 (corregido):
-  //   - bg form: #d1eaff celeste muy claro (como .asp_w del store) ✓
-  //   - border: ninguno (store no tiene border en .asp_w)
+  // v7 corregido para match exact del store visible:
+  //   - bg form: var(--brand-purple) (morado sólido, ya que es lo que
+  //     visualmente se ve por el gradient)
+  //   - text input: blanco
+  //   - placeholder: blanco translúcido (.search-input-white)
   //   - radius: 12px
-  //   - height: 40px
-  //   - text input: var(--text), placeholder var(--text-muted)
-  //   - lupa: bg transparent, sin cuadrado distinto, icono morado visible
+  //   - height: 32px (medido en .asp_w del store)
+  //   - maxWidth: 654px (medido del form del store)
+  //   - lupa: 28×28, bg transparent (replica .promagnifier), icono blanco
   return (
     <div
       ref={containerRef}
       className={`relative ${className}`}
-      style={{ maxWidth: "477px" }}
+      style={{ maxWidth: "654px" }}
     >
       <form
         onSubmit={handleSubmit}
         className="group flex items-center transition-all overflow-hidden"
         style={{
-          background: "#d1eaff",
+          background: "var(--brand-purple)",
           border: "none",
           borderRadius: "12px",
-          height: "40px",
+          height: "32px",
           paddingLeft: "16px",
           paddingRight: "8px",
         }}
@@ -400,21 +396,21 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
             }
           }}
           placeholder="Buscar..."
-          className="flex-1 text-sm outline-none bg-transparent search-input-store"
+          className="flex-1 outline-none bg-transparent search-input-white"
           style={{
-            color: "var(--text)",
+            color: "#ffffff",
             border: "none",
             minWidth: 0,
             fontWeight: 500,
+            fontSize: "12px",
             marginRight: "8px",
           }}
           aria-label="Buscar tutoriales"
           autoComplete="off"
           readOnly={overlay !== null}
         />
-        {/* Botón submit lupa — sin cuadrado externo (replica .promagnifier
-            del store que es transparent). Icono morado para visibilidad
-            sobre el bg celeste claro. */}
+        {/* Botón submit lupa — replica .promagnifier del store: 28×28,
+            bg transparent, icono blanco visible sobre el bg morado. */}
         <button
           type="submit"
           aria-label="Buscar"
@@ -426,7 +422,7 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
             border: "none",
             borderRadius: "6px",
             cursor: "pointer",
-            color: "var(--brand-purple)",
+            color: "#ffffff",
           }}
         >
           <svg
