@@ -23,11 +23,28 @@
  * Server component sin JS.
  */
 export default function UtilityBar() {
+  // Pablo 23-may-2026 v10 — Pablo señaló que el bg del store NO es plano
+  // negro sino un GRADIENT animado. Playwright reveló los valores reales:
+  //
+  //   background: #000 linear-gradient(#121212 -50%, #6017B1 200%, #000000 250%)
+  //               0% 0% / 140% 100% repeat;
+  //   animation: bannerShift 22s ease-in-out infinite alternate;
+  //
+  // Los stops fuera de rango (-50%, 200%, 250%) hacen que el viewport
+  // muestre solo una franja del gradient — predominantemente negro con
+  // tinte morado que se desplaza horizontalmente cada 22s.
+  //
+  // @keyframes bannerShift en globals.css.
   return (
     <div
       className="banner-container-fixed"
       style={{
-        background: "#000000",
+        backgroundColor: "#000",
+        backgroundImage:
+          "linear-gradient(#121212 -50%, #6017B1 200%, #000000 250%)",
+        backgroundSize: "140% 100%",
+        backgroundRepeat: "repeat",
+        animation: "bannerShift 22s ease-in-out infinite alternate",
         padding: "8px 12px",
         fontSize: "15px",
       }}

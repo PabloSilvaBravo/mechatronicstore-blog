@@ -540,6 +540,15 @@ input, textarea, select {
   --ms-dot-off: #0b0b0b;
 }
 
+/* Pablo 23-may-2026 v10 — animación del banner top "Envío gratis" del
+ * store. El bg es un linear-gradient con stops fuera del viewport
+ * (-50%, 200%, 250%) y se desplaza horizontal con animation
+ * `bannerShift 22s ease-in-out infinite alternate`. */
+@keyframes bannerShift {
+  0% { background-position: 0% 0; }
+  100% { background-position: 100% 0; }
+}
+
 @keyframes msPulse {
   0%, 100% {
     background-color: var(--ms-dot-off);
