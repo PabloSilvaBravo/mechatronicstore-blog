@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-05-23T22:56:38.654882+00:00",
+  "checked_at": "2026-05-24T00:37:03.927427+00:00",
   "metrics": {
     "drafts_pending": 0,
-    "published_24h": 2,
-    "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.673,
-    "published_48h": 36,
+    "published_24h": 0,
+    "ranked_stuck": 3,
+    "rejected_ratio_48h": 0.692,
+    "published_48h": 33,
     "rejected_48h": 74,
     "sources_active": 42,
     "sources_silent_48h": 0,
@@ -17,7 +17,15 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
       },
       {
         "status": 403,
@@ -25,27 +33,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       },
       {
         "status": 403,
@@ -53,26 +41,53 @@
       },
       {
         "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
+      },
+      {
+        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
       }
     ],
-    "ranked_aging_hours": 0,
-    "published_7d": 36,
+    "ranked_aging_hours": 60,
+    "published_7d": 33,
     "rank_runs_24h": 1,
     "translate_runs_24h": 1,
     "counts_by_status": {
-      "published": 36,
+      "published": 33,
+      "ranked": 3,
       "rejected": 500
     }
   },
   "alerts": [
+    {
+      "severity": "critical",
+      "metric": "published_24h",
+      "value": 0,
+      "threshold": 1,
+      "message": "Cero publicaciones en últimas 24h. Pipeline congelado — revisar Routine C + workflow translate-persist."
+    },
     {
       "severity": "warning",
       "metric": "heros_broken",
       "value": 23,
       "threshold": 0,
       "message": "23/30 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+    },
+    {
+      "severity": "warning",
+      "metric": "ranked_aging_hours",
+      "value": 60,
+      "threshold": 24,
+      "message": "Tutorial ranked más viejo lleva 60h esperando translate. Routine C puede estar fallando o cadencia 2/día insuficiente — considerar volver a 3/día (ver AGENTS.md)."
     }
   ],
-  "status": "warning"
+  "status": "critical"
 }
