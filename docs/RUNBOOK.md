@@ -11,7 +11,7 @@
 | Hora UTC | Routine | Trigger ID | Propósito |
 |----------|---------|-----------|-----------|
 | 04:00 | A — Ingest | (GH Actions workflow) | Scrape RSS sources → `status=draft` |
-| 06:30 | B — Ranking | (en `docs/routines/blog-ranking-prompt.md`) | Score con 7 dimensiones, threshold cs ≥ 0.78 → `ranked` |
+| 06:30 | B — Ranking | (en `docs/routines/blog-ranking-prompt.md`) | Score con 7 dimensiones, threshold variable por idioma (es=0.75 / en=0.68) → `ranked` |
 | 12:00 | C — Translation | (en `docs/routines/blog-translation-prompt.md`) | Reescritura ES-CL + MCP product detection → `published` |
 | Lun 11:30 | F — Weekly Digest | `trig_016Sdy532XtZq8d3khNY9SKi` | Email Pablo con publicados + métricas semana |
 
@@ -93,17 +93,71 @@ SQL
 
 ---
 
-## 5. Bajar threshold cs para que pasen más tutoriales
+## 5. Queue vacía / published_24h=0 — diagnóstico ANTES de bajar threshold
 
-Si la queue queda vacía durante varios días, bajar el threshold:
+**ATENCIÓN — sección actualizada 24-may-2026 tras incidente.**
 
-1. Editar `docs/routines/blog-ranking-prompt.md` línea con `cs >= 0.78`
-2. Cambiar a `cs >= 0.75` (o 0.72 si seguís sin notas)
-3. `RemoteTrigger action=update trigger_id=<ranking_trigger>` con el prompt nuevo
+El threshold ya NO es `cs >= 0.78` único. Es **variable por idioma**
+(ver `docs/routines/blog-ranking-prompt.md` líneas 131-132):
 
-Datos para ajustar:
-- `/admin/blog/queue` muestra cuántos drafts hay esperando
-- `/admin/blog/rejected` agrupa por razón de rechazo
+- `source_language=es` → threshold **0.75** (estricto, riesgo plagio)
+- `source_language=en/de/fr/pt/it/other` → threshold **0.68**
+
+**No bajar threshold a ciegas**. La causa más común de queue vacía
+NO es threshold sino:
+1. **Sources zombie**: news/reviews sites que NUNCA producen tutoriales
+   (xataka-*, geeknetic, profesionalreview, 3dnatives-es) saturando
+   el ingest con basura que los hard filters rechazan
+2. **Hard filters demasiado estrictos** para sources legítimos pero
+   con tutoriales cortos (rejected con `no_materials_list`, `steps_below_3`)
+3. **Routine C colgada** (rare — verificar `gh run list`)
+
+**Diagnóstico paso a paso**:
+
+```bash
+# 1. Cuántos drafts hay
+python3 -c "
+import sys; sys.path.insert(0,'scripts'); import db
+for r in db.execute('SELECT status, COUNT(*) FROM tutorials GROUP BY status').fetchall():
+    print(f'  {r[1]:4d} {r[0]}')
+"
+
+# 2. Razones de rechazo últimos 4 días
+python3 -c "
+import sys; sys.path.insert(0,'scripts'); import db
+for r in db.execute(\"SELECT SUBSTR(rejected_reason,1,60), COUNT(*) FROM tutorials WHERE status='rejected' AND ingested_at >= datetime('now','-4 days') GROUP BY 1 ORDER BY 2 DESC LIMIT 15\").fetchall():
+    print(f'  {r[1]:4d}  {r[0]}')
+"
+
+# 3. Sources zombie (0 published 60d + alto rejected)
+python3 -c "
+import sys; sys.path.insert(0,'scripts'); import db
+rows = db.execute('''
+SELECT s.id, s.name, s.tier,
+       (SELECT COUNT(*) FROM tutorials t WHERE t.source_id=s.id AND t.status='published' AND t.published_at >= datetime(\\'now\\',\\'-60 days\\')) AS pub_60d,
+       (SELECT COUNT(*) FROM tutorials t WHERE t.source_id=s.id AND t.status='rejected' AND t.ingested_at >= datetime(\\'now\\',\\'-4 days\\')) AS rej_4d
+  FROM sources s WHERE s.is_active = 1
+''').fetchall()
+for r in sorted(rows, key=lambda x: -x[4])[:15]:
+    if r[3]==0 and r[4]>=8: print(f'  ZOMBIE  {r[1]:30s}  pub_60d=0  rej_4d={r[4]}')
+"
+```
+
+**Decisión según hallazgo**:
+
+| Hallazgo | Acción |
+|---|---|
+| 80%+ rejected por `below_threshold` | Sí: bajar 0.68/0.75 a 0.65/0.72 en `blog-ranking-prompt.md` |
+| 80%+ rejected por `hard_filter:no_materials_list/steps_below_3` con sources que NO publican (zombies) | Desactivar sources zombie con `UPDATE sources SET is_active=0 WHERE id IN (...)` |
+| Drafts hay pero ranking no corre | Verificar `gh run list --workflow=blog-rank-prep.yml` + RemoteTrigger get del trigger Ranking |
+| Routine C no corre | RemoteTrigger run manual del trigger Translation |
+
+**Incidente 24-may-2026**: published_24h=0 hace 20h+. Causa REAL: 9
+sources zombie (xataka-*, geeknetic, profesionalreview, 3dnatives-es,
+inventable, electronicaonline) que el agent de source-discovery del
+20-may agregó como tier1/2 pero que son **news/reviews, no tutoriales**.
+35 rejected/source × 9 sources/día. Fix aplicado: desactivar las 9.
+NO se tocó threshold (estaba bien calibrado).
 
 ---
 
