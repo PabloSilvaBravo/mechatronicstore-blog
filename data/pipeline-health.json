@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-24T17:07:57.882193+00:00",
+  "checked_at": "2026-05-24T18:41:00.078211+00:00",
   "metrics": {
     "drafts_pending": 1,
     "published_24h": 0,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.581,
+    "rejected_ratio_48h": 0.544,
     "published_48h": 36,
-    "rejected_48h": 50,
+    "rejected_48h": 43,
     "sources_active": 42,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,15 +17,15 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
       },
       {
         "status": 403,
@@ -49,21 +49,21 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
       }
     ],
     "ranked_aging_hours": 0,
     "published_7d": 35,
-    "rank_runs_24h": 0,
+    "rank_runs_24h": 1,
     "translate_runs_24h": 1,
     "counts_by_status": {
-      "draft": 12,
+      "draft": 11,
       "published": 36,
-      "rejected": 500
+      "rejected": 501
     }
   },
   "alerts": [
@@ -80,13 +80,6 @@
       "value": 23,
       "threshold": 0,
       "message": "23/30 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
-    },
-    {
-      "severity": "critical",
-      "metric": "rank_runs_24h",
-      "value": 0,
-      "threshold": 1,
-      "message": "Cero corridas de Ranking en 24h (debería ser 2/día). Verificar trigger CCR trig_018awZKUDjfX8JqWmh5x5Mi4 enabled."
     }
   ],
   "status": "critical"
