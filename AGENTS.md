@@ -60,6 +60,35 @@ Para cambios a tutoriales individuales (post-translate), agregar la URL del slug
 
 ---
 
+## REGLA: post-translate R2 rehost después de cada Routine C
+
+Routine C corre en CCR cloud que NO tiene env vars de R2 (Cloudflare
+creds viven solo en `.env.local` y `.env` de la VPS Dashboard). Eso
+significa que cuando la routine persiste un tutorial nuevo, las URLs
+de imágenes inline en `body_es` markdown y `steps[].image_url`
+quedan APUNTANDO a la source externa (i0.wp.com, geekfactory.mx,
+soloelectronicos.com, etc.).
+
+Esas URLs son vulnerables a hotlink protection — se rompen en cuanto
+la source las bloquea por referrer. Para inmunizar:
+
+```bash
+# Detecta tutoriales modificados en últimas 24h con URLs externas,
+# rehospede TODAS las imágenes a R2 (images.mechatronicstore.cl).
+python3 scripts/post_translate_rehost.py --hours 24
+
+# O por ID específico
+python3 scripts/post_translate_rehost.py --ids 1ec722f7c21b ca35c83050a0
+```
+
+Cuándo correrlo:
+- Después de cada `RemoteTrigger run` de Routine C manual
+- Cuando aparece nuevo commit `chore(translate): blog translated N tutoriales`
+  en git (autor "Claude") — ese es el marker visible en `git log`
+
+Pendiente automatizar via GH Actions workflow que escuche commits
+de translate y dispare el script. Por ahora MANUAL pero documentado.
+
 ## Otras reglas del proyecto
 
 ### Push directo a `main`, NO PRs
