@@ -18,8 +18,10 @@ export default function PWARegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     const t = setTimeout(() => {
+      // El blog vive bajo /blog/* (Cloudflare Worker route).
+      // SW + scope deben estar bajo /blog/ para que el worker los enrute.
       navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
+        .register("/blog/sw.js", { scope: "/blog/" })
         .catch((err) => console.warn("[SW] register failed", err));
     }, 2000);
     return () => clearTimeout(t);
@@ -89,7 +91,7 @@ export default function PWARegister() {
           boxShadow: "0 10px 40px rgba(96,23,177,0.3)",
         }}
       >
-        <img src="/icons/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
+        <img src="/blog/icons/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
         <div className="flex-1">
           <h3 className="text-sm font-bold" style={{ color: "var(--text)" }}>
             Instalar MechaBlog

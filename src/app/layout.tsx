@@ -44,12 +44,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico?v=1", sizes: "any" },
-      { url: "/icons/favicon-32.png?v=1", sizes: "32x32", type: "image/png" },
-      { url: "/icons/favicon-16.png?v=1", sizes: "16x16", type: "image/png" },
+      { url: "/blog/icons/favicon-32.png?v=1", sizes: "32x32", type: "image/png" },
+      { url: "/blog/icons/favicon-16.png?v=1", sizes: "16x16", type: "image/png" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png?v=1", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/blog/icons/apple-touch-icon.png?v=1", sizes: "180x180", type: "image/png" }],
   },
-  manifest: "/manifest.webmanifest",
+  manifest: "/blog/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

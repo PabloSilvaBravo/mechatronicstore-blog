@@ -1,21 +1,22 @@
 /* eslint-disable */
-// MechaBlog Service Worker v1.0.0
+// MechaBlog Service Worker v1.0.1
+// Servido desde /blog/sw.js con scope /blog/ (el blog vive bajo /blog/* via CF Worker).
 // Estrategias:
 // - HTML pages: NETWORK-ONLY con fallback /blog/offline (no cachea HTML)
 // - Images same/cross-origin: stale-while-revalidate cap 60
 // - CSS/JS/fonts: cache-first
-// - /api/blog-header-data: stale-while-revalidate cap 30
+// - /api/blog/header-data: stale-while-revalidate cap 30
 
-const VERSION = "v1.0.0";
+const VERSION = "v1.0.1";
 const CACHE_SHELL = `mb-shell-${VERSION}`;
 const CACHE_IMAGES = "mb-images";
 const CACHE_PAGES = "mb-pages";
 
 const SHELL = [
   "/blog/offline",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/apple-touch-icon.png",
+  "/blog/icons/icon-192.png",
+  "/blog/icons/icon-512.png",
+  "/blog/icons/apple-touch-icon.png",
 ];
 
 const MAX_IMAGES = 60;
@@ -111,7 +112,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.pathname.startsWith("/api/blog-header-data")) {
+  if (url.pathname.startsWith("/api/blog/header-data")) {
     event.respondWith(
       caches.open(CACHE_PAGES).then((cache) =>
         cache.match(req).then((cached) => {
@@ -143,8 +144,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "MechaBlog";
   const options = {
     body: payload.body || "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: "/blog/icons/icon-192.png",
+    badge: "/blog/icons/icon-192.png",
     image: payload.image,
     tag: payload.tag || "mechablog-default",
     renotify: true,
@@ -181,7 +182,7 @@ self.addEventListener("pushsubscriptionchange", (event) => {
     self.registration.pushManager
       .subscribe({ userVisibleOnly: true })
       .then((sub) =>
-        fetch("/api/push/subscribe", {
+        fetch("/api/blog/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subscription: sub.toJSON() }),

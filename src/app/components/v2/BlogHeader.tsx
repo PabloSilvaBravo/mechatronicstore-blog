@@ -38,7 +38,7 @@ export default function BlogHeader() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/blog-header-data")
+    fetch("/api/blog/header-data")
       .then((r) => (r.ok ? r.json() : null))
       .then((j: BlogHeaderData | null) => {
         if (!cancelled && j) setData(j);

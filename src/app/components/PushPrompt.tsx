@@ -58,7 +58,7 @@ export default function PushPrompt() {
         applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
       });
     }
-    const res = await fetch("/api/push/subscribe", {
+    const res = await fetch("/api/blog/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subscription: sub.toJSON(), userAgent: navigator.userAgent }),
