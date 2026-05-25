@@ -187,7 +187,6 @@ export default function MegaMenu({
                     className="mt-3 line-clamp-3 text-sm font-bold leading-snug"
                     style={{
                       color: "var(--text)",
-                      fontFamily: "Georgia, 'Times New Roman', serif",
                     }}
                   >
                     <span className="bg-[linear-gradient(transparent_92%,rgba(255,215,0,0.3)_92%)] bg-no-repeat transition-[background-size] duration-300 [background-size:0%_100%] group-hover:[background-size:100%_100%]">

@@ -189,11 +189,11 @@ export default async function CategoryPage({ params }: Props) {
         <span style={{ color: "var(--text-muted)" }}>{meta.label}</span>
       </nav>
 
-      {/* Hero header con decoración + H1 en gradient block (Pack C-lite)
-          Pablo 18-may-2026: replicando luisllamas — H1 wrapped en
-          container con bg gradient brand. Subtitle en monospace
-          con caret blink. */}
-      <header className="relative mb-10 -mx-4 px-4 py-10 sm:-mx-6 sm:px-6 sm:py-14">
+      {/* Hero header con decoración + H1 en gradient block.
+          Pablo 25-may-2026 Fase D: reducir whitespace mobile (antes
+          py-10 sm:py-14 + mb-10 = ~250px de aire). Bajar a py-6 sm:py-10
+          + mb-6 (~150px). Mismo enfoque que home page.tsx audit. */}
+      <header className="relative mb-6 -mx-4 px-4 py-6 sm:-mx-6 sm:px-6 sm:py-10">
         <HeroDecor />
         <div className="relative">
           <div

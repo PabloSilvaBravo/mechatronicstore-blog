@@ -141,7 +141,7 @@ export default async function TagPage({ params }: PageProps) {
         <span style={{ color: "var(--text-muted)" }}>#{decoded}</span>
       </nav>
 
-      <header className="relative mb-10 -mx-4 px-4 py-10 sm:-mx-6 sm:px-6 sm:py-12">
+      <header className="relative mb-6 -mx-4 px-4 py-6 sm:-mx-6 sm:px-6 sm:py-10">
         <HeroDecor />
         <div className="relative">
           <div
