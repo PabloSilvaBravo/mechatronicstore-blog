@@ -216,7 +216,7 @@ export default async function BlogHomePage() {
           encontrar via los links de cada tutorial. El header (utility
           bar + cart) ya provee el contexto comercial; el hero del blog
           tiene que vender LO QUE VAS A APRENDER. */}
-      <header className="relative mb-10 sm:mb-14 py-8 sm:py-12">
+      <header className="relative mb-6 sm:mb-10 py-4 sm:py-8">
         <HeroDecor />
         <div className="relative">
           <div
@@ -342,10 +342,10 @@ export default async function BlogHomePage() {
           el user "se acercaba demasiado". Mejor mostrar siempre. */}
       {featured.length > 0 && (
         <section
-          className="mb-12 sm:mb-16 pt-10 border-t"
+          className="mb-8 sm:mb-12 pt-6 border-t"
           style={{ borderColor: "var(--border-subtle)" }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {featured.map((t) => (
               <TutorialCard key={t.slug} t={t} variant="feature" />
             ))}
@@ -359,16 +359,16 @@ export default async function BlogHomePage() {
           blanco" que reportó Pablo. */}
       {remaining.length > 0 && (
         <section
-          className="pt-10 border-t"
+          className="pt-6 border-t"
           style={{ borderColor: "var(--border-subtle)" }}
         >
           <h2
-            className="text-[11px] font-bold uppercase tracking-[0.18em] mb-6"
+            className="text-[11px] font-bold uppercase tracking-[0.18em] mb-4"
             style={{ color: "var(--text-dim)" }}
           >
             Más tutoriales
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {remaining.map((t) => (
               <TutorialCard key={t.slug} t={t} variant="compact" />
             ))}

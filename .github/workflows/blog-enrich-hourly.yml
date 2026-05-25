@@ -1,0 +1,47 @@
+name: Blog Enrich Linked Products (hourly)
+
+# Enriquece linked_products_json con wc_id + image_url para los tutoriales
+# que aún no estén enriquecidos. El script es idempotente: skipea los que
+# ya tienen ambos campos.
+#
+# Por qué: el persist_blog_translation.py corre en CCR cloud y NO tiene
+# credenciales/access para scrapear HTML del store WooCommerce. Entonces
+# nuevos tutoriales se publican con materials sin foto (image_url=NULL).
+# Este workflow corre cada hora y los enriquece.
+#
+# Trade-off: hasta 1h de gap entre publish y enrich-visible. Aceptable
+# porque el bug es cosmético (cae a checkmark amarillo).
+
+on:
+  schedule:
+    - cron: "15 * * * *"  # cada hora a los :15
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+
+      - name: Run enrich
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: python3 scripts/enrich_linked_products.py

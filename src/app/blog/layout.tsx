@@ -18,14 +18,14 @@ export default async function BlogLayout({
   // del main bar). NO duplicar aca.
   return (
     <SearchOverlayProvider>
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-4 sm:py-8">
         {children}
       </main>
 
       <BackToTop />
 
       <footer
-        className="border-t mt-24"
+        className="border-t mt-12"
         style={{
           borderColor: "var(--border-subtle)",
           backgroundColor: "var(--bg-elevated)",
