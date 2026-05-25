@@ -1196,16 +1196,24 @@ input, textarea, select {
 
 /* Reduced motion respect.
  *
- * Pablo 25-may-2026: en mobile iOS por default activa "Reducir movimiento"
- * y esta regla universal con `*` rompia el marquee de hashtags (lo reducia
- * a 0.01ms = pausa instantanea). Mismo issue que tuvimos en mecha-noticias
- * el 15-may.
+ * Pablo 25-may-2026: la regla universal con `*` y `!important` rompia el
+ * marquee de hashtags en iPhone (iOS activa "Reducir movimiento" por default).
+ * El primer fix con `revert !important` no funciono porque `revert` cae al
+ * user-agent default (0s) → la animacion no corre. Necesito un valor literal.
  *
- * Solucion: la regla universal se MANTIENE para todo (decoraciones,
- * shimmers, hover transitions, etc), PERO se override explicito para
- * `.trending-marquee-track` que es scroll lineal suave (no es trigger
- * vestibular real). El marquee debe correr siempre - es senal visual de
- * "el blog esta vivo, hay tendencias nuevas". */
+ * Solucion v2: definir el `animation` del marquee DIRECTO en CSS usando una
+ * custom property (--marquee-duration) que el JSX seta inline. Asi el CSS
+ * controla la animation completa y puedo poner !important DENTRO del media
+ * query para ganarle a la regla universal.
+ */
+.trending-marquee-track {
+  /* Default duration - el JSX inline-sets esta var con el calculo real */
+  --marquee-duration: 80s;
+  animation: trending-scroll-x var(--marquee-duration) linear infinite;
+  animation-play-state: running;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1213,10 +1221,11 @@ input, textarea, select {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Override explicito - marquee corre siempre, incluso con reduced motion. */
+  /* Override - el marquee corre siempre con la duration de la custom property.
+     Es scroll lineal suave, no trigger vestibular real. */
   .trending-marquee-track {
-    animation-duration: revert !important;
-    animation-iteration-count: infinite !important;
+    animation: trending-scroll-x var(--marquee-duration, 80s) linear infinite !important;
+    animation-play-state: running !important;
   }
 }
 
