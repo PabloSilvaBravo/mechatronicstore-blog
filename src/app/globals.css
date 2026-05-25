@@ -40,6 +40,10 @@
   --shadow-color: rgba(0, 0, 0, 0.55);
   --shadow-glow: rgba(96, 23, 177, 0.22);
 
+  --scrollbar-track: #0E0F14;
+  --scrollbar-thumb: #6017b1;
+  --scrollbar-thumb-hover: #8a3fd6;
+
   --brand-purple: #6017b1;
   --brand-purple-light: #8a3fd6;
   --brand-yellow: #ffd700;
@@ -76,6 +80,10 @@
 
   --shadow-color: rgba(96, 23, 177, 0.08);
   --shadow-glow: rgba(96, 23, 177, 0.15);
+
+  --scrollbar-track: #f0f0f0;
+  --scrollbar-thumb: #6017b1;
+  --scrollbar-thumb-hover: #4a0f8a;
 
   --brand-purple: #6017b1;
   --brand-purple-light: #8a3fd6;
@@ -1193,5 +1201,156 @@ input, textarea, select {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   MOBILE + PERFORMANCE OPTIMIZATIONS (port desde mecha-noticias)
+   ============================================================ */
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  /* Fix flicker scroll-anchoring cuando header colapsa (mecha-noticias 24-may-2026) */
+  overflow-anchor: none;
+}
+
+/* Evita auto-zoom iOS al focus en inputs */
+input, textarea, select { font-size: 16px; }
+@media (min-width: 640px) {
+  input, textarea, select { font-size: inherit; }
+}
+
+/* Safe-area helpers (iPhone notch) */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0); }
+
+/* Scrollbar custom + hide utility */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* Fluid typography */
+.text-fluid-xl  { font-size: clamp(20px, 4.8vw, 28px); }
+.text-fluid-2xl { font-size: clamp(22px, 5.6vw, 36px); }
+.text-fluid-3xl { font-size: clamp(26px, 7vw, 48px); }
+
+/* ============================================================
+   ANIMATIONS (port desde mecha-noticias)
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.4s ease-out; }
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.animate-shimmer { animation: shimmer 1.4s ease-in-out infinite; }
+
+@keyframes subscribe-pulse {
+  0%, 100% {
+    background-color: var(--brand-yellow);
+    box-shadow: 0 0 8px 2px rgba(232, 195, 0, 0.55), 0 0 0 1px rgba(232, 195, 0, 0.35);
+  }
+  50% {
+    background-color: var(--text);
+    box-shadow: 0 0 0 0 transparent, 0 0 0 1px rgba(0, 0, 0, 0);
+  }
+}
+.subscribe-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 9999px;
+  background-color: var(--brand-yellow);
+  animation: subscribe-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .subscribe-dot { animation: none; }
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.85); }
+}
+.live-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 9999px;
+  background: var(--brand-yellow);
+  animation: live-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 0 2px rgba(232, 195, 0, 0.18);
+}
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
+/* ============================================================
+   TRENDING MARQUEE (port literal, mismo nombre que en noticias)
+   ============================================================ */
+@keyframes trending-scroll-x {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+.trending-marquee-track:hover,
+.trending-marquee-track:focus-within {
+  animation-play-state: paused;
+}
+.trending-marquee-track a {
+  touch-action: manipulation;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   PULL-TO-REFRESH visual
+   ============================================================ */
+.ptr-indicator {
+  position: fixed; top: 0; left: 50%;
+  transform: translate(-50%, -100%);
+  z-index: 70;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0; pointer-events: none;
+}
+.ptr-indicator[data-state="pulling"]    { opacity: 1; }
+.ptr-indicator[data-state="refreshing"] { opacity: 1; transform: translate(-50%, 20%); }
+
+/* ============================================================
+   VIEW TRANSITIONS (Next 16 + Chrome)
+   ============================================================ */
+@supports (view-transition-name: auto) {
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  ::view-transition-old(root) { animation-name: vt-fade-out; }
+  ::view-transition-new(root) { animation-name: vt-fade-in; }
+  ::view-transition-old(hero-image), ::view-transition-new(hero-image) {
+    animation-duration: 0.42s;
+    animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+    mix-blend-mode: normal;
+  }
+}
+@keyframes vt-fade-out { from {opacity:1; transform:translateY(0);} to {opacity:0; transform:translateY(-4px);} }
+@keyframes vt-fade-in  { from {opacity:0; transform:translateY(6px);} to {opacity:1; transform:translateY(0);} }
+.vt-hero { view-transition-name: hero-image; contain: paint; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root),
+  ::view-transition-old(hero-image), ::view-transition-new(hero-image) {
+    animation-duration: 0.001s !important;
   }
 }
