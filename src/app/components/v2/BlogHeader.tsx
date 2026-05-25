@@ -383,17 +383,14 @@ export default function BlogHeader() {
                 />
                 <div
                   className="trending-marquee-track flex shrink-0 items-center gap-1.5"
-                  style={
-                    {
-                      // CSS custom property leida desde globals.css. Asi el
-                      // CSS controla la animation completa (con !important en
-                      // prefers-reduced-motion) y el JSX solo pasa la duration.
-                      "--marquee-duration": `${Math.max(
-                        40,
-                        data.topTags.length * 4,
-                      )}s`,
-                    } as React.CSSProperties
-                  }
+                  style={{
+                    animation: `trending-scroll-x ${Math.max(
+                      40,
+                      data.topTags.length * 4,
+                    )}s linear infinite`,
+                    animationPlayState: "running",
+                    willChange: "transform",
+                  }}
                 >
                   {data.topTags.map((t) => (
                     <Link

@@ -1194,40 +1194,22 @@ input, textarea, select {
   background: transparent;
 }
 
-/* Reduced motion respect.
+/* Pablo 25-may-2026: REMOVIDO el bloque universal `*, *::before, *::after {
+ * animation-duration: 0.01ms !important; ... }` dentro de @media
+ * (prefers-reduced-motion: reduce). Mismo fix que se aplico en mecha-noticias
+ * el 15-may-2026. Razon literal del comment de mecha-noticias:
  *
- * Pablo 25-may-2026: la regla universal con `*` y `!important` rompia el
- * marquee de hashtags en iPhone (iOS activa "Reducir movimiento" por default).
- * El primer fix con `revert !important` no funciono porque `revert` cae al
- * user-agent default (0s) → la animacion no corre. Necesito un valor literal.
+ *   iOS 16+ activa "Reducir movimiento" por default → 80%+ de usuarios
+ *   iPhone veian la barra estatica (bug reportado por Pablo desde su iPhone).
+ *   El marquee es scroll lineal suave sin parpadeo ni parallax - no es
+ *   trigger vestibular real. Para casos extremos el usuario puede pausarlo
+ *   con tap (focus-within lo detecta y aplica animation-play-state: paused).
  *
- * Solucion v2: definir el `animation` del marquee DIRECTO en CSS usando una
- * custom property (--marquee-duration) que el JSX seta inline. Asi el CSS
- * controla la animation completa y puedo poner !important DENTRO del media
- * query para ganarle a la regla universal.
+ * El bloque universal era demasiado agresivo - mataba TODA animacion del site
+ * incluyendo el marquee, pulses, view-transitions, etc. Reglas especificas
+ * para reducir motion siguen aplicandose donde corresponde (live-dot,
+ * subscribe-dot, view-transition-old, etc en otros @media de mas arriba).
  */
-.trending-marquee-track {
-  /* Default duration - el JSX inline-sets esta var con el calculo real */
-  --marquee-duration: 80s;
-  animation: trending-scroll-x var(--marquee-duration) linear infinite;
-  animation-play-state: running;
-  will-change: transform;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  /* Override - el marquee corre siempre con la duration de la custom property.
-     Es scroll lineal suave, no trigger vestibular real. */
-  .trending-marquee-track {
-    animation: trending-scroll-x var(--marquee-duration, 80s) linear infinite !important;
-    animation-play-state: running !important;
-  }
-}
 
 /* ============================================================
    MOBILE + PERFORMANCE OPTIMIZATIONS (port desde mecha-noticias)
