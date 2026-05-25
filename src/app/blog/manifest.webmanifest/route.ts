@@ -31,7 +31,7 @@ export function GET() {
       ],
       shortcuts: [
         { name: "Inicio", short_name: "Inicio", description: "Ultimos tutoriales", url: "/blog" },
-        { name: "Buscar", short_name: "Buscar", description: "Buscar tutoriales", url: "/blog/buscar" },
+        { name: "Buscar", short_name: "Buscar", description: "Buscar tutoriales", url: "/blog/tutoriales" },
       ],
     },
     {

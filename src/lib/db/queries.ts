@@ -193,6 +193,86 @@ export async function searchPublishedTutorials(
 }
 
 /**
+ * MACRO-CATEGORIAS para el header del blog (Electronica, Robotica, Domotica,
+ * Telematica). Pablo 25-may-2026: las "categorias" de DB son sub-tipos
+ * (esp32, arduino, rpi, sensores, robotica, otros). El header v2 muestra
+ * 4 verticales macro que mapean por categoria + tags asi:
+ *
+ *   electronica → categories: arduino, esp32, rpi, sensores, otros (~99% del corpus)
+ *   robotica    → category: robotica (DB ya tiene 'robotica' directo)
+ *   domotica    → tags: iot, homekit, mqtt, home-assistant, alexa, google-home, smart-home
+ *   telematica  → tags: wifi, wireless, ble, bluetooth, web-server, esp-now, lora, mqtt, http
+ *
+ * Tutoriales pueden aparecer en multiples verticales (un ESP32+HomeKit aparece
+ * en electronica + domotica + telematica). Eso es deseable: mas exploracion.
+ */
+const MACRO_CATEGORY_FILTERS: Record<
+  string,
+  { categories?: string[]; tags?: string[] }
+> = {
+  electronica: { categories: ["arduino", "esp32", "rpi", "sensores", "otros"] },
+  robotica: { categories: ["robotica"] },
+  domotica: {
+    tags: ["iot", "homekit", "mqtt", "home-assistant", "alexa", "google-home", "smart-home", "domotica"],
+  },
+  telematica: {
+    tags: ["wifi", "wireless", "ble", "bluetooth", "web-server", "esp-now", "lora", "http", "tcp", "udp", "telematica"],
+  },
+};
+
+export function isMacroCategory(slug: string): boolean {
+  return slug in MACRO_CATEGORY_FILTERS;
+}
+
+export async function tutorialsByMacroCategory(
+  slug: string,
+  limit = 50,
+): Promise<TutorialPublished[]> {
+  const filter = MACRO_CATEGORY_FILTERS[slug];
+  if (!filter) return [];
+  const client = getClient();
+
+  // Si solo categorias: simple IN clause
+  if (filter.categories && !filter.tags) {
+    const placeholders = filter.categories.map(() => "?").join(",");
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM tutorials
+        WHERE status = 'published'
+          AND category IN (${placeholders})
+        ORDER BY published_at DESC
+        LIMIT ?
+      `,
+      args: [...filter.categories, limit],
+    });
+    return result.rows.map(
+      (r) => rowToTutorial(r as unknown as typeof tutorials.$inferSelect),
+    );
+  }
+
+  // Si solo tags: usar json_each + IN
+  if (filter.tags && !filter.categories) {
+    const placeholders = filter.tags.map(() => "?").join(",");
+    const result = await client.execute({
+      sql: `
+        SELECT DISTINCT t.*
+        FROM tutorials t, json_each(t.tags_json) jt
+        WHERE t.status = 'published'
+          AND lower(jt.value) IN (${placeholders})
+        ORDER BY t.published_at DESC
+        LIMIT ?
+      `,
+      args: [...filter.tags.map((tag) => tag.toLowerCase()), limit],
+    });
+    return result.rows.map(
+      (r) => rowToTutorial(r as unknown as typeof tutorials.$inferSelect),
+    );
+  }
+
+  return [];
+}
+
+/**
  * Tutoriales publicados que tienen un tag específico en su tags_json.
  * Usa SQLite json_each para iterar el array sin parsear JSON en TS.
  *

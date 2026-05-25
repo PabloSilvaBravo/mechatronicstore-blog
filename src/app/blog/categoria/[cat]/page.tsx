@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getPublishedTutorials } from "@/lib/db/queries";
+import {
+  getPublishedTutorials,
+  tutorialsByMacroCategory,
+  isMacroCategory,
+} from "@/lib/db/queries";
 import HeroDecor from "../../components/HeroDecor";
-import RevealOnScroll from "../../components/RevealOnScroll";
 import ImageWithSkeleton from "../../components/ImageWithSkeleton";
 
 interface Props {
@@ -12,42 +15,72 @@ interface Props {
 
 const BASE_URL = "https://www.mechatronicstore.cl";
 
+/**
+ * CATEGORIES = todos los slugs validos en `/blog/categoria/{slug}`.
+ *
+ * Pablo 25-may-2026: agregar slugs macro (electronica, domotica, telematica)
+ * para evitar 404 desde el header v2 que enlaza a esas 4 verticales.
+ *
+ * Slugs legacy (arduino, esp32, rpi, sensores, otros, 3d) siguen activos
+ * para no romper URLs ya indexadas + links externos.
+ *
+ * Para slugs macro la query usa `tutorialsByMacroCategory` que filtra por
+ * categorias DB + tags. Para legacy usa `getPublishedTutorials(limit, cat)`
+ * (equivalente a WHERE category = cat).
+ */
 const CATEGORIES: Record<
   string,
-  { label: string; description: string; icon: string }
+  { label: string; description: string }
 > = {
+  // Macro verticales (header v2)
+  electronica: {
+    label: "Electronica",
+    description:
+      "Tutoriales paso a paso de electronica: Arduino, ESP32, Raspberry Pi, sensores y mas",
+  },
+  robotica: {
+    label: "Robotica",
+    description: "Robots y mecatronica DIY con codigo probado",
+  },
+  domotica: {
+    label: "Domotica",
+    description:
+      "Domotica DIY: HomeKit, Home Assistant, IoT smart home, MQTT y automatizacion",
+  },
+  telematica: {
+    label: "Telematica",
+    description:
+      "Comunicaciones inalambricas: WiFi, BLE, ESP-NOW, LoRa, web servers, MQTT",
+  },
+  // Legacy sub-tipos (slugs viejos, mantener compatibilidad SEO)
   arduino: {
     label: "Arduino",
     description: "Tutoriales con placas Arduino",
-    icon: "🔌",
   },
   esp32: {
     label: "ESP32",
     description: "Tutoriales con ESP32 y derivados",
-    icon: "📡",
   },
   rpi: {
     label: "Raspberry Pi",
     description: "Tutoriales con Raspberry Pi",
-    icon: "🍓",
-  },
-  robotica: {
-    label: "Robótica",
-    description: "Robots y mecatrónica",
-    icon: "🤖",
   },
   sensores: {
     label: "Sensores",
     description: "Sensores y actuadores",
-    icon: "📊",
   },
   "3d": {
-    label: "Impresión 3D",
-    description: "Impresión 3D y modelado",
-    icon: "🖨️",
+    label: "Impresion 3D",
+    description: "Impresion 3D y modelado",
   },
-  otros: { label: "Otros", description: "Otros tutoriales", icon: "⚙️" },
+  otros: { label: "Otros", description: "Otros tutoriales" },
 };
+
+async function getTutorialsForSlug(slug: string, limit = 50) {
+  return isMacroCategory(slug)
+    ? tutorialsByMacroCategory(slug, limit)
+    : getPublishedTutorials(limit, slug);
+}
 
 // Pablo 20-may-2026 audit SEO: categoría tenía OG básico sin og_image y
 // sin JSON-LD. Fix: usar hero del primer tutorial de la categoría como
@@ -62,7 +95,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // og:image dinámico — hero del primer tutorial publicado en la categoría
   let ogImage = FALLBACK_OG_IMAGE;
   try {
-    const recent = await getPublishedTutorials(1, cat);
+    const recent = await getTutorialsForSlug(cat, 1);
     if (recent[0]?.hero_image_url) ogImage = recent[0].hero_image_url;
   } catch {}
   const desc = `${meta.description}. Tutoriales paso a paso, código probado y materiales en stock en Chile.`;
@@ -95,7 +128,7 @@ export default async function CategoryPage({ params }: Props) {
   const meta = CATEGORIES[cat];
   if (!meta) notFound();
 
-  const tutorials = await getPublishedTutorials(50, cat);
+  const tutorials = await getTutorialsForSlug(cat, 50);
 
   // JSON-LD CollectionPage + Breadcrumb (Pablo 20-may-2026 audit SEO)
   const url = `${BASE_URL}/blog/categoria/${cat}`;
