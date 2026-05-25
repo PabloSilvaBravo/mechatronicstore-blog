@@ -89,13 +89,16 @@ export const viewport: Viewport = {
   ],
 };
 
+// Pablo 25-may-2026: default LIGHT (era "dark"). Script inline en <head>
+// para evitar FOUC - corre antes de React hidrate, lee localStorage y aplica
+// el theme correcto en el <html>. Si no hay stored, default light.
 const THEME_INIT_SCRIPT = `
 (function(){try{
   var t = localStorage.getItem('mechastore-blog-theme');
-  if (t !== 'light' && t !== 'dark') t = 'dark';
+  if (t !== 'light' && t !== 'dark') t = 'light';
   document.documentElement.setAttribute('data-theme', t);
 }catch(e){
-  document.documentElement.setAttribute('data-theme', 'dark');
+  document.documentElement.setAttribute('data-theme', 'light');
 }})();
 `;
 
@@ -105,7 +108,7 @@ export default function RootLayout({
   return (
     <html
       lang="es-CL"
-      data-theme="dark"
+      data-theme="light"
       className={`${montserrat.variable} ${baloo.variable} h-full antialiased`}
       suppressHydrationWarning
     >

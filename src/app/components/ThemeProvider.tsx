@@ -20,11 +20,15 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const STORAGE_KEY = "mechastore-blog-theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  // Pablo 25-may-2026: default LIGHT (era "dark"). Blog tutoriales se ve
+  // mejor en claro para mostrar codigo, materiales y diagramas con buen
+  // contraste. El user puede cambiar a dark con el ThemeToggle si quiere.
+  const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial: Theme = stored === "light" || stored === "dark" ? stored : "dark";
+    const initial: Theme =
+      stored === "light" || stored === "dark" ? stored : "light";
     setThemeState(initial);
     document.documentElement.setAttribute("data-theme", initial);
   }, []);

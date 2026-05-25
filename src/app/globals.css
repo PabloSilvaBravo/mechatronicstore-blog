@@ -1194,13 +1194,29 @@ input, textarea, select {
   background: transparent;
 }
 
-/* Reduced motion respect */
+/* Reduced motion respect.
+ *
+ * Pablo 25-may-2026: en mobile iOS por default activa "Reducir movimiento"
+ * y esta regla universal con `*` rompia el marquee de hashtags (lo reducia
+ * a 0.01ms = pausa instantanea). Mismo issue que tuvimos en mecha-noticias
+ * el 15-may.
+ *
+ * Solucion: la regla universal se MANTIENE para todo (decoraciones,
+ * shimmers, hover transitions, etc), PERO se override explicito para
+ * `.trending-marquee-track` que es scroll lineal suave (no es trigger
+ * vestibular real). El marquee debe correr siempre - es senal visual de
+ * "el blog esta vivo, hay tendencias nuevas". */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* Override explicito - marquee corre siempre, incluso con reduced motion. */
+  .trending-marquee-track {
+    animation-duration: revert !important;
+    animation-iteration-count: infinite !important;
   }
 }
 
