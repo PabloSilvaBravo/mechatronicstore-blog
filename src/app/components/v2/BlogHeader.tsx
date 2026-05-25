@@ -142,7 +142,12 @@ export default function BlogHeader() {
             zIndex: openMegaId ? 30 : "auto",
           }}
         >
-          <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6 sm:py-3.5 lg:gap-5">
+          {/* Pablo 25-may-2026: padding vertical subido py-3 → py-4 (sm:py-3.5
+              → sm:py-4) para que el logo NO quede pegado al borde inferior.
+              El Logo md mide 60px de alto (SVG 38 + BLOG 20 + 2px margin) y
+              tiene descender visual de la 'g' → necesita aire simetrico de
+              16px arriba y abajo (vs 12-14px anterior que apretaba el logo). */}
+          <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-4 sm:px-6 sm:py-4 lg:gap-5">
             {/* Logo */}
             <Link
               href="/blog"
