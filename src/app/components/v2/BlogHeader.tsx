@@ -449,167 +449,177 @@ export default function BlogHeader() {
           </div>
         )}
 
-        {/* ============================================================
-            MOBILE DRAWER (slide-in derecha, lg:hidden).
-            ============================================================ */}
-        <div
-          className="fixed inset-0 z-50 lg:hidden"
-          style={{ pointerEvents: menuOpen ? "auto" : "none" }}
-          aria-hidden={!menuOpen}
-        >
-          <button
-            type="button"
-            aria-label="Cerrar menu"
-            onClick={() => setMenuOpen(false)}
-            className="absolute inset-0 cursor-default"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.45)",
-              opacity: menuOpen ? 1 : 0,
-              transition: "opacity 280ms cubic-bezier(0.32,0.72,0,1)",
-            }}
-          />
-          <aside
-            className="absolute right-0 top-0 flex h-full w-[88%] max-w-[380px] flex-col"
-            style={{
-              background:
-                "linear-gradient(180deg, var(--bg) 0%, var(--bg) 70%, var(--bg-elevated) 100%)",
-              borderLeft: "1px solid var(--border-subtle)",
-              transform: menuOpen ? "translateX(0)" : "translateX(100%)",
-              transition: "transform 280ms cubic-bezier(0.32,0.72,0,1)",
-              paddingTop: "env(safe-area-inset-top, 0)",
-              paddingBottom: "env(safe-area-inset-bottom, 0)",
-            }}
-          >
-            <div
-              className="flex items-center justify-between border-b px-4 py-3"
-              style={{ borderColor: "var(--border-subtle)" }}
-            >
-              <Logo className="h-7 w-auto" />
-              <button
-                type="button"
-                aria-label="Cerrar"
-                onClick={() => setMenuOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border"
-                style={{
-                  borderColor: "var(--border)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.2}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+      </header>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              {/* MechatronicStore card */}
-              <a
-                href={STORE_URL}
-                target="_blank"
-                rel="noopener"
-                onClick={() => setMenuOpen(false)}
-                className="mb-5 flex items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-[color:var(--bg-hover)]"
-                style={{
-                  borderColor: "var(--border-strong)",
-                  backgroundColor: "var(--bg-elevated)",
-                }}
+      {/* ============================================================
+          MOBILE DRAWER (slide-in derecha, lg:hidden).
+
+          Pablo 25-may-2026 (Playwright test): el drawer estaba DENTRO del
+          <header> que tiene `transform: translateZ(0)` para GPU layering.
+          Eso crea un nuevo containing block que captura los descendientes
+          `position: fixed` → el drawer con `fixed inset-0` se restringia
+          al bbox del header (~150px) en vez del viewport completo, dejando
+          el contenido del page visible detras. Solucion: mover el drawer
+          FUERA del <header>, como sibling, para que `fixed inset-0` se
+          ancle al viewport raiz.
+          ============================================================ */}
+      <div
+        className="fixed inset-0 z-50 lg:hidden"
+        style={{ pointerEvents: menuOpen ? "auto" : "none" }}
+        aria-hidden={!menuOpen}
+      >
+        <button
+          type="button"
+          aria-label="Cerrar menu"
+          onClick={() => setMenuOpen(false)}
+          className="absolute inset-0 cursor-default"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.45)",
+            opacity: menuOpen ? 1 : 0,
+            transition: "opacity 280ms cubic-bezier(0.32,0.72,0,1)",
+          }}
+        />
+        <aside
+          className="absolute right-0 top-0 flex h-full w-[88%] max-w-[380px] flex-col"
+          style={{
+            background:
+              "linear-gradient(180deg, var(--bg) 0%, var(--bg) 70%, var(--bg-elevated) 100%)",
+            borderLeft: "1px solid var(--border-subtle)",
+            transform: menuOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 280ms cubic-bezier(0.32,0.72,0,1)",
+            paddingTop: "env(safe-area-inset-top, 0)",
+            paddingBottom: "env(safe-area-inset-bottom, 0)",
+          }}
+        >
+          <div
+            className="flex items-center justify-between border-b px-4 py-3"
+            style={{ borderColor: "var(--border-subtle)" }}
+          >
+            <Logo />
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={() => setMenuOpen(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text-muted)",
+              }}
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.2}
+                stroke="currentColor"
               >
-                <div>
-                  <div
-                    className="text-[10px] font-bold uppercase tracking-[0.18em]"
-                    style={{ color: "var(--brand-yellow)" }}
-                  >
-                    Tienda
-                  </div>
-                  <div
-                    className="text-sm font-bold"
-                    style={{ color: "var(--brand-purple)" }}
-                  >
-                    MechatronicStore
-                  </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            {/* MechatronicStore card */}
+            <a
+              href={STORE_URL}
+              target="_blank"
+              rel="noopener"
+              onClick={() => setMenuOpen(false)}
+              className="mb-5 flex items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-[color:var(--bg-hover)]"
+              style={{
+                borderColor: "var(--border-strong)",
+                backgroundColor: "var(--bg-elevated)",
+              }}
+            >
+              <div>
+                <div
+                  className="text-[10px] font-bold uppercase tracking-[0.18em]"
+                  style={{ color: "var(--brand-yellow)" }}
+                >
+                  Tienda
                 </div>
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.5}
-                  stroke="currentColor"
+                <div
+                  className="text-sm font-bold"
                   style={{ color: "var(--brand-purple)" }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-              </a>
+                  MechatronicStore
+                </div>
+              </div>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                style={{ color: "var(--brand-purple)" }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
 
+            <div className="mb-5">
+              <div
+                className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em]"
+                style={{ color: "var(--brand-yellow)" }}
+              >
+                Categorias
+              </div>
+              <ul className="space-y-0.5">
+                {BLOG_CATEGORIES.map((cat) => (
+                  <li key={cat}>
+                    <Link
+                      href={`/blog/categoria/${
+                        BLOG_CATEGORY_SLUGS[cat] || cat.toLowerCase()
+                      }`}
+                      onClick={() => setMenuOpen(false)}
+                      className="block rounded-md px-3 py-2.5 text-base font-medium transition-colors hover:bg-[color:var(--bg-hover)]"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {BLOG_CATEGORY_LABELS[cat] || cat}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {data?.topTags && data.topTags.length > 0 && (
               <div className="mb-5">
                 <div
                   className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em]"
                   style={{ color: "var(--brand-yellow)" }}
                 >
-                  Categorias
+                  Tendencia
                 </div>
-                <ul className="space-y-0.5">
-                  {BLOG_CATEGORIES.map((cat) => (
-                    <li key={cat}>
-                      <Link
-                        href={`/blog/categoria/${
-                          BLOG_CATEGORY_SLUGS[cat] || cat.toLowerCase()
-                        }`}
-                        onClick={() => setMenuOpen(false)}
-                        className="block rounded-md px-3 py-2.5 text-base font-medium transition-colors hover:bg-[color:var(--bg-hover)]"
-                        style={{ color: "var(--text)" }}
-                      >
-                        {BLOG_CATEGORY_LABELS[cat] || cat}
-                      </Link>
-                    </li>
+                <div className="flex flex-wrap gap-1.5">
+                  {data.topTags.slice(0, 12).map((t) => (
+                    <Link
+                      key={t.slug}
+                      href={`/blog/tag/${t.slug}`}
+                      onClick={() => setMenuOpen(false)}
+                      className="rounded-full border px-2.5 py-1 text-xs transition-colors"
+                      style={{
+                        borderColor: "var(--border)",
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      <span style={{ color: "var(--text-dim)" }}>#</span>
+                      {t.name}
+                    </Link>
                   ))}
-                </ul>
-              </div>
-
-              {data?.topTags && data.topTags.length > 0 && (
-                <div className="mb-5">
-                  <div
-                    className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em]"
-                    style={{ color: "var(--brand-yellow)" }}
-                  >
-                    Tendencia
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {data.topTags.slice(0, 12).map((t) => (
-                      <Link
-                        key={t.slug}
-                        href={`/blog/tag/${t.slug}`}
-                        onClick={() => setMenuOpen(false)}
-                        className="rounded-full border px-2.5 py-1 text-xs transition-colors"
-                        style={{
-                          borderColor: "var(--border)",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        <span style={{ color: "var(--text-dim)" }}>#</span>
-                        {t.name}
-                      </Link>
-                    ))}
-                  </div>
                 </div>
-              )}
-            </div>
-          </aside>
-        </div>
-      </header>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
 
       <SearchOverlay
         open={searchOpen}
