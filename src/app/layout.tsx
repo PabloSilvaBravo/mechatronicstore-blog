@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
+import { Suspense } from "react";
 import { Montserrat, Baloo_2 } from "next/font/google";
 import dynamic from "next/dynamic";
 import "./globals.css";
@@ -123,7 +124,11 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <PullToRefresh />
-          <BlogHeader />
+          {/* Suspense necesario porque SearchBar usa useSearchParams() -
+              Next 16 lo requiere cuando se hace prerender static (ej /404). */}
+          <Suspense fallback={null}>
+            <BlogHeader />
+          </Suspense>
           <div id="main" className="flex-1">
             {children}
           </div>

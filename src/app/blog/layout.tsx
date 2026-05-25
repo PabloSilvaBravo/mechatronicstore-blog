@@ -1,6 +1,5 @@
 import Link from "next/link";
 import BackToTop from "./components/BackToTop";
-import UtilityBar from "./components/UtilityBar";
 import NewsletterSignup from "./components/NewsletterSignup";
 import { SearchOverlayProvider } from "./components/SearchOverlay";
 import Logo from "../components/Logo";
@@ -14,13 +13,11 @@ export default async function BlogLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Header (v2) + skip-link ahora se montan en root layout.tsx — NO
-  // duplicar acá. Esta layout solo agrega UtilityBar (banner promo),
-  // wrapper main, BackToTop y footer del blog.
+  // Header v2 + UtilityBar (banner Envio gratis) + skip-link ahora se
+  // montan en root layout.tsx (UtilityBar dentro del BlogHeader v2, arriba
+  // del main bar). NO duplicar aca.
   return (
     <SearchOverlayProvider>
-      <UtilityBar />
-
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
         {children}
       </main>
