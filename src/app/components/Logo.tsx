@@ -55,7 +55,10 @@ export default function Logo({
           color: "var(--brand-yellow)",
           fontSize: `${fontSize}px`,
           letterSpacing,
-          marginTop: "2px",
+          /* Pablo 25-may-2026: marginTop bajado 2px → 0 para reducir el
+             bbox vertical del Logo y mejorar el balance visual cuando
+             se centra en el row del header. */
+          marginTop: "0",
           alignSelf: "flex-end",
           paddingRight: `${imgH * 0.05}px`,
           lineHeight: 1,

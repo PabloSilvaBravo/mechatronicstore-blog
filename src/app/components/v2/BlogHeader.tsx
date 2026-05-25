@@ -142,12 +142,15 @@ export default function BlogHeader() {
             zIndex: openMegaId ? 30 : "auto",
           }}
         >
-          {/* Pablo 25-may-2026: padding vertical subido py-3 → py-4 (sm:py-3.5
-              → sm:py-4) para que el logo NO quede pegado al borde inferior.
-              El Logo md mide 60px de alto (SVG 38 + BLOG 20 + 2px margin) y
-              tiene descender visual de la 'g' → necesita aire simetrico de
-              16px arriba y abajo (vs 12-14px anterior que apretaba el logo). */}
-          <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-4 sm:px-6 sm:py-4 lg:gap-5">
+          {/* Pablo 25-may-2026 v2 (Playwright DOM inspection): el bug real
+              era el className `h-9 w-auto sm:h-10` aplicado al Logo en linea
+              ~158 — Tailwind h-9 limitaba el container del Logo a 36px, pero
+              el contenido (SVG 38 + BLOG 20 + 2 margin = 60px) overflowea
+              hacia abajo. items-center del flex centraba el container 36px,
+              NO el contenido 60px → BLOG quedaba a 0.5px del borde inferior.
+              Fix: removido h-9 (deja al Logo tomar altura natural) + py-5
+              (~20px) para aire amplio simetrico. */}
+          <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-5 sm:px-6 sm:py-5 lg:gap-5">
             {/* Logo */}
             <Link
               href="/blog"
@@ -156,7 +159,10 @@ export default function BlogHeader() {
               aria-label="Blog MechatronicStore, ir al inicio"
               onClick={handleLogoClick}
             >
-              <Logo className="h-9 w-auto sm:h-10" />
+              {/* Pablo 25-may-2026: NO pasar h-9 className - rompe el bbox.
+                  Logo toma altura natural (60px md) y el flex items-center lo
+                  centra correctamente en el row de 100px (~20px aire arriba/abajo). */}
+              <Logo />
             </Link>
 
             {/* SearchBar inline (md+) - el que clona el store con bg morado.
