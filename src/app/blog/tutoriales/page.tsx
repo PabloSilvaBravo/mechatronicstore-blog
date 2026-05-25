@@ -5,42 +5,10 @@ import {
   searchPublishedTutorials,
 } from "@/lib/db/queries";
 import HeroDecor from "../components/HeroDecor";
-import RevealOnScroll from "../components/RevealOnScroll";
-import ImageWithSkeleton from "../components/ImageWithSkeleton";
+import TutorialCard from "../components/TutorialCard";
 
 interface Props {
   searchParams: Promise<{ q?: string }>;
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  arduino: "Arduino",
-  esp32: "ESP32",
-  rpi: "Raspberry Pi",
-  robotica: "Robótica",
-  sensores: "Sensores",
-  "3d": "Impresión 3D",
-  otros: "Otros",
-};
-
-function difficultyLabel(d: string | null): string {
-  if (d === "beginner") return "Principiante";
-  if (d === "intermediate" || d === "intermedia") return "Intermedio";
-  if (d === "advanced") return "Avanzado";
-  return d || "";
-}
-
-function difficultyColor(d: string | null): string {
-  if (d === "beginner") return "var(--brand-yellow)";
-  if (d === "intermediate" || d === "intermedia") return "var(--brand-purple-light)";
-  if (d === "advanced") return "var(--text-accent)";
-  return "var(--text-muted)";
-}
-
-function formatPublishedDate(iso: string): string {
-  const dateStr = iso.slice(0, 10);
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-  return `${d} ${months[m - 1]} ${y}`;
 }
 
 // Pablo 20-may-2026 audit SEO: agregar OG + Twitter con hero del primer
@@ -153,67 +121,10 @@ export default async function TutorialesIndexPage({ searchParams }: Props) {
           </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{/* Pablo 23-may-2026: sin RevealOnScroll — observer no dispara en grids altos */}
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{/* Pablo 23-may-2026: sin RevealOnScroll — observer no dispara en grids altos */}
             {tutorials.map((t) => (
               <li key={t.slug}>
-                <Link href={`/blog/${t.slug}`} className="card-luis group block">
-                  {t.hero_image_url && (
-                    <ImageWithSkeleton
-                      src={t.hero_image_url}
-                      alt={t.title_es}
-                      className="card-img w-full h-44"
-                    />
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      {t.category && (
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-[0.12em]"
-                          style={{ color: "var(--text-accent)" }}
-                        >
-                          {CATEGORY_LABELS[t.category] || t.category}
-                        </span>
-                      )}
-                      {t.difficulty && (
-                        <>
-                          <span style={{ color: "var(--text-dim)" }} aria-hidden>·</span>
-                          <span
-                            className="text-[10px] font-semibold"
-                            style={{ color: difficultyColor(t.difficulty) }}
-                          >
-                            {difficultyLabel(t.difficulty)}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <h2
-                      className="font-headline font-bold leading-tight mb-2 line-clamp-2 group-hover:text-[color:var(--text-accent)] transition-colors"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {t.title_es}
-                    </h2>
-                    <p
-                      className="text-sm line-clamp-2 mb-2"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {t.subtitle_es}
-                    </p>
-                    {(t.published_at || t.estimated_time_minutes) && (
-                      <div
-                        className="flex items-center gap-3 mt-3 text-[11px]"
-                        style={{ color: "var(--text-dim)" }}
-                      >
-                        {t.published_at && <span>{formatPublishedDate(t.published_at)}</span>}
-                        {t.estimated_time_minutes && (
-                          <>
-                            <span aria-hidden>·</span>
-                            <span>{t.estimated_time_minutes} min</span>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </Link>
+                <TutorialCard t={t} variant="compact" />
               </li>
             ))}
         </ul>

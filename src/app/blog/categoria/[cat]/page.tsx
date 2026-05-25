@@ -7,7 +7,7 @@ import {
   isMacroCategory,
 } from "@/lib/db/queries";
 import HeroDecor from "../../components/HeroDecor";
-import ImageWithSkeleton from "../../components/ImageWithSkeleton";
+import TutorialCard from "../../components/TutorialCard";
 
 interface Props {
   params: Promise<{ cat: string }>;
@@ -233,32 +233,10 @@ export default async function CategoryPage({ params }: Props) {
           </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{/* sin RevealOnScroll, ver page.tsx */}
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{/* sin RevealOnScroll, ver page.tsx */}
             {tutorials.map((t) => (
               <li key={t.slug}>
-                <Link href={`/blog/${t.slug}`} className="card-luis group block">
-                  {t.hero_image_url && (
-                    <ImageWithSkeleton
-                      src={t.hero_image_url}
-                      alt={t.title_es}
-                      className="card-img w-full h-44"
-                    />
-                  )}
-                  <div className="p-4">
-                    <h2
-                      className="font-headline font-bold leading-tight mb-1 line-clamp-2 group-hover:text-[color:var(--text-accent)] transition-colors"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {t.title_es}
-                    </h2>
-                    <p
-                      className="text-sm line-clamp-2"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {t.subtitle_es}
-                    </p>
-                  </div>
-                </Link>
+                <TutorialCard t={t} variant="compact" />
               </li>
             ))}
         </ul>
