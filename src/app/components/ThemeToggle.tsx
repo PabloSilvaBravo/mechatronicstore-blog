@@ -14,10 +14,10 @@ export default function ThemeToggle() {
     toggleTheme();
   };
 
-  // Pablo 21-may-2026 (header alignment con store): el theme toggle vive
-  // junto a los iconos cart/user/cotizar del cluster derecho del header.
-  // Para que se vea coherente con esos botones, le damos la misma
-  // estética — cuadrado púrpura sólido 36×36 con icono blanco.
+  // Pablo 25-may-2026 (header v2 mobile UX): estilo unificado con
+  // search/cart/user/hamburger del cluster derecho — 32x33 + bg morado +
+  // radius 12px. Antes era 36x36 con radius 4px (cuadrado mas duro), no
+  // matcheaba el cart que tiene 12px (mas pill-ish).
   return (
     <button
       type="button"
@@ -25,11 +25,13 @@ export default function ThemeToggle() {
       aria-label={label}
       aria-pressed={isDark}
       title={label}
-      className="header-icon-btn relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center transition-colors"
+      className="header-icon-btn relative z-10 flex flex-shrink-0 items-center justify-center transition-colors"
       style={{
+        width: "32px",
+        height: "33px",
         background: "var(--brand-purple)",
         color: "#ffffff",
-        borderRadius: "4px",
+        borderRadius: "12px",
         touchAction: "manipulation",
         WebkitTapHighlightColor: "transparent",
       }}

@@ -168,13 +168,22 @@ export default function BlogHeader() {
                 + ThemeToggle (nuevo del v2) + Buscar btn mobile + Hamburger.
                 HeaderActions ya esconde Suscribete y COTIZAR <lg internamente. */}
             <div className="flex items-center gap-1.5 shrink-0">
-              {/* Btn lupa mobile only - abre overlay */}
+              {/* Btn lupa mobile only - abre overlay.
+                  Pablo 25-may-2026: estilo unificado con cart/user (32x33 +
+                  bg morado + radius 12px) para que los 4 iconos del cluster
+                  derecho sean visualmente consistentes. */}
               <button
                 type="button"
                 aria-label="Buscar"
                 onClick={() => setSearchOpen(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border text-[color:var(--text-muted)] transition-colors hover:border-[color:var(--text-muted)] hover:text-[color:var(--text)] md:hidden"
-                style={{ borderColor: "var(--border)" }}
+                className="flex shrink-0 items-center justify-center transition-colors md:hidden"
+                style={{
+                  width: "32px",
+                  height: "33px",
+                  background: "var(--brand-purple)",
+                  color: "#ffffff",
+                  borderRadius: "12px",
+                }}
               >
                 <svg
                   className="h-4 w-4"
@@ -199,14 +208,21 @@ export default function BlogHeader() {
                   Se mantiene fuera de HeaderActions para que el store no lo tenga. */}
               <ThemeToggle />
 
-              {/* Hamburger (lg:hidden) - abre drawer mobile */}
+              {/* Hamburger (lg:hidden) - abre drawer mobile.
+                  Mismo estilo unificado que search/cart/user/theme. */}
               <button
                 type="button"
                 aria-label={menuOpen ? "Cerrar menu" : "Abrir menu"}
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((v) => !v)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border text-[color:var(--text-muted)] hover:text-[color:var(--text)] lg:hidden"
-                style={{ borderColor: "var(--border)" }}
+                className="flex shrink-0 items-center justify-center transition-colors lg:hidden"
+                style={{
+                  width: "32px",
+                  height: "33px",
+                  background: "var(--brand-purple)",
+                  color: "#ffffff",
+                  borderRadius: "12px",
+                }}
               >
                 {menuOpen ? (
                   <svg
