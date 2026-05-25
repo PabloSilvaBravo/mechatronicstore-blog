@@ -56,7 +56,10 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const overlay = useSearchOverlay();
-  const [query, setQuery] = useState(searchParams.get("q") || "");
+  // En prerender static / CSR bailout, useSearchParams() puede devolver null.
+  // Optional chaining evita TypeError que hacia caer todo el BlogHeader al
+  // Suspense fallback (null) durante SSR de paginas estaticas.
+  const [query, setQuery] = useState(searchParams?.get("q") || "");
   const [open, setOpen] = useState(false); // modal mobile
   const [dropdownOpen, setDropdownOpen] = useState(false); // dropdown desktop / dentro del modal
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -68,7 +71,7 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
 
   // Sync query con URL (back/forward, link share)
   useEffect(() => {
-    setQuery(searchParams.get("q") || "");
+    setQuery(searchParams?.get("q") || "");
   }, [searchParams]);
 
   // Live fetch con debounce 300ms
