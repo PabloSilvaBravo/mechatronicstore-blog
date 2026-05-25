@@ -1,11 +1,9 @@
 import Link from "next/link";
-import BlogHeader from "./components/BlogHeader";
 import BackToTop from "./components/BackToTop";
 import UtilityBar from "./components/UtilityBar";
 import NewsletterSignup from "./components/NewsletterSignup";
 import { SearchOverlayProvider } from "./components/SearchOverlay";
 import Logo from "../components/Logo";
-import { getCategoryCounts } from "@/lib/db/queries";
 
 // Revalidate counts cada 10 min — los conteos no necesitan ser
 // realtime, solo dirigir tráfico.
@@ -16,37 +14,14 @@ export default async function BlogLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Fetch en server, pasamos plain JSON al BlogHeader (client).
-  // Si la DB falla, fallback a {} para no romper el render.
-  let categoryCounts: Record<string, number> = {};
-  try {
-    categoryCounts = await getCategoryCounts();
-  } catch (e) {
-    console.error("[blog/layout] getCategoryCounts failed", e);
-  }
-
+  // Header (v2) + skip-link ahora se montan en root layout.tsx — NO
+  // duplicar acá. Esta layout solo agrega UtilityBar (banner promo),
+  // wrapper main, BackToTop y footer del blog.
   return (
     <SearchOverlayProvider>
-      {/* Skip link — Pablo 21-may-2026 (alineación store).
-          A11y: keyboard users pueden saltar header+nav directo al contenido.
-          Solo visible cuando recibe focus (clase utility sr-only:focus-not). */}
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-md focus:outline-none"
-        style={{
-          background: "var(--brand-purple)",
-          color: "#fff",
-          fontWeight: 600,
-          fontSize: "13px",
-        }}
-      >
-        Saltar al contenido
-      </a>
-
       <UtilityBar />
-      <BlogHeader categoryCounts={categoryCounts} />
 
-      <main id="main" className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12">
         {children}
       </main>
 
