@@ -1,33 +1,32 @@
 /**
- * Categorías visibles en el header del blog. El orden define qué
- * categorías aparecen como mega-menu en desktop (top 3 por defecto)
- * y como links en el drawer mobile.
+ * Categorias visibles en el header del blog. Pablo 25-may-2026:
+ * curadas a 4 verticales que matchean el catalogo del store y el publico
+ * tecnico chileno: Electronica, Robotica, Domotica, Telematica.
+ *
+ * Las strings SON el valor literal de `tutorials.category` en la DB.
+ * Si un tutorial usa otra categoria (legacy: "Microcontrollers", "Sensors",
+ * "IoT", "3D Printing", "Maker"), no aparece en mega-menu pero sigue siendo
+ * accesible via /blog/tag/{slug} y home feed.
  */
 export const BLOG_CATEGORIES = [
-  "Microcontrollers",
-  "Sensors",
-  "Robotics",
-  "IoT",
-  "3D Printing",
-  "Maker",
+  "Electronica",
+  "Robotica",
+  "Domotica",
+  "Telematica",
 ] as const;
 
 export type BlogCategory = (typeof BLOG_CATEGORIES)[number];
 
 export const BLOG_CATEGORY_LABELS: Record<string, string> = {
-  Microcontrollers: "Microcontroladores",
-  Sensors: "Sensores",
-  Robotics: "Robótica",
-  IoT: "IoT",
-  "3D Printing": "Impresión 3D",
-  Maker: "Maker",
+  Electronica: "Electronica",
+  Robotica: "Robotica",
+  Domotica: "Domotica",
+  Telematica: "Telematica",
 };
 
 export const BLOG_CATEGORY_SLUGS: Record<string, string> = {
-  Microcontrollers: "microcontroladores",
-  Sensors: "sensores",
-  Robotics: "robotica",
-  IoT: "iot",
-  "3D Printing": "impresion-3d",
-  Maker: "maker",
+  Electronica: "electronica",
+  Robotica: "robotica",
+  Domotica: "domotica",
+  Telematica: "telematica",
 };
