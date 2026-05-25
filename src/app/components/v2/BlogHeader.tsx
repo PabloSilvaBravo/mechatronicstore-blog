@@ -260,7 +260,7 @@ export default function BlogHeader() {
                 className="group inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-bold uppercase tracking-wider transition-colors hover:bg-[color:var(--bg-elevated)]"
                 style={{ color: "var(--brand-purple)" }}
               >
-                MechatronicStore
+                Tienda
                 <svg
                   className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   fill="none"
@@ -276,12 +276,6 @@ export default function BlogHeader() {
                   />
                 </svg>
               </a>
-
-              <span
-                aria-hidden
-                className="mx-1 h-4 w-px"
-                style={{ backgroundColor: "var(--border)" }}
-              />
 
               {BLOG_CATEGORIES.map((cat) => {
                 const catData = data?.categories[cat] || {
