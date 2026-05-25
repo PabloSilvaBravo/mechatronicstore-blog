@@ -54,34 +54,43 @@ const ICON_BUTTON_STYLE: React.CSSProperties = {
 export default function HeaderActions() {
   return (
     <div className="flex items-center gap-2 sm:gap-3">
-      {/* SUSCRÍBETE — dot animado msPulse + texto. Replica .ms-kl-btn del store. */}
-      <a
-        href="#newsletter"
-        onClick={handleScrollToNewsletter}
-        className="ms-kl-btn hidden lg:inline-flex"
-        aria-label="Suscríbete al newsletter del blog"
-      >
-        <span className="ms-dot" aria-hidden />
-        <span className="ms-kl-text">Suscríbete</span>
-      </a>
+      {/* Suscribete + COTIZAR escondidos en mobile via wrapper.
+          Pablo 25-may-2026 (mobile UX fix): las clases custom .ms-kl-btn y
+          .cotizar-slide tienen `display: inline-flex` que override el `hidden`
+          de Tailwind por specificity de CSS. Para garantizar que se oculten
+          en mobile, los envuelvo en un div con `hidden lg:contents` — el div
+          es transparente al flex layout cuando lg+ (los hijos siguen siendo
+          flex items del parent), pero `display: none` en <lg. */}
+      <div className="hidden lg:contents">
+        {/* SUSCRIBETE - dot animado msPulse + texto. Replica .ms-kl-btn del store. */}
+        <a
+          href="#newsletter"
+          onClick={handleScrollToNewsletter}
+          className="ms-kl-btn"
+          aria-label="Suscribete al newsletter del blog"
+        >
+          <span className="ms-dot" aria-hidden />
+          <span className="ms-kl-text">Suscribete</span>
+        </a>
 
-      {/* Divider sutil */}
-      <span
-        className="hidden lg:inline-block w-px h-5"
-        style={{ background: "var(--border-subtle)" }}
-        aria-hidden
-      />
+        {/* Divider sutil */}
+        <span
+          className="inline-block w-px h-5"
+          style={{ background: "var(--border-subtle)" }}
+          aria-hidden
+        />
 
-      {/* COTIZAR — replica EXACTA del store .slide con badge NUEVO ::after.
-          Inline styles para garantizar match 1:1 con el inline style del store. */}
-      <a
-        href="https://empresas.mechatronicstore.cl/?utm_source=blog&utm_medium=header&utm_campaign=cotizar"
-        className="cotizar-slide hidden lg:inline-flex"
-        aria-label="Cotizar en MechatronicStore Empresas"
-        title="Cotizar en MechatronicStore"
-      >
-        COTIZAR
-      </a>
+        {/* COTIZAR - replica EXACTA del store .slide con badge NUEVO ::after.
+            Inline styles para garantizar match 1:1 con el inline style del store. */}
+        <a
+          href="https://empresas.mechatronicstore.cl/?utm_source=blog&utm_medium=header&utm_campaign=cotizar"
+          className="cotizar-slide"
+          aria-label="Cotizar en MechatronicStore Empresas"
+          title="Cotizar en MechatronicStore"
+        >
+          COTIZAR
+        </a>
+      </div>
 
       {/* Cart icon — Pablo 23-may-2026 v9: SVG path EXACTO del icon
           `shopping-bag` (U+E90A) del font flatsome-icons que usa el
