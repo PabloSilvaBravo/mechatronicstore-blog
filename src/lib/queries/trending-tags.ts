@@ -108,44 +108,73 @@ export interface MacroSubmenuItem {
   type: "category" | "tag";
 }
 
-const MACRO_SUBMENU_CONFIG: Record<
-  string,
-  { type: "category" | "tag"; items: { slug: string; label: string }[] }
-> = {
-  electronica: {
-    type: "category",
-    items: [
-      { slug: "arduino", label: "Arduino" },
-      { slug: "esp32", label: "ESP32" },
-      { slug: "rpi", label: "Raspberry Pi" },
-      { slug: "sensores", label: "Sensores" },
-      { slug: "otros", label: "Otros" },
-    ],
-  },
-  robotica: {
-    type: "category",
-    items: [{ slug: "robotica", label: "Robotica" }],
-  },
-  domotica: {
-    type: "tag",
-    items: [
-      { slug: "homekit", label: "HomeKit" },
-      { slug: "iot", label: "IoT" },
-      { slug: "mqtt", label: "MQTT" },
-      { slug: "home-assistant", label: "Home Assistant" },
-      { slug: "alexa", label: "Alexa" },
-    ],
-  },
-  telematica: {
-    type: "tag",
-    items: [
-      { slug: "wifi", label: "WiFi" },
-      { slug: "ble", label: "Bluetooth LE" },
-      { slug: "esp-now", label: "ESP-NOW" },
-      { slug: "wireless", label: "Wireless" },
-      { slug: "lora", label: "LoRa" },
-    ],
-  },
+/**
+ * Pablo 26-may-2026: expandido cada macro con MAS items (mix categorias +
+ * tags) para que los dropdowns no se vean vacios. Los items con count=0
+ * se filtran al final. Se incluyen items con generosa selectividad
+ * porque la lista crece naturalmente con mas tutoriales.
+ */
+type SubmenuItemConfig = {
+  slug: string;
+  label: string;
+  source: "category" | "tag";
+};
+
+const MACRO_SUBMENU_CONFIG: Record<string, SubmenuItemConfig[]> = {
+  electronica: [
+    // Sub-categorias DB
+    { slug: "arduino", label: "Arduino", source: "category" },
+    { slug: "esp32", label: "ESP32", source: "category" },
+    { slug: "rpi", label: "Raspberry Pi", source: "category" },
+    { slug: "sensores", label: "Sensores", source: "category" },
+    { slug: "otros", label: "Otros", source: "category" },
+    // Plataformas y dialectos (tags)
+    { slug: "esp32-s3", label: "ESP32-S3", source: "tag" },
+    { slug: "rp2040", label: "RP2040", source: "tag" },
+    { slug: "micropython", label: "MicroPython", source: "tag" },
+    { slug: "circuitpython", label: "CircuitPython", source: "tag" },
+  ],
+  robotica: [
+    { slug: "robotica", label: "Robotica", source: "category" },
+    { slug: "wearable", label: "Wearables", source: "tag" },
+    { slug: "audio", label: "Audio", source: "tag" },
+    { slug: "display", label: "Display", source: "tag" },
+    { slug: "oled", label: "OLED", source: "tag" },
+    { slug: "matriz-led", label: "Matriz LED", source: "tag" },
+    { slug: "led-matrix", label: "LED Matrix", source: "tag" },
+    { slug: "neopixel", label: "NeoPixel", source: "tag" },
+    { slug: "tm1637", label: "TM1637", source: "tag" },
+    { slug: "7-segmentos", label: "7 Segmentos", source: "tag" },
+    { slug: "led", label: "LED", source: "tag" },
+    { slug: "rgb", label: "RGB", source: "tag" },
+  ],
+  domotica: [
+    { slug: "homekit", label: "HomeKit", source: "tag" },
+    { slug: "iot", label: "IoT", source: "tag" },
+    { slug: "mqtt", label: "MQTT", source: "tag" },
+    { slug: "home-assistant", label: "Home Assistant", source: "tag" },
+    { slug: "alexa", label: "Alexa", source: "tag" },
+    { slug: "ota", label: "OTA", source: "tag" },
+    { slug: "lifecycle-manager", label: "Lifecycle Mgr", source: "tag" },
+    { slug: "datalogger", label: "Datalogger", source: "tag" },
+    { slug: "bme280", label: "BME280", source: "tag" },
+    { slug: "microsd", label: "MicroSD", source: "tag" },
+    { slug: "domotica", label: "Domotica", source: "tag" },
+  ],
+  telematica: [
+    { slug: "wifi", label: "WiFi", source: "tag" },
+    { slug: "ble", label: "Bluetooth LE", source: "tag" },
+    { slug: "bluetooth", label: "Bluetooth", source: "tag" },
+    { slug: "esp-now", label: "ESP-NOW", source: "tag" },
+    { slug: "wireless", label: "Wireless", source: "tag" },
+    { slug: "web-server", label: "Web Server", source: "tag" },
+    { slug: "lora", label: "LoRa", source: "tag" },
+    { slug: "http", label: "HTTP", source: "tag" },
+    { slug: "api", label: "API", source: "tag" },
+    { slug: "radio", label: "Radio", source: "tag" },
+    { slug: "sdr", label: "SDR", source: "tag" },
+    { slug: "walkie-talkie", label: "Walkie Talkie", source: "tag" },
+  ],
 };
 
 export async function getMacroSubmenus(): Promise<
@@ -184,23 +213,28 @@ export async function getMacroSubmenus(): Promise<
   }
 
   const out: Record<string, MacroSubmenuItem[]> = {};
-  for (const [macroSlug, config] of Object.entries(MACRO_SUBMENU_CONFIG)) {
-    const items: MacroSubmenuItem[] = [];
-    for (const it of config.items) {
+  for (const [macroSlug, items] of Object.entries(MACRO_SUBMENU_CONFIG)) {
+    const filled: MacroSubmenuItem[] = [];
+    for (const it of items) {
+      // Pablo 26-may-2026: source declarado por item (no por macro) para
+      // mezclar categorias DB + tags en la misma macro - mas items potenciales.
       const count =
-        config.type === "category"
+        it.source === "category"
           ? categoryCounts[it.slug] || 0
           : tagCounts[it.slug.toLowerCase()] || 0;
       if (count > 0) {
-        items.push({
+        filled.push({
           slug: it.slug,
           label: it.label,
           count,
-          type: config.type,
+          type: it.source,
         });
       }
     }
-    out[macroSlug] = items;
+    // Ordenar por count desc para que los items mas poblados aparezcan
+    // arriba (mejor jerarquia visual).
+    filled.sort((a, b) => b.count - a.count);
+    out[macroSlug] = filled;
   }
   return out;
 }
