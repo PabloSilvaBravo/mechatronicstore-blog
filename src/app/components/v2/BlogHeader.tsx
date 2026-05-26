@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "../Logo";
 import ThemeToggle from "../ThemeToggle";
-import MegaMenu from "./MegaMenu";
+import Submenu from "./Submenu";
 import SearchOverlay from "./SearchOverlay";
 import UtilityBar from "../../blog/components/UtilityBar";
 import SearchBar from "../../blog/components/SearchBar";
@@ -16,14 +16,11 @@ import {
   BLOG_CATEGORY_LABELS,
   BLOG_CATEGORY_SLUGS,
 } from "@/lib/blog-categories";
-import type { Tag, FeaturedTutorial } from "@/lib/queries/trending-tags";
+import type { Tag, MacroSubmenuItem } from "@/lib/queries/trending-tags";
 
 interface BlogHeaderData {
   topTags: Tag[];
-  categories: Record<
-    string,
-    { topTags: Tag[]; featured: FeaturedTutorial | null }
-  >;
+  macroSubmenus: Record<string, MacroSubmenuItem[]>;
 }
 
 const STORE_URL =
@@ -305,22 +302,17 @@ export default function BlogHeader() {
               </a>
 
               {BLOG_CATEGORIES.map((cat) => {
-                const catData = data?.categories[cat] || {
-                  topTags: [],
-                  featured: null,
-                };
+                const slug = BLOG_CATEGORY_SLUGS[cat] || cat.toLowerCase();
+                const items = data?.macroSubmenus[slug] || [];
                 return (
-                  <MegaMenu
+                  <Submenu
                     key={cat}
                     itemId={cat}
                     openId={openMegaId ?? undefined}
                     onOpen={(id) => setOpenMegaId(id)}
                     label={BLOG_CATEGORY_LABELS[cat] || cat}
-                    href={`/blog/categoria/${
-                      BLOG_CATEGORY_SLUGS[cat] || cat.toLowerCase()
-                    }`}
-                    topTags={catData.topTags}
-                    featured={catData.featured}
+                    href={`/blog/categoria/${slug}`}
+                    items={items}
                   />
                 );
               })}

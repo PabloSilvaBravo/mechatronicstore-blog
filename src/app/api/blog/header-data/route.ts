@@ -1,41 +1,40 @@
 import { NextResponse } from "next/server";
 import {
   getTopBlogTags,
-  getFeaturedPerCategory,
-  getTagsPerCategory,
+  getMacroSubmenus,
   type Tag,
-  type FeaturedTutorial,
+  type MacroSubmenuItem,
 } from "@/lib/queries/trending-tags";
-import { BLOG_CATEGORIES } from "@/lib/blog-categories";
 
 export const dynamic = "force-static";
 export const revalidate = 1800; // 30 min
 
+/**
+ * Pablo 25-may-2026 audit: simplificacion de la API tras feedback "los
+ * mega-menus no tienen sentido, estan vacios".
+ *
+ * Antes: { topTags, categories: { [macroSlug]: { topTags: [], featured: null } } }
+ *   → los mega-menus 2-col mostraban dropdown vacio para macro-cats
+ *     (electronica/robotica/domotica/telematica) porque consultaban
+ *     `WHERE category = 'electronica'` literal que no existe en DB.
+ *
+ * Ahora: { topTags, macroSubmenus: { [macroSlug]: MacroSubmenuItem[] } }
+ *   → cada macro tiene su lista real de sub-categorias o tags relevantes
+ *     con conteo. Dropdown SIMPLE 1-col, util y visible.
+ */
 export interface BlogHeaderData {
   topTags: Tag[];
-  categories: Record<
-    string,
-    { topTags: Tag[]; featured: FeaturedTutorial | null }
-  >;
+  macroSubmenus: Record<string, MacroSubmenuItem[]>;
 }
 
 export async function GET() {
   try {
-    const [topTags, perCatTags, featured] = await Promise.all([
+    const [topTags, macroSubmenus] = await Promise.all([
       getTopBlogTags(20),
-      getTagsPerCategory(BLOG_CATEGORIES, 6),
-      getFeaturedPerCategory(BLOG_CATEGORIES),
+      getMacroSubmenus(),
     ]);
 
-    const categories: BlogHeaderData["categories"] = {};
-    for (const cat of BLOG_CATEGORIES) {
-      categories[cat] = {
-        topTags: perCatTags[cat] || [],
-        featured: featured[cat] || null,
-      };
-    }
-
-    const payload: BlogHeaderData = { topTags, categories };
+    const payload: BlogHeaderData = { topTags, macroSubmenus };
 
     return NextResponse.json(payload, {
       headers: {
@@ -46,7 +45,7 @@ export async function GET() {
   } catch (e) {
     console.error("[blog-header-data] error:", e);
     return NextResponse.json(
-      { topTags: [], categories: {} } satisfies BlogHeaderData,
+      { topTags: [], macroSubmenus: {} } satisfies BlogHeaderData,
       { status: 200 },
     );
   }

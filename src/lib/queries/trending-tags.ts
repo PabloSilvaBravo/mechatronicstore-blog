@@ -84,6 +84,128 @@ export async function getFeaturedPerCategory(
 }
 
 /**
+ * MACRO-SUBMENUS — para los dropdowns de las 4 macro-categorias del header.
+ *
+ * Pablo 25-may-2026 audit: la version anterior usaba mega-menus 2-col
+ * con "Subtemas" (top tags) + "Featured" (tutorial reciente). Para las
+ * macro-categorias devolvian dropdown VACIO porque consultaban
+ * `WHERE category = 'electronica'` que no existe en DB literal.
+ *
+ * Solucion: dropdown SIMPLE 1-col con sub-categorias/tags reales y conteo.
+ *
+ *   ELECTRONICA  → sub-categorias reales (arduino, esp32, rpi, sensores, otros)
+ *   ROBOTICA     → robotica
+ *   DOMOTICA     → tags top del pool (homekit, iot, mqtt, home-assistant, alexa)
+ *   TELEMATICA   → tags top del pool (wifi, ble, esp-now, wireless, lora)
+ *
+ * Click en cada item: /blog/categoria/{slug} si type=category,
+ * /blog/tag/{slug} si type=tag.
+ */
+export interface MacroSubmenuItem {
+  slug: string;
+  label: string;
+  count: number;
+  type: "category" | "tag";
+}
+
+const MACRO_SUBMENU_CONFIG: Record<
+  string,
+  { type: "category" | "tag"; items: { slug: string; label: string }[] }
+> = {
+  electronica: {
+    type: "category",
+    items: [
+      { slug: "arduino", label: "Arduino" },
+      { slug: "esp32", label: "ESP32" },
+      { slug: "rpi", label: "Raspberry Pi" },
+      { slug: "sensores", label: "Sensores" },
+      { slug: "otros", label: "Otros" },
+    ],
+  },
+  robotica: {
+    type: "category",
+    items: [{ slug: "robotica", label: "Robotica" }],
+  },
+  domotica: {
+    type: "tag",
+    items: [
+      { slug: "homekit", label: "HomeKit" },
+      { slug: "iot", label: "IoT" },
+      { slug: "mqtt", label: "MQTT" },
+      { slug: "home-assistant", label: "Home Assistant" },
+      { slug: "alexa", label: "Alexa" },
+    ],
+  },
+  telematica: {
+    type: "tag",
+    items: [
+      { slug: "wifi", label: "WiFi" },
+      { slug: "ble", label: "Bluetooth LE" },
+      { slug: "esp-now", label: "ESP-NOW" },
+      { slug: "wireless", label: "Wireless" },
+      { slug: "lora", label: "LoRa" },
+    ],
+  },
+};
+
+export async function getMacroSubmenus(): Promise<
+  Record<string, MacroSubmenuItem[]>
+> {
+  // 1 query para conteos por categoria
+  const catRes = await client.execute({
+    sql: `
+      SELECT category, COUNT(*) AS cnt
+        FROM tutorials
+       WHERE status = 'published' AND category IS NOT NULL
+       GROUP BY category
+    `,
+    args: [],
+  });
+  const categoryCounts: Record<string, number> = {};
+  for (const r of catRes.rows) {
+    categoryCounts[String(r.category)] = Number(r.cnt);
+  }
+
+  // 1 query para conteos por tag (lowercase)
+  const tagRes = await client.execute({
+    sql: `
+      SELECT lower(je.value) AS tag, COUNT(*) AS cnt
+        FROM tutorials t, json_each(t.tags_json) je
+       WHERE t.status = 'published'
+         AND t.tags_json IS NOT NULL
+         AND t.tags_json != ''
+       GROUP BY lower(je.value)
+    `,
+    args: [],
+  });
+  const tagCounts: Record<string, number> = {};
+  for (const r of tagRes.rows) {
+    tagCounts[String(r.tag)] = Number(r.cnt);
+  }
+
+  const out: Record<string, MacroSubmenuItem[]> = {};
+  for (const [macroSlug, config] of Object.entries(MACRO_SUBMENU_CONFIG)) {
+    const items: MacroSubmenuItem[] = [];
+    for (const it of config.items) {
+      const count =
+        config.type === "category"
+          ? categoryCounts[it.slug] || 0
+          : tagCounts[it.slug.toLowerCase()] || 0;
+      if (count > 0) {
+        items.push({
+          slug: it.slug,
+          label: it.label,
+          count,
+          type: config.type,
+        });
+      }
+    }
+    out[macroSlug] = items;
+  }
+  return out;
+}
+
+/**
  * Top N tags por categoría (para mega-menu).
  */
 export async function getTagsPerCategory(
