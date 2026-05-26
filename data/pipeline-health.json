@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-05-26T21:48:56.436371+00:00",
+  "checked_at": "2026-05-26T23:13:12.873155+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 0,
@@ -17,6 +17,30 @@
     "heros_broken_urls": [
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
+      },
+      {
+        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
       },
       {
@@ -25,35 +49,11 @@
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
-      },
-      {
-        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/bb21433e6838/6a536ef5a1aaa22c.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3b6286d1c33/97301b37ef8c2bad.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
       }
     ],
     "ranked_aging_hours": 0,
