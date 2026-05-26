@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-26T03:59:41.050779+00:00",
+  "checked_at": "2026-05-26T07:58:44.475030+00:00",
   "metrics": {
-    "drafts_pending": 0,
+    "drafts_pending": 1,
     "published_24h": 0,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.652,
+    "rejected_ratio_48h": 0.619,
     "published_48h": 8,
-    "rejected_48h": 15,
+    "rejected_48h": 13,
     "sources_active": 33,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,11 +17,7 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
       },
       {
         "status": 403,
@@ -29,7 +25,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
       },
       {
         "status": 403,
@@ -49,21 +49,21 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1a6559cb5b5a/97fc0743dbfafdd0.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/MULTIPLEXOR.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       }
     ],
     "ranked_aging_hours": 0,
-    "published_7d": 30,
+    "published_7d": 28,
     "rank_runs_24h": 0,
     "translate_runs_24h": 0,
     "counts_by_status": {
-      "draft": 11,
+      "draft": 12,
       "published": 36,
-      "rejected": 504
+      "rejected": 513
     }
   },
   "alerts": [
