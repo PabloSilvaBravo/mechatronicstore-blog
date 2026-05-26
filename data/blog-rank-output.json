@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-24T18:40:03Z",
+  "ranked_at": "2026-05-26T18:32:00Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,8 +25,8 @@
   },
   "rankings": [
     {
-      "id": "734093535a2e",
-      "source_language": "es",
+      "id": "33ab132c7b16",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -37,20 +37,20 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 6,
-        "code_quality": 2,
-        "materials_clarity": 5,
-        "step_completeness": 4,
-        "relevance_to_store_catalog": 5,
-        "value_added": 3,
-        "originality_potential": 4
+        "pedagogy": 2,
+        "code_quality": 1,
+        "materials_clarity": 2,
+        "step_completeness": 1,
+        "relevance_to_store_catalog": 2,
+        "value_added": 2,
+        "originality_potential": 3
       },
-      "combined_score": 0.420,
-      "verdict": "Artículo de opinión/recomendación comercial sin proyecto técnico: sugiere comprar enchufe inteligente Eightree y programar temporizador, sin código, sin DIY, sin downloadables. Tema genérico en español con alto riesgo de duplicate content.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Enchufe inteligente WiFi", "Sonoff S31", "Smart Plug Tuya"],
-      "re_angulation_hint": "Convertir en proyecto DIY: ESP32 + relé + firmware Tasmota con dashboard MQTT"
+      "combined_score": 0.195,
+      "verdict": "Press release patrocinado de Kickstarter para laser cutter industrial Gweike MCore (400W fiber + 80W CO2, ~$2300). Sin proyecto técnico, sin downloadables, sin tutorial. Producto fuera de catálogo MechatronicStore. Contenido publicitario etiquetado 'sponsored'.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial / press release patrocinado de Kickstarter sin proyecto técnico ni tutorial reproducible. La fuente la etiqueta explícitamente como 'sponsored'.",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: contenido publicitario sin proyecto técnico subyacente"
     }
   ]
 }
