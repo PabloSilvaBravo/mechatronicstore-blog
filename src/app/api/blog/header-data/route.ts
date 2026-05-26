@@ -7,7 +7,13 @@ import {
 } from "@/lib/queries/trending-tags";
 
 export const dynamic = "force-static";
-export const revalidate = 1800; // 30 min
+// Pablo 26-may-2026: bajado de 1800s a 120s. El revalidate 30min hacia que
+// despues de un deploy con cambio del MACRO_SUBMENU_CONFIG, los browsers
+// siguieran fetcheando la version vieja por hasta 30 minutos. Bajamos a 2min
+// para que los cambios de config se propaguen rapido. Si el endpoint se
+// vuelve costoso (mas tutoriales), subir de nuevo o usar revalidatePath
+// en un hook de deploy.
+export const revalidate = 120;
 
 /**
  * Pablo 25-may-2026 audit: simplificacion de la API tras feedback "los
