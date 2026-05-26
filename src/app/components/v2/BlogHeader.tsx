@@ -303,7 +303,9 @@ export default function BlogHeader() {
 
               {BLOG_CATEGORIES.map((cat) => {
                 const slug = BLOG_CATEGORY_SLUGS[cat] || cat.toLowerCase();
-                const items = data?.macroSubmenus[slug] || [];
+                // Optional chaining con bracket access: necesita `?.[` no `?.macroSubmenus[`
+                // Sino `undefined[slug]` tira TypeError en SSR initial (data=null).
+                const items = data?.macroSubmenus?.[slug] || [];
                 return (
                   <Submenu
                     key={cat}
