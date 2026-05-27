@@ -1,17 +1,17 @@
 {
-  "checked_at": "2026-05-27T10:02:29.277059+00:00",
+  "checked_at": "2026-05-27T15:55:57.520063+00:00",
   "metrics": {
     "drafts_pending": 12,
     "published_24h": 0,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 1.0,
-    "published_48h": 0,
+    "rejected_ratio_48h": 0.875,
+    "published_48h": 3,
     "rejected_48h": 21,
     "sources_active": 33,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
     "editorial_rejected_48h": 0,
-    "editorial_rejected_ratio": 0,
+    "editorial_rejected_ratio": 0.0,
     "heros_checked": 30,
     "heros_broken": 23,
     "heros_broken_urls": [
@@ -25,23 +25,19 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
+        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
       },
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
       },
       {
         "status": 403,
@@ -50,6 +46,10 @@
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
       },
       {
         "status": 403,
@@ -73,13 +73,6 @@
       "value": 0,
       "threshold": 1,
       "message": "Cero publicaciones en últimas 24h. Pipeline congelado — revisar Routine C + workflow translate-persist."
-    },
-    {
-      "severity": "warning",
-      "metric": "rejected_ratio_48h",
-      "value": 1.0,
-      "threshold": 0.95,
-      "message": "100% rejected en últimas 48h (21/21). Filtros/threshold pueden estar mal calibrados."
     },
     {
       "severity": "warning",
