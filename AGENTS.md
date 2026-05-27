@@ -149,3 +149,52 @@ Si en el dashboard Vercel ves todos los deploys del blog en "Error —" sin tiem
 ### Skills y slash commands
 
 Pablo mantiene skills SIEMPRE en `~/.claude/skills/<nombre>.md` (global), nunca en `.claude/skills/` del proyecto. Si una skill se acumula info específica del blog, va igual en global, con descripción que aclare cuándo aplica.
+
+## MechaBlog cadencia revertida 2026-05-27 (pipeline congelado)
+
+El 22-may-2026 bajamos la cadencia de Routine B (ranking) y Routine C
+(translation) de 3/día → 2/día con caps duplicados (rank 30→60, translate
+10→10). La justificación: backlog 0 y ratio rank→publish ~9% sostenido
+sugería que menos corridas con más material por slot serían más eficientes.
+
+**El +5d cadencia-check (2026-05-27) la revierte.** Reporte:
+`data/cadencia-check-5d-20260527T120740Z.md`. Resumen del verdict
+CRITICAL:
+
+- Burst inicial: 36 publishes en las primeras 48h (drenaje del backlog
+  preexistente con el cap nuevo).
+- Después: **0 publishes sostenidos 96+ horas**, **0 translate_runs
+  24h sostenidos 72+ horas**.
+- `published_7d` cayó 36→13 en 3 días (rolling window) y proyecta llegar
+  a 0 el 30-may si nada cambia.
+- `rejected_ratio_48h=1.0` (100% de candidatos descartados) sugiere un
+  problema ortogonal con filtros / thresholds, pero la regla manda
+  revertir primero, diagnosticar después.
+
+### Estado del revert (al 2026-05-27T12:08Z)
+
+| Componente | Estado |
+|---|---|
+| `.github/workflows/blog-rank-prep.yml` cron | ✅ revertido a `25 4,12,20 * * *` (3/día) |
+| `data/cadencia-revert-log.md` | ✅ escrito |
+| Esta sección de AGENTS.md | ✅ agregada |
+| CCR trigger `trig_018awZKUDjfX8JqWmh5x5Mi4` (Routine B) | ⏳ PENDIENTE — requiere `RemoteTrigger update ... cron "30 4,12,20 * * *"` |
+| CCR trigger `trig_012SUx3X96ndwjTdzWs4RKZp` (Routine C) | ⏳ PENDIENTE — requiere `RemoteTrigger update ... cron "0 6,14,22 * * *"` |
+| Caps en prep workflow | ⏸ sin cambio (rank=60, translate=15 mantenidos como headroom; revertir a 30/10 sólo si Pablo decide) |
+
+**Por qué la parte CCR quedó pendiente**: el MCP `RemoteTrigger` que
+controla los cron schedules de CCR no está expuesto al container de
+`cadencia-check` en Anthropic Cloud. Mismo patrón que TURSO env vars
+no presentes en cloud sessions. Pablo (o cualquier agente con acceso
+a `RemoteTrigger`) tiene que ejecutar el revert manual.
+
+### Reglas operativas que quedan vigentes
+
+- Si volvés a tocar cadencia, **siempre dejar trazabilidad** en
+  `data/cadencia-baseline.json` ANTES de aplicar el cambio.
+- Antes de declarar una bajada como "exitosa", esperar el +5d check
+  con datos de DB reales — el +2d puede ser engañoso por bursts de
+  drenaje.
+- Si `rejected_ratio_48h` salta a 1.0 o cerca, eso NO es problema de
+  cadencia → es filtros / scoring. Inspeccionar
+  `data/blog-rank-output.json` del último run y `hard_filters.py`.

@@ -8,6 +8,12 @@ name: Blog Rank Prep (refresh input)
 # Backlog real 0, ratio rank→publish ~9% justifica menos corridas. Ranking
 # slots nuevos 06:30 + 18:30 UTC. Refresh corre 5 min antes (06:25 + 18:25).
 #
+# 2026-05-27: cadencia-check +5d detectó CRITICAL (0 publishes 96h+, 0 translate
+# 72h+, published_7d cayendo de 36→13). Cron revertido a 3/día (slots originales
+# 04:30/12:30/20:30 UTC, prep 5 min antes). CCR triggers requieren revert
+# manual via RemoteTrigger (no expuesto en cloud routine). Ver
+# data/cadencia-check-5d-20260527T120740Z.md y data/cadencia-revert-log.md.
+#
 # Este workflow corre 5 min antes de cada Routine B y refresca el dump con
 # los drafts más recientes (incluye refetch promotes + cambios manuales).
 #
@@ -17,7 +23,7 @@ name: Blog Rank Prep (refresh input)
 on:
   schedule:
     # 25 min después de la hora pero antes de cada rank (que es :30)
-    - cron: "25 6,18 * * *"
+    - cron: "25 4,12,20 * * *"
   workflow_dispatch: {}
 
 permissions:
