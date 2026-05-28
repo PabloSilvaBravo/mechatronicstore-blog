@@ -1,13 +1,20 @@
 /* eslint-disable */
-// MechaBlog Service Worker v1.0.1
+// MechaBlog Service Worker v1.0.2 (Pablo 27-may-2026 — bug fix imágenes
+// cross-origin invisibles en sesión normal pero OK en incógnito).
 // Servido desde /blog/sw.js con scope /blog/ (el blog vive bajo /blog/* via CF Worker).
 // Estrategias:
 // - HTML pages: NETWORK-ONLY con fallback /blog/offline (no cachea HTML)
-// - Images same/cross-origin: stale-while-revalidate cap 60
+// - Images SAME-ORIGIN ÚNICAMENTE: stale-while-revalidate cap 60.
+//   Cross-origin (images.mechatronicstore.cl, etc.) pasa directo al
+//   browser — el SW no las intercepta. Antes interceptábamos todo, pero
+//   cache.put() de responses opaque cross-origin falla silenciosamente
+//   y .catch(() => cached) devuelve undefined si no había nada cacheado
+//   → respondWith(undefined) → imagen invisible en pantalla aunque el
+//   browser cree que "cargó".
 // - CSS/JS/fonts: cache-first
 // - /api/blog/header-data: stale-while-revalidate cap 30
 
-const VERSION = "v1.0.1";
+const VERSION = "v1.0.2";
 const CACHE_SHELL = `mb-shell-${VERSION}`;
 const CACHE_IMAGES = "mb-images";
 const CACHE_PAGES = "mb-pages";
@@ -65,6 +72,19 @@ self.addEventListener("fetch", (event) => {
     req.destination === "image" ||
     /\.(jpg|jpeg|png|webp|gif|avif|svg)(\?|$)/i.test(url.pathname);
 
+  // Pablo 27-may-2026 — Cross-origin pasa SIN tocar (no respondWith).
+  // Histórico del bug: el SW interceptaba imágenes de images.mechatronicstore.cl
+  // (R2 CDN cross-origin). Como esos responses son opaque, cache.put() falla
+  // silenciosamente y la cadena .catch(() => cached) devolvía undefined
+  // cuando no había nada cacheado → respondWith(undefined) → imagen
+  // invisible en pantalla aunque el browser reporta complete:true. Sólo
+  // pasaba en sesión normal (incógnito no ejecuta SW).
+  // Fix: para cross-origin, simplemente no llamamos respondWith — el
+  // browser hace fetch normal sin la lógica del SW.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   if (isImage) {
     event.respondWith(
       caches.open(CACHE_IMAGES).then((cache) =>
@@ -77,15 +97,15 @@ self.addEventListener("fetch", (event) => {
               }
               return res;
             })
-            .catch(() => cached);
+            // Si fetch falla Y no había cached, fallback a un Response 504
+            // explícito en vez de undefined (que rompe respondWith).
+            .catch(() => cached || new Response("", { status: 504 }));
           return cached || fetchPromise;
         }),
       ),
     );
     return;
   }
-
-  if (url.origin !== self.location.origin) return;
 
   const accept = req.headers.get("accept") || "";
   const isHTML = req.mode === "navigate" || accept.includes("text/html");
