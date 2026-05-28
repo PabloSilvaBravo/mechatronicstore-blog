@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-28T16:09:40.874848+00:00",
+  "checked_at": "2026-05-28T18:32:51.559017+00:00",
   "metrics": {
     "drafts_pending": 2,
     "published_24h": 2,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.861,
+    "rejected_ratio_48h": 0.865,
     "published_48h": 5,
-    "rejected_48h": 31,
+    "rejected_48h": 32,
     "sources_active": 33,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,15 +17,11 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp"
       },
       {
         "status": 403,
@@ -37,11 +33,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
       },
       {
         "status": 403,
@@ -49,11 +45,15 @@
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
       },
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
       }
     ],
     "ranked_aging_hours": 0,
@@ -61,9 +61,9 @@
     "rank_runs_24h": 1,
     "translate_runs_24h": 1,
     "counts_by_status": {
-      "draft": 13,
+      "draft": 11,
       "published": 38,
-      "rejected": 544
+      "rejected": 546
     }
   },
   "alerts": [
