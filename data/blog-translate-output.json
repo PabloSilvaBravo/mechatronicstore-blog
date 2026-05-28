@@ -1,393 +1,169 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-24T00:36:08Z",
+  "translated_at": "2026-05-28T08:25:00Z",
   "translations": [
     {
-      "id": "1ec722f7c21b",
-      "slug": "esp32-data-logger-web-graficos-bme280-microsd",
-      "title_es": "ESP32 Data Logger Web: gráficos históricos con BME280 y microSD",
-      "subtitle_es": "Arma un servidor web en ESP32 que registra temperatura, humedad y presión en una microSD, y muestra los datos en gráficos interactivos.",
-      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp",
-      "body_es": "## Por qué un data logger con gráficos vale más que un sensor \"que solo muestra\"\n\nLa mayoría de proyectos con sensores ambientales terminan en lo mismo: un valor parpadeando en un monitor serial que nadie revisa. Útil para debug, inútil para tomar decisiones. Si quieres saber cómo varía la temperatura de tu pieza durante una noche, o si la humedad del taller se dispara cuando llueve, necesitas tres cosas: **almacenar** las lecturas, **visualizarlas en una línea de tiempo** y poder **acceder desde el celular** sin instalar nada.\n\nEste tutorial te enseña a construir exactamente eso con un ESP32, un sensor de temperatura/humedad/presión y una tarjeta microSD. Al final vas a tener un servidor web que registra una lectura por minuto, las guarda en un archivo CSV en la microSD, y dibuja tres gráficos interactivos (con zoom y descarga) en una página HTML que se autoactualiza sola.\n\n![Hero — ESP32 con gráficos históricos en navegador](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-WebServer-Historic-data.jpg?resize=828%2C466&quality=100&strip=all&ssl=1)\n\n## Concepto: cómo encajan las piezas\n\nEl ESP32 hace tres tareas en paralelo:\n\n1. **Lectura periódica del sensor** (cada 60 s, por timer no bloqueante con `millis()`).\n2. **Persistencia en CSV** sobre microSD usando SPI — cada lectura se añade como una fila nueva con timestamp NTP.\n3. **Servidor web asíncrono** que sirve una página HTML estática (incrustada en el sketch) y rutas para descargar o borrar el CSV.\n\nLa página HTML embebida usa **Chart.js + el plugin de zoom** desde un CDN público, así que el navegador renderiza los gráficos sin que el ESP32 tenga que generar imágenes. Esto es importante: el ESP32 solo entrega el CSV crudo (~50 KB para 24 horas de datos) y el cliente hace el trabajo pesado de dibujar. Por eso funciona fluido incluso desde un celular antiguo.\n\n![Vista del navegador con los 3 gráficos](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Arduino-IDE-Historical-Chart-CSV-Log-Data-File-Demonstration.png?resize=828%2C896&quality=100&strip=all&ssl=1)\n\n## Hardware y conexiones\n\nEl sensor original del tutorial es un **BME280** (temperatura + humedad + presión, I²C). En Chile no siempre está disponible: el **BMP180** del catálogo es funcionalmente equivalente para temperatura y presión, y si quieres también humedad puedes combinarlo con un **DHT22** en otro pin. El código que ves aquí usa el BME280 — para BMP180 cambia la librería a `Adafruit_BMP085` y elimina la línea de `readHumidity()`.\n\nCableado de ambos módulos en paralelo sobre los pines por defecto del ESP32:\n\n**Sensor BME280 (I²C):**\n\n| BME280 | ESP32 |\n|--------|-------|\n| VCC    | 3.3V  |\n| GND    | GND   |\n| SCL    | GPIO 22 |\n| SDA    | GPIO 21 |\n\n**Módulo microSD (SPI):**\n\n| microSD | ESP32 |\n|---------|-------|\n| VCC (3V3) | 3.3V |\n| GND  | GND     |\n| CS   | GPIO 5  |\n| MOSI | GPIO 23 |\n| CLK  | GPIO 18 |\n| MISO | GPIO 19 |\n\n![Diagrama de conexión BME280 + microSD al ESP32](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Arduino-IDE-Wiring-Circuit-Diagram-BME280-MicroSD-Card.png?resize=800%2C797&quality=100&strip=all&ssl=1)\n\nImportante: la microSD debe estar formateada en **FAT32**. Si tu tarjeta es de 64 GB o más, Windows la formatea por defecto en exFAT y la librería `SD.h` no la reconoce. Usa una herramienta como **guiformat** o `mkfs.vfat -F 32` en Linux.\n\n## Software: librerías y código\n\nDesde el gestor de librerías del IDE Arduino instala estas cuatro:\n\n- **ESPAsyncWebServer** (de ESP32Async)\n- **AsyncTCP** (de ESP32Async)\n- **Adafruit BME280 Library**\n- **Adafruit Unified Sensor**\n\n![Instalación ESPAsyncWebServer](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2024/06/Install-ESPAsyncWebServer-Library-ArduinoIDE-2-f.png?resize=666%2C586&quality=100&strip=all&ssl=1)\n\nEl sketch completo (~250 líneas) tiene tres bloques claros: setup de hardware, manejador HTTP para `/`, `/download` y `/delete`, y el loop que dispara `logData()` cada 60 s. Acá va el código completo:\n\n```cpp\n#include <WiFi.h>\n#include <ESPAsyncWebServer.h>\n#include <AsyncTCP.h>\n#include <Adafruit_Sensor.h>\n#include <Adafruit_BME280.h>\n#include <SD.h>\n#include <SPI.h>\n#include <time.h>\n\nconst char* ssid     = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\n\n#define SDA_PIN 21\n#define SCL_PIN 22\n#define SD_CS   5\n#define SD_MOSI 23\n#define SD_MISO 19\n#define SD_SCK  18\n\nconst char* ntpServer = \"pool.ntp.org\";\nconst long  gmtOffset_sec = -4 * 3600;   // Chile continental: UTC-4 (ajusta a -3 en horario de verano)\nconst int   daylightOffset_sec = 0;\n\nunsigned long previousMillis = 0;\nconst long interval = 60000;\nconst char* dataFile = \"/bme280_log.csv\";\n\nAsyncWebServer server(80);\nAdafruit_BME280 bme;\n\nString getTimeStr() {\n  struct tm t; if (!getLocalTime(&t)) return \"00:00:00\";\n  char b[9]; sprintf(b, \"%02d:%02d:%02d\", t.tm_hour, t.tm_min, t.tm_sec);\n  return String(b);\n}\nString getDateStr() {\n  struct tm t; if (!getLocalTime(&t)) return \"1970-01-01\";\n  char b[11]; sprintf(b, \"%04d-%02d-%02d\", t.tm_year+1900, t.tm_mon+1, t.tm_mday);\n  return String(b);\n}\n\nvoid initSD() {\n  SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);\n  if (!SD.begin(SD_CS)) { Serial.println(\"SD Card Failed\"); return; }\n  if (!SD.exists(dataFile)) {\n    File f = SD.open(dataFile, FILE_WRITE);\n    if (f) { f.println(\"temp_c,temp_f,humidity,pressure,time,day\"); f.close(); }\n  }\n}\n\nvoid logData() {\n  float tC = bme.readTemperature();\n  float tF = tC * 9.0/5.0 + 32.0;\n  float h  = bme.readHumidity();\n  float p  = bme.readPressure() / 100.0F;\n  File f = SD.open(dataFile, FILE_APPEND);\n  if (f) {\n    f.printf(\"%.2f,%.2f,%.2f,%.2f,%s,%s\\n\", tC, tF, h, p,\n             getTimeStr().c_str(), getDateStr().c_str());\n    f.close();\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  Wire.begin(SDA_PIN, SCL_PIN);\n  if (!bme.begin(0x76)) { Serial.println(\"BME280 not found!\"); while(1); }\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print(\".\"); }\n  Serial.printf(\"\\nIP: %s\\n\", WiFi.localIP().toString().c_str());\n  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);\n  delay(2000);\n  initSD();\n\n  server.on(\"/\", HTTP_GET, [](AsyncWebServerRequest *req){\n    req->send(200, \"text/html; charset=UTF-8\", /* HTML con Chart.js — ver tutorial original */ \"\");\n  });\n  server.on(\"/download\", HTTP_GET, [](AsyncWebServerRequest *req){\n    req->send(SD, dataFile, \"text/csv\", true);\n  });\n  server.on(\"/delete\", HTTP_POST, [](AsyncWebServerRequest *req){\n    if (SD.exists(dataFile)) SD.remove(dataFile);\n    File f = SD.open(dataFile, FILE_WRITE);\n    if (f) { f.println(\"temp_c,temp_f,humidity,pressure,time,day\"); f.close(); }\n    req->send(200);\n  });\n  server.begin();\n}\n\nvoid loop() {\n  if (millis() - previousMillis >= interval) {\n    previousMillis = millis();\n    logData();\n  }\n  delay(10);\n}\n```\n\nReemplaza `REPLACE_WITH_YOUR_SSID` y `REPLACE_WITH_YOUR_PASSWORD` con tus credenciales y compila. El HTML con Chart.js está en el repo del tutorial original — son ~200 líneas más.\n\n### Detalle clave del código: timer no bloqueante\n\nNotar que el `loop()` **no usa `delay(60000)`**. Si lo hicieras, el ESP32 dejaría de responder a peticiones HTTP por un minuto entero entre cada lectura. La técnica de `millis() - previousMillis >= interval` permite que el servidor web siga atendiendo descargas y borrados mientras esperamos el próximo log.\n\n### Por qué la página se actualiza sola\n\nEl JavaScript embebido tiene `setInterval(loadCSVData, 30000)`: cada 30 segundos pide `/download`, parsea el CSV crudo y reemplaza el dataset de los tres gráficos. No hace WebSockets ni Server-Sent Events — solo polling, que para 1 lectura/minuto es más que suficiente y mucho más simple de mantener.\n\n## Ejecución y pruebas\n\nTras subir el código, abre el monitor serial a 115200 baud y aprieta RST. Vas a ver la IP del ESP32 (ej. `192.168.1.42`). Ábrela en el navegador desde cualquier dispositivo de la misma red Wi-Fi y vas a ver la página con tres gráficos vacíos y un mensaje \"No data logged yet\".\n\n![Primera carga sin datos](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-First-Web-Page-Load-with-no-data-Arduino-IDE.png?resize=828%2C833&quality=100&strip=all&ssl=1)\n\nA los 60 segundos aparece la primera fila en el CSV; a los 30 después (próximo `setInterval`) los gráficos se pueblan con un punto. Para acelerar pruebas, baja temporalmente `interval` a `5000` (5 segundos).\n\nLos botones de la página:\n\n- **Refresh Charts**: fuerza recarga del CSV (útil si el polling falla).\n- **Download CSV**: descarga el archivo completo al dispositivo.\n- **Delete All Data**: borra el CSV y deja solo la cabecera.\n- **Reset All Zoom**: vuelve los tres gráficos al rango completo.\n\n![Botones de control](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Arduino-IDE-Buttons.png?resize=709%2C176&quality=100&strip=all&ssl=1)\n\nEl gráfico de temperatura tiene un toggle °C/°F. Los tres soportan **zoom con rueda del mouse o pinch** en touchscreen, y arrastre para hacer pan.\n\n![Switch Celsius / Fahrenheit](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Temperature-Celsius-Fahrenheit-switch-Arduino-IDE.png?resize=790%2C494&quality=100&strip=all&ssl=1)\n\n## Variantes y mejoras\n\nTres extensiones concretas que el tutorial original no cubre:\n\n1. **Acceso desde fuera de tu red local**: el servidor solo escucha en la LAN. Si quieres ver las gráficas desde el trabajo, expón el ESP32 detrás de un túnel **Cloudflare Tunnel** gratuito o usa **ngrok**. No hagas port-forwarding directo al ESP32 — el servidor asíncrono no tiene rate-limiting y queda expuesto a escaneos.\n\n2. **Alertas por Telegram cuando la temperatura cruza un umbral**: dentro de `logData()`, después de calcular `tC`, agrega `if (tC > 30 || tC < 5) sendTelegram(tC);`. La librería **UniversalTelegramBot** funciona directo sobre ESP32 con WiFiClientSecure. Útil para monitorear una sala de servidores o el invernadero.\n\n3. **Reducir consumo para operación con batería**: cambiar el loop por `esp_deep_sleep_start()` con wake-up cada 60 segundos baja el consumo de ~80 mA a <10 µA promedio. La pega: pierdes el servidor web (al dormir el WiFi se apaga). Solución intermedia: dormir solo de noche, modo activo de día — controlable con la hora NTP que ya tienes.\n\n## Personalización para Chile\n\nTodo lo necesario en el catálogo de MechatronicStore:\n\n- **ESP32 ESP-WROOM-32 (USB-C)** (SKU X2-10V2) — $7.990 CLP\n- **Módulo datalogger microSD** (SKU G-014) — $2.500 CLP\n- **MicroSD 8GB** (SKU B-450V1) — $7.990 CLP (sirve cualquier capacidad ≥ 4 GB)\n- **Sensor de Presión Barométrica BMP180** (SKU GE1-10) — $2.490 CLP *(equivalente a BME280 para temperatura y presión; para humedad agrega un DHT22)*\n- **Sensor DHT22 humedad+temperatura** (SKU GP1-7) — $4.100 CLP *(opcional, si quieres la métrica de humedad)*\n- **Breadboard 830 puntos MB102** (SKU C-302) — $3.790 CLP\n- **Pack 40 cables macho-macho 20cm** (SKU C-411) — $1.990 CLP\n- **Cable USB-C** (SKU A-537) — $4.390 CLP\n\nTotal estimado con BMP180 (sin DHT22): **~$31.140 CLP**. El BME280 nominal del tutorial vendría siendo el equivalente de estos dos sensores combinados.\n\n## Recursos\n\n- **Tutorial original** (inglés): [ESP32 Web Server: Charts with Historical Data (load .csv file)](https://randomnerdtutorials.com/esp32-web-server-charts-historical-data/)\n- **Librería gráficos**: [Chart.js](https://www.chartjs.org/) + [chartjs-plugin-zoom](https://www.chartjs.org/chartjs-plugin-zoom/latest/)\n- **Librería servidor**: [ESPAsyncWebServer](https://github.com/ESP32Async/ESPAsyncWebServer)\n- **Documentación NTP**: [ESP32 NTP Client-Server: Get Date and Time](https://randomnerdtutorials.com/esp32-ntp-client-date-time-arduino-ide/)\n\nVersión chilena con componentes en stock local en MechatronicStore.",
+      "id": "077cc6e117a4",
+      "slug": "kit-percepcion-fisica-llm-esp32-sensores-feedback",
+      "title_es": "Kit de percepción física para un LLM con ESP32 y sensores con feedback",
+      "subtitle_es": "Construye un dispositivo que le da a un agente LLM ojos, oídos y manos: sensores ambientales, NeoPixels, motor háptico y bucles de auto-verificación.",
+      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp",
+      "body_es": "## La idea: que el modelo realmente \"sienta\" lo que pasa\n\nUn LLM corriendo en la nube es brillante leyendo texto, pero está completamente desconectado del mundo físico que rodea a su usuario. Este proyecto cierra esa brecha con un \"sidecar\" embebido: un ESP32 con micrófono, sensor ambiental, acelerómetro, sensor de luz, NeoPixels, motor de vibración y buzzer. El modelo conversa con el dispositivo por MQTT o HTTP y puede medir el entorno, expresarse en él y —lo más interesante— verificar que sus salidas efectivamente ocurrieron en la realidad física.\n\nLa propuesta original es de Olivia Zhu en su paper *A Minimal Self-Perceiving Embodiment for Large Language Models* (Zenodo, 2026). Esta versión chilena adapta el hardware al catálogo local: cambia el ESP32-S3 Reverse TFT Feather de Adafruit por un XIAO ESP32-S3 o ESP32 WROOM estándar, sustituye el micrófono PDM por un INMP441 I2S, y reemplaza el VEML7700 por un sensor BH1750 (GY-302). El código sigue siendo CircuitPython y la arquitectura de bucles de feedback es idéntica.\n\nAl terminar vas a tener un agente que puede pedir \"avísame cuando suba la temperatura sobre 25°C vibrando el motor y poniendo los LED en rojo\" y comprobar por sí mismo, con su propio micrófono y acelerómetro, que el aviso realmente sonó y vibró.\n\n![Render del kit completo armado en perma-proto con todos los sensores conectados](https://cdn-learn.adafruit.com/assets/assets/000/144/252/medium800/sensors_full_build.png?1779386051)\n\n## Tres bloques: percepción, expresión y auto-percepción\n\nLo que hace \"corporeizado\" a este agente no es la lista de sensores, es el cierre del bucle. Casi cualquier proyecto IoT puede leer un BME280 y publicar al cloud. Lo que diferencia a este kit es que cada salida está emparejada con un sensor que confirma su efecto:\n\n- El **buzzer piezo** suena → el **micrófono I2S** detecta el nivel de presión sonora.\n- Los **NeoPixels** se encienden → el **sensor de luz BH1750** registra el cambio de luminancia.\n- El **motor de vibración** pulsa → el **acelerómetro** detecta la oscilación.\n\nEsta verificación cierra el lazo. El agente no \"asume\" que su comando llegó: lo comprueba. Si manda encender NeoPixels en azul y el lux no cambia, sabe que algo falló (cable suelto, GPIO mal mapeado, sensor tapado). Eso lo distingue de un bot con sensores: está **anclado** en la realidad.\n\n### Modalidades de percepción\n\n| Magnitud | Sensor sugerido (catálogo MS) | Bus |\n|---|---|---|\n| Temperatura / humedad / presión | HTU21D (temp+hum) + BMP180 (presión) o AHT10 | I2C |\n| Nivel de sonido | Micrófono I2S INMP441 | I2S |\n| Luminancia | Módulo BH1750 GY-302 | I2C |\n| Movimiento / orientación | Acelerómetro ADXL345 GY-291 | I2C / SPI |\n| Entrada del usuario | 3 botones GPIO | digital |\n\n### Modalidades de expresión\n\n| Acción | Actuador | Bucle de verificación |\n|---|---|---|\n| Sonido | Buzzer activo 5V | Micrófono I2S |\n| Luz RGB | Anillo / módulo NeoPixel 8x5050 | Sensor de luz BH1750 |\n| Háptico | DRV2605L + motor de vibración 3.3V | Acelerómetro |\n| Visual (cara/texto) | TFT del ESP32 Feather (o display externo I2C) | — (sin loop) |\n\n## Hardware: por qué ESP32 estándar funciona igual\n\nEl tutorial original usa el ESP32-S3 Reverse TFT Feather de Adafruit porque tiene 3 botones integrados, pantalla TFT a bordo y conectores STEMMA QT para I2C plug-and-play. En Chile esa placa específica es difícil de conseguir, pero el **mismo firmware CircuitPython corre en casi cualquier ESP32-S3 o ESP32 WROOM** con dos ajustes:\n\n1. **Los botones**: en lugar de los 3 integrados, agregá 3 pulsadores táctiles a GPIOs libres con resistencias pull-up internas (`digitalio.DigitalInOut` con `Pull.UP`).\n2. **La pantalla**: si usás un ESP32 WROOM sin TFT, conectá un display OLED SSD1306 0.96\" I2C aparte. La librería `adafruit_displayio_ssd1306` reemplaza la TFT integrada sin cambios mayores en la lógica de \"caritas\".\n\nPara las conexiones I2C de los sensores, en vez de cables STEMMA QT, usá protoboard 830 puntos + jumpers macho-hembra. Funcionalmente idéntico, solo menos elegante.\n\n## Software: CircuitPython, MQTT y un mini HTTP server\n\nEl flujo es:\n\n1. Flasheá el ESP32 con CircuitPython 9.x (`esptool.py --port /dev/ttyUSB0 erase_flash` y después arrastrar el `.bin` correspondiente a tu chip).\n2. Copiá las librerías necesarias a `/lib`: `adafruit_bme280` (o `adafruit_bmp280` + `adafruit_htu21d` si combinás), `adafruit_drv2605`, `neopixel`, `adafruit_lis3dh` (o `adafruit_adxl34x` si usás el ADXL345), `adafruit_minimqtt`.\n3. Creá tu `settings.toml` con SSID, password Wi-Fi y credenciales de Adafruit IO (o tu broker MQTT preferido — Mosquitto local funciona perfecto).\n4. Subí el `code.py` del repo de Tim C ajustando los pines a tu placa.\n\n### Esqueleto del bucle principal\n\n```python\nimport board, busio, time\nimport neopixel, pwmio\nfrom adafruit_bh1750 import BH1750\nfrom adafruit_adxl34x import ADXL345\n\ni2c = busio.I2C(board.GP5, board.GP4)  # ajusta pines a tu ESP32\nlux = BH1750(i2c)\naccel = ADXL345(i2c)\npixels = neopixel.NeoPixel(board.GP2, 8, brightness=0.3)\nbuzzer = pwmio.PWMOut(board.GP3, variable_frequency=True)\n\ndef expresar_y_verificar(color, freq_hz):\n    lux_antes = lux.lux\n    pixels.fill(color)\n    buzzer.frequency = freq_hz\n    buzzer.duty_cycle = 2**15\n    time.sleep(0.5)\n    lux_despues = lux.lux\n    buzzer.duty_cycle = 0\n    return (lux_despues - lux_antes) > 50  # confirmacion fisica\n```\n\nEste patrón es el corazón del proyecto: cada vez que el agente actúa, el código reporta de vuelta un booleano de \"sí, lo percibí\". El LLM remoto recibe ese ACK y entiende que el comando aterrizó.\n\n## Variantes y mejoras\n\n- **Modo offline con LLM local**: en vez de Adafruit IO, puedes correr un Ollama con `llama3.2:3b` en una Raspberry Pi 4 dentro de la misma red y exponerlo por HTTP. El ESP32 hace POST con las lecturas de sensores cada N segundos y el modelo decide qué actuador disparar. Cero cuenta cloud.\n- **Reemplazar el motor háptico por un servo SG90**: si lo háptico te queda largo, un servo barato puede mover una \"banderita\" física que el acelerómetro detecta igual. Más visual, más barato y mismo bucle de auto-verificación.\n- **Agregar Claude vía API**: el watcher MQTT puede llamar a la API de Anthropic con `claude-haiku-4-5-20251001` (rápido y económico) pasándole las lecturas de sensores como tool inputs y dejando que decida acciones. El prompt caching reduce el costo a ~$0.01 USD por hora de operación continua.\n- **Logging local en microSD**: agregando un módulo microSD SPI puedes guardar todas las lecturas + decisiones del agente, útil para debug o para entrenar fine-tunes después.\n\n## Personalización para Chile\n\nLista de componentes equivalentes en stock en MechatronicStore:\n\n- **Seeed Studio XIAO ESP32-S3** (SKU GS1-3) — $13.670 CLP. Reemplazo directo del ESP32-S3 Feather: dual core, Wi-Fi, BLE, USB-C nativo.\n- **ESP32 WROOM-32 USB-C** (SKU X2-10V2) — $7.990 CLP. Alternativa más barata si no necesitas los periféricos extra del S3.\n- **Módulo Sensor de Temperatura y Humedad HTU21D** (SKU GE2-6) — $4.490 CLP. Cubre temperatura y humedad del BME280.\n- **Sensor de Presión Barométrica BMP180 GY-68** (SKU GE1-10) — $2.490 CLP. Completa la parte de presión.\n- **Módulo Micrófono I2S INMP441** (SKU GL3-12) — $5.890 CLP. Equivalente funcional del PDM mic de Adafruit (también MEMS, bus distinto pero compatible).\n- **Módulo RGB LED 8 bits 5050 WS2812** (SKU GN3-11) — $1.990 CLP. NeoPixel stick clónico al precio justo.\n- **Controlador Háptico Gravity DRV2605L** (SKU GL2-6) — $10.650 CLP. Es el mismo chip DRV2605 del original.\n- **Motor de vibración 3.3V** (SKU GB3-6V2) — $2.490 CLP. El \"haptic motor\" que va al DRV2605L.\n- **Acelerómetro ADXL345 GY-291** (SKU GN3-4) — $3.490 CLP. Reemplazo del LIS3DH; mismo bus I2C, similar rango ±2g/4g/8g/16g.\n- **Módulo Sensor de Intensidad Luminosa BH1750 GY-302** (SKU GN1-6) — $3.990 CLP. Sustituto del VEML7700, sensor lux I2C estándar.\n- **Buzzer activo 5V** (SKU GA3-2) — $500 CLP.\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP. Sustituye la Perma-Proto half-size de Adafruit; ideal para prototipar antes de soldar.\n- **Pack 12 filas Pin Header Macho 40 pines 2.54mm** (SKU E-101) — $3.990 CLP.\n- **Cables macho-hembra 30cm** (SKU C-418) — $1.990 CLP. Para las conexiones I2C entre módulos.\n- **Cable USB Tipo C a USB Tipo A 1mt** (SKU B-101) — $2.190 CLP. Para flashear y alimentar el ESP32-S3.\n\n**Costo total aproximado: $65.920 CLP** (versus ~USD $80-100 + envío internacional armando con las piezas exactas de Adafruit).\n\n## Recursos\n\n- **Tutorial original** (inglés): [LLM Agent Embodiment Kit — Adafruit Learning System](https://learn.adafruit.com/llm-agent-embodiment-kit)\n- **Paper de referencia**: *A Minimal Self-Perceiving Embodiment for Large Language Models* — Olivia Zhu (Zenodo, 2026)\n- **PDF descargable del original**: [llm-agent-embodiment-kit.pdf](https://cdn-learn.adafruit.com/downloads/pdf/llm-agent-embodiment-kit.pdf)\n- **Librerías CircuitPython**: [circuitpython.org/libraries](https://circuitpython.org/libraries) (bundle oficial)\n\nVersión chilena inspirada en el trabajo de Tim C, con componentes equivalentes en stock local en MechatronicStore.\n",
       "materials_list": [
-        {
-          "name": "ESP32 DevKit (WROOM-32)",
-          "qty": 1,
-          "role": "core"
-        },
-        {
-          "name": "Módulo microSD SPI",
-          "qty": 1,
-          "role": "almacenamiento"
-        },
-        {
-          "name": "Tarjeta microSD 8GB",
-          "qty": 1,
-          "role": "almacenamiento"
-        },
-        {
-          "name": "Sensor BMP180 (equivalente a BME280)",
-          "qty": 1,
-          "role": "sensor"
-        },
-        {
-          "name": "Sensor DHT22 humedad",
-          "qty": 1,
-          "role": "sensor opcional"
-        },
-        {
-          "name": "Protoboard 830 puntos",
-          "qty": 1,
-          "role": "prototipado"
-        },
-        {
-          "name": "Cables jumpers macho-macho 20cm",
-          "qty": 1,
-          "role": "conexiones"
-        },
-        {
-          "name": "Cable USB-C",
-          "qty": 1,
-          "role": "alimentación"
-        }
+        {"name": "Placa ESP32-S3 (XIAO o equivalente)", "qty": 1, "role": "core"},
+        {"name": "Sensor de temperatura y humedad HTU21D", "qty": 1, "role": "sensor ambiental"},
+        {"name": "Sensor de presión barométrica BMP180", "qty": 1, "role": "sensor ambiental"},
+        {"name": "Módulo Micrófono I2S INMP441", "qty": 1, "role": "captura de sonido"},
+        {"name": "Módulo NeoPixel 8 LEDs WS2812 5050", "qty": 1, "role": "expresión visual"},
+        {"name": "Controlador háptico DRV2605L", "qty": 1, "role": "driver motor"},
+        {"name": "Motor de vibración 3.3V", "qty": 1, "role": "actuador háptico"},
+        {"name": "Acelerómetro ADXL345 GY-291", "qty": 1, "role": "verificación háptica"},
+        {"name": "Sensor de luz BH1750 GY-302", "qty": 1, "role": "verificación visual"},
+        {"name": "Buzzer activo 5V", "qty": 1, "role": "expresión sonora"},
+        {"name": "Protoboard 830 puntos MB102", "qty": 1, "role": "prototipado"},
+        {"name": "Pack Pin Header Macho 40 pines 2.54mm", "qty": 1, "role": "conectores"},
+        {"name": "Cables Dupont macho-hembra 30cm", "qty": 1, "role": "cableado I2C"},
+        {"name": "Cable USB-C a USB-A 1m", "qty": 1, "role": "alimentación y datos"}
       ],
       "steps": [
-        {
-          "position": 1,
-          "name": "Conectar BME280/BMP180 al ESP32 por I²C",
-          "text": "Une SDA a GPIO21 y SCL a GPIO22, alimentación 3.3V/GND.",
-          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Arduino-IDE-Wiring-Circuit-Diagram-BME280-MicroSD-Card.png?resize=800%2C797&quality=100&strip=all&ssl=1"
-        },
-        {
-          "position": 2,
-          "name": "Conectar módulo microSD por SPI",
-          "text": "CS=GPIO5, MOSI=GPIO23, CLK=GPIO18, MISO=GPIO19. Formatea la tarjeta en FAT32.",
-          "image_url": null
-        },
-        {
-          "position": 3,
-          "name": "Instalar librerías en Arduino IDE",
-          "text": "ESPAsyncWebServer, AsyncTCP, Adafruit BME280, Adafruit Unified Sensor.",
-          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2024/06/Install-ESPAsyncWebServer-Library-ArduinoIDE-2-f.png?resize=666%2C586&quality=100&strip=all&ssl=1"
-        },
-        {
-          "position": 4,
-          "name": "Cargar el sketch con credenciales WiFi",
-          "text": "Reemplaza SSID y password, ajusta gmtOffset_sec a UTC-4 (Chile), sube al ESP32.",
-          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Start-Arduino-IDE-Serial-Monitor.png?resize=818%2C204&quality=100&strip=all&ssl=1"
-        },
-        {
-          "position": 5,
-          "name": "Acceder al servidor desde el navegador",
-          "text": "Abre la IP que reporta el monitor serial en cualquier navegador de tu red.",
-          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-First-Web-Page-Load-with-no-data-Arduino-IDE.png?resize=828%2C833&quality=100&strip=all&ssl=1"
-        },
-        {
-          "position": 6,
-          "name": "Validar gráficos y descarga de CSV",
-          "text": "Espera 2-3 lecturas (1-3 minutos) y prueba zoom, descarga y borrado del CSV.",
-          "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/ESP32-Chart-Web-Server-Temperature-Celsius-Fahrenheit-switch-Arduino-IDE.png?resize=790%2C494&quality=100&strip=all&ssl=1"
-        }
+        {"position": 1, "name": "Flashear CircuitPython 9.x en el ESP32-S3", "text": "Conecta la placa por USB-C y corre esptool.py --port <PUERTO> erase_flash, luego arrastra el binario CircuitPython para tu chip al drive RPI-RP2 / CIRCUITPY. Verifica que aparezca el REPL en el monitor serial.", "image_url": null},
+        {"position": 2, "name": "Cablear los módulos I2C al protoboard", "text": "En el protoboard 830 puntos comparte líneas de 3.3V y GND, luego conecta SDA/SCL de cada módulo (HTU21D, BMP180, BH1750, ADXL345, DRV2605L) al bus I2C del ESP32. Cables macho-hembra suficientes para todo.", "image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/252/medium800/sensors_full_build.png?1779386051"},
+        {"position": 3, "name": "Conectar actuadores: NeoPixels, buzzer y motor", "text": "NeoPixels van a un GPIO con resistencia 330Ω en serie a la línea DIN. El buzzer activo a otro GPIO con PWM. El motor de vibración se conecta a la salida del DRV2605L (no directo a un GPIO, el driver maneja el efecto).", "image_url": null},
+        {"position": 4, "name": "Copiar librerías y settings.toml", "text": "Descarga el bundle oficial de circuitpython.org/libraries y copia a /lib las librerías de cada sensor más adafruit_minimqtt. Crea settings.toml con CIRCUITPY_WIFI_SSID, CIRCUITPY_WIFI_PASSWORD y AIO_USERNAME / AIO_KEY (o el broker MQTT que prefieras).", "image_url": null},
+        {"position": 5, "name": "Probar cada sensor en aislamiento", "text": "Antes de orquestar todo, haz un script mínimo por sensor que imprima al serial sus lecturas. Si algún módulo no responde, revisa direcciones I2C con i2c.scan().", "image_url": null},
+        {"position": 6, "name": "Integrar los bucles de auto-verificación", "text": "Implementa la función expresar_y_verificar(color, freq_hz) del ejemplo: mide lux antes/después de encender NeoPixels y devuelve True si el delta es significativo. Replica el patrón para buzzer↔micrófono y motor↔acelerómetro.", "image_url": null},
+        {"position": 7, "name": "Conectar con el agente LLM", "text": "El ESP32 publica lecturas en feeds MQTT (env/temp, env/lux, env/sound) y se suscribe a comandos (cmd/neopixels, cmd/haptic, cmd/buzzer). El cliente LLM (script Python con anthropic SDK o el broker de Adafruit IO) lee y responde con acciones.", "image_url": null}
       ],
       "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Sketch principal — data logger ESP32 con BME280 y servidor web",
-          "code": "#include <WiFi.h>\n#include <ESPAsyncWebServer.h>\n#include <AsyncTCP.h>\n#include <Adafruit_Sensor.h>\n#include <Adafruit_BME280.h>\n#include <SD.h>\n#include <SPI.h>\n#include <time.h>\n\nconst char* ssid     = \"REPLACE_WITH_YOUR_SSID\";\nconst char* password = \"REPLACE_WITH_YOUR_PASSWORD\";\n\n#define SDA_PIN 21\n#define SCL_PIN 22\n#define SD_CS   5\n#define SD_MOSI 23\n#define SD_MISO 19\n#define SD_SCK  18\n\nconst char* ntpServer = \"pool.ntp.org\";\nconst long gmtOffset_sec = -4 * 3600;\nunsigned long previousMillis = 0;\nconst long interval = 60000;\nconst char* dataFile = \"/bme280_log.csv\";\n\nAsyncWebServer server(80);\nAdafruit_BME280 bme;\n\nvoid logData() {\n  float tC = bme.readTemperature();\n  float tF = tC * 9.0/5.0 + 32.0;\n  float h  = bme.readHumidity();\n  float p  = bme.readPressure() / 100.0F;\n  File f = SD.open(dataFile, FILE_APPEND);\n  if (f) { f.printf(\"%.2f,%.2f,%.2f,%.2f\\n\", tC, tF, h, p); f.close(); }\n}\n\nvoid loop() {\n  if (millis() - previousMillis >= interval) {\n    previousMillis = millis();\n    logData();\n  }\n  delay(10);\n}"
-        }
+        {"lang": "python", "caption": "Bucle de expresión y auto-verificación visual con NeoPixels y BH1750", "code": "import board, busio, time\nimport neopixel, pwmio\nfrom adafruit_bh1750 import BH1750\nfrom adafruit_adxl34x import ADXL345\n\ni2c = busio.I2C(board.GP5, board.GP4)\nlux = BH1750(i2c)\naccel = ADXL345(i2c)\npixels = neopixel.NeoPixel(board.GP2, 8, brightness=0.3)\nbuzzer = pwmio.PWMOut(board.GP3, variable_frequency=True)\n\ndef expresar_y_verificar(color, freq_hz):\n    lux_antes = lux.lux\n    pixels.fill(color)\n    buzzer.frequency = freq_hz\n    buzzer.duty_cycle = 2**15\n    time.sleep(0.5)\n    lux_despues = lux.lux\n    buzzer.duty_cycle = 0\n    return (lux_despues - lux_antes) > 50"},
+        {"lang": "python", "caption": "Reproducción de escala musical con buzzer piezo", "code": "import time, board, pwmio\n\nTONE_FREQ = [262, 294, 330, 349, 392, 440, 494]\nbuzzer = pwmio.PWMOut(board.D5, variable_frequency=True)\nbuzzer.duty_cycle = 2**15\n\nwhile True:\n    for f in TONE_FREQ:\n        buzzer.frequency = f\n        time.sleep(0.5)\n    for f in reversed(TONE_FREQ):\n        buzzer.frequency = f\n        time.sleep(0.5)"}
       ],
       "linked_products": [
         {
-          "name_original": "ESP32 DevKit (WROOM-32)",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=X2-10V2&attribute_entrada=Tipo+C",
-          "price_clp": 7990,
+          "name_original": "Placa ESP32-S3 XIAO",
+          "product_id": "GS1-3",
+          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GS1-3",
+          "price_clp": 13670,
           "stock_available": true,
-          "match_score": 0.88
+          "match_score": 0.82
         },
         {
-          "name_original": "Módulo microSD SPI",
-          "product_id": "G-014",
-          "product_url": "https://www.mechatronicstore.cl/modulo-datalogger-para-tarjeta-de-memoria-microsd/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=G-014",
-          "price_clp": 2500,
-          "stock_available": true,
-          "match_score": 0.94
-        },
-        {
-          "name_original": "Tarjeta microSD 8GB",
-          "product_id": "B-450V1",
-          "product_url": "https://www.mechatronicstore.cl/micro-sd-tarjeta-de-memoria-32gb-marca-kingston-clase-10/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=B-450V1&attribute_memoria=8gb",
-          "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Sensor BMP180 (equivalente a BME280)",
-          "product_id": "GE1-10",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-presion-barometrica-bmp180-digital-gy-68/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=GE1-10",
-          "price_clp": 2490,
-          "stock_available": true,
-          "match_score": 0.72
-        },
-        {
-          "name_original": "Sensor DHT22 humedad",
-          "product_id": "GP1-7",
-          "product_url": "https://www.mechatronicstore.cl/sensor-temperatura-humedad-relativa-dht22/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=GP1-7",
-          "price_clp": 4100,
+          "name_original": "Sensor de temperatura y humedad HTU21D",
+          "product_id": "GE2-6",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-temperatura-y-humedad-htu21d/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GE2-6",
+          "price_clp": 4490,
           "stock_available": true,
           "match_score": 0.78
         },
         {
-          "name_original": "Protoboard 830 puntos",
-          "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=C-302",
-          "price_clp": 3790,
+          "name_original": "Sensor de presión barométrica BMP180",
+          "product_id": "GE1-10",
+          "product_url": "https://www.mechatronicstore.cl/sensor-de-presion-barometrica-bmp180-digital-gy-68/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GE1-10",
+          "price_clp": 2490,
           "stock_available": true,
-          "match_score": 0.95
+          "match_score": 0.75
         },
         {
-          "name_original": "Cables jumpers macho-macho 20cm",
-          "product_id": "C-411",
-          "product_url": "https://www.mechatronicstore.cl/cable-macho-macho-40-piezas-20cm/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=C-411",
+          "name_original": "Módulo Micrófono I2S INMP441",
+          "product_id": "GL3-12",
+          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GL3-12",
+          "price_clp": 5890,
+          "stock_available": true,
+          "match_score": 0.80
+        },
+        {
+          "name_original": "Módulo NeoPixel 8 LEDs RGB WS2812 5050",
+          "product_id": "GN3-11",
+          "product_url": "https://www.mechatronicstore.cl/modulo-rgb-led-de-8-bits-5050/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GN3-11",
           "price_clp": 1990,
-          "stock_available": true,
-          "match_score": 0.9
-        },
-        {
-          "name_original": "Cable USB-C",
-          "product_id": "A-537",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-c-a-usb-a-ogt/?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-data-logger-web-graficos-bme280-microsd&utm_content=A-537",
-          "price_clp": 4390,
-          "stock_available": true,
-          "match_score": 0.82
-        }
-      ],
-      "github_url": null,
-      "download_urls": [
-        {
-          "label": "Tutorial original con código HTML/CSS completo",
-          "url": "https://randomnerdtutorials.com/esp32-web-server-charts-historical-data/",
-          "kind": "page"
-        }
-      ],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 90,
-      "estimated_cost_clp": 35240,
-      "tags": [
-        "esp32",
-        "bme280",
-        "microsd",
-        "datalogger",
-        "webserver",
-        "chartjs"
-      ],
-      "source_language": "en",
-      "re_angulation_applied": "primera persona narrativa → guía instructiva en bloques temáticos (Concepto → Hardware → Software → Pruebas → Variantes), agregado de equivalencia BME280→BMP180+DHT22 para catálogo Chile, sección Variantes con Cloudflare Tunnel/Telegram/deep sleep no presente en original, explicación técnica añadida sobre timer no bloqueante y polling vs WebSockets",
-      "editorial_checklist": {
-        "title_distinct": true,
-        "has_unique_section": true,
-        "has_downloadable": true,
-        "body_word_ratio": 1.25,
-        "tone_or_structure_changed": true
-      },
-      "editorial_quality_warning": false
-    },
-    {
-      "id": "ca35c83050a0",
-      "slug": "reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231",
-      "title_es": "Reloj con Arduino y 6 displays de 7 segmentos multiplexados + RTC DS3231",
-      "subtitle_es": "Aprende multiplexado de displays, interrupciones por timer y manejo de DS3231 en un proyecto físico que enseña más que cualquier OLED.",
-      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp",
-      "body_es": "## ¿Por qué armar un reloj con 6 displays cuando hay módulos OLED de $2.000?\n\nHacer un reloj digital es uno de esos proyectos que parecen obsoletos hasta que entiendes lo que hay debajo. Un módulo OLED te resuelve la pantalla en 4 cables y dos líneas de código, pero esconde todo lo interesante: multiplexado, manejo de interrupciones, control directo de pines, y debugging real cuando algo no enciende. Este tutorial te lleva por el camino largo a propósito — al final vas a tener un reloj con presencia física (6 dígitos brillantes en rojo) y un dominio sólido de técnicas que sirven para mucho más que mostrar la hora.\n\nEl proyecto controla **6 displays de 7 segmentos de cátodo común** multiplexados por software, con un **módulo RTC DS3231** como base de tiempo (mantiene la hora con batería incluso desconectado), y dos botones para ajustar fecha y hora. Está basado en el proyecto publicado por Geek Factory, re-orientado a componentes del stock chileno y con explicaciones extras sobre la técnica de multiplexado.\n\n![Reloj armado con 6 displays multiplexados](https://www.geekfactory.mx/wp-content/uploads/proyecto-de-reloj-digital-con-arduino-y-displays-de-7-segmentos-portada-1080x675.webp)\n\n## Concepto clave: ¿qué significa \"multiplexar\"?\n\nUn display de 7 segmentos necesita 8 pines de control (7 segmentos + punto). Si quisieras prender 6 displays independientes necesitarías **48 pines** — imposible en un Arduino Nano que tiene apenas 22 GPIO útiles. La solución: **multiplexar**.\n\nLa idea es conectar los 7 segmentos de los 6 displays **en paralelo** (todos los \"A\" juntos, todos los \"B\" juntos, etc.), y agregar un transistor por display que controla qué cátodo común se conecta a tierra en cada instante. Si enciendes los dígitos uno a la vez a más de **50 Hz**, el ojo humano los percibe como si estuvieran todos encendidos simultáneamente — el mismo principio que usa una TV para mostrar fotogramas.\n\nResultado: con **7 pines para segmentos + 6 pines para selección de dígito = 13 pines** controlas los 6 displays. Cabe holgado en cualquier Arduino.\n\n## Hardware: lista de componentes y por qué cada uno\n\n| Componente | Cantidad | Para qué sirve |\n|------------|----------|----------------|\n| Arduino Nano | 1 | Controlador principal |\n| Módulo RTC DS3231 | 1 | Base de tiempo (≤2 min/año de deriva) |\n| Display 7 segmentos cátodo común | 6 | Mostrar dígitos |\n| Transistor 2N2222 NPN | 6 | Switching del cátodo de cada display |\n| Resistencia 1 kΩ | 6 | Base del transistor (limitar corriente desde Arduino) |\n| Resistencia 220 Ω (o 120 Ω) | 7 | En serie con cada segmento (limitar corriente del LED) |\n| Pushbutton 4 pines | 2 | Botones SET y UP |\n| Protoboard 830 puntos | 2 | Espacio para todos los cables |\n| Cables macho-macho | 1 pack | Conexiones |\n\n**Nota chilena**: en el catálogo MS están las **resistencias de 220 Ω** (no 120 Ω). La diferencia es marginal — con 220 Ω los displays se ven un ~30% menos brillantes pero protege más al Arduino. Si quieres brillo máximo y tienes pulso firme, podés combinar dos 220 Ω en paralelo para obtener ~110 Ω.\n\n### Mapa de pines\n\n| Pin Arduino | Función |\n|-------------|---------|\n| D2 | Interrupción 1Hz desde DS3231 (SQW) |\n| D3 | Botón SET |\n| D4 | Botón UP |\n| D5 - D11 | Segmentos A, B, C, D, E, F, G |\n| D12, D13 | Habilitación dígitos 1 y 2 |\n| A0 - A3 | Habilitación dígitos 3, 4, 5, 6 |\n| A4 (SDA) | I²C datos hacia DS3231 |\n| A5 (SCL) | I²C reloj hacia DS3231 |\n\n## Software: librerías y patrón de diseño\n\nEl tutorial original usa cuatro librerías de la familia Geek Factory:\n\n- `GFDisplay7S` — abstracción para displays multiplexados\n- `GFButton` — debouncing de botones con detección de pulsación corta y larga\n- `GFRTC` — wrapper de DS3231 con interrupción de 1 Hz\n- `TimerOne` — interrupciones por timer para refrescar el display sin bloquear `loop()`\n\nHay un patrón importante aquí que vale la pena entender: **el refresco del display NO está en `loop()`**. Si lo pusieras ahí, cualquier `delay()` o instrucción lenta haría parpadear los dígitos. En lugar de eso, `Timer1.attachInterrupt(interrupt_display_refresh)` corre la función de refresco cada 3 ms (333 Hz, muy por encima del umbral perceptible), liberando el `loop()` para manejar botones y leer el RTC.\n\nEl **DS3231 genera además una señal cuadrada de 1 Hz** por el pin SQW, que se conecta a la interrupción externa D2. Cada flanco de bajada (una vez por segundo) levanta un flag, y `loop()` solo lee el RTC cuando ese flag está activo — así no martillamos el I²C constantemente.\n\n```cpp\n#include \"GFDisplay7S.h\"\n#include \"GFButton.h\"\n#include \"GFRTC.h\"\n#include \"TimerOne.h\"\n\nGFButton setButton(3);\nGFButton upButton(4);\nGFDisplay7S display(\n  (const uint8_t[]){ 5, 6, 7, 8, 9, 10, 11, 0xFF },   // segmentos A-G\n  (const uint8_t[]){ 12, 13, A0, A1, A2, A3 },         // selección de dígitos\n  6\n);\n\nenum clock_modes { E_CLOCK_MODE_RUN = 0, E_CLOCK_MODE_ADJ };\nenum clock_modes mode = E_CLOCK_MODE_RUN;\nstruct timelib_tm datetime;\nvolatile bool rtcflag = false;\n\nvoid setup() {\n  display.begin();\n  Timer1.initialize(3000);   // 333 Hz refresh\n  Timer1.attachInterrupt(interrupt_display_refresh);\n\n  GFRTC.begin(true);\n  if (!GFRTC.isPresent()) { display.print(\"E1\"); for(;;); }\n  GFRTC.setIntSqwMode(E_SQRWAVE_1_HZ);\n\n  pinMode(2, INPUT);\n  attachInterrupt(digitalPinToInterrupt(2), interrupt_rtc, FALLING);\n}\n\nvoid loop() {\n  switch (mode) {\n    case E_CLOCK_MODE_RUN:\n      if (setButton.wasLongPress()) {            // 5 s pulsado → entra ajuste\n        setButton.wasPressed();\n        mode = E_CLOCK_MODE_ADJ;\n        break;\n      }\n      if (rtcflag) {                              // 1 Hz desde DS3231\n        rtcflag = false;\n        if (GFRTC.read(datetime))\n          upButton.isPressed() ? clock_show_date() : clock_show_time();\n      }\n      break;\n    case E_CLOCK_MODE_ADJ:\n      // ... lógica de ajuste con SET para cambiar variable y UP para incrementar\n      break;\n  }\n}\n\nvoid interrupt_display_refresh() { display.process(); }\nvoid interrupt_rtc() { rtcflag = true; }\n```\n\nEl código completo (~150 líneas) está en el repositorio del autor original — link al final.\n\n## Cómo se usa el reloj\n\nUna vez cargado el sketch:\n\n- **Modo normal**: muestra HH:MM:SS. Mantén apretado **UP** para ver fecha (DD-MM-YY) mientras lo tengas pulsado.\n- **Entrar a ajuste**: mantén **SET pulsado 5 segundos**. Empiezan a parpadear los dígitos de horas.\n- **Ajustar**: con **UP** incrementas el valor. **SET** corto pasa al siguiente campo (minutos → segundos → día → mes → año).\n- **Guardar y salir**: **SET pulsado 5 segundos** nuevamente. Vuelve a modo normal con la nueva hora guardada en el DS3231.\n\nSi el RTC no se comunica al arranque (cableado mal o módulo malo), el display muestra **\"E1\"** y se cuelga. Es un buen ejemplo de **fail-fast**: mejor avisar inmediatamente que correr con basura.\n\n## Variantes y mejoras\n\nTres formas concretas de extender el proyecto que el tutorial original no plantea:\n\n1. **Cambiar a displays de ánodo común**: si compras displays **D-207** (ánodo común, mucho más stock en MS), reemplaza los **2N2222 NPN** por **transistores PNP 2N2907** y reconecta el cátodo a GND fijo + ánodo común al colector del PNP que va a VCC. La lógica del software se invierte (HIGH apaga, LOW prende), eso lo manejas con un define en la librería.\n\n2. **Brillo regulable según hora**: agregar un **LDR (fotorresistencia)** en A6 y leerlo cada minuto. Si la luz ambiente baja (de noche), reduce el duty cycle del refresco — en vez de prender cada dígito por 3 ms de cada 18 ms, hacelo por 1 ms. Resultado: reloj que no enceguece a las 3 AM.\n\n3. **Sincronización por WiFi**: reemplaza el Arduino Nano por un **ESP8266 NodeMCU** o **ESP32** (los segmentos van igual a los GPIO). Una vez por día, sincroniza el DS3231 contra **pool.ntp.org** y el reloj nunca más atrasa. El DS3231 queda como backup para cuando se corta el WiFi.\n\n## Personalización para Chile\n\nTodos los componentes en MechatronicStore (precios mayo 2026):\n\n- **Arduino Nano V3 CH340 + cable** (SKU N-302) — $4.490 CLP\n- **Módulo Reloj RTC DS3231** (SKU G-101V2) — $6.490 CLP\n- **Display 7 segmentos cátodo común 0.56\"** (SKU D-208) — $490 CLP × 6 = $2.940 CLP\n- **Transistor 2N2222 NPN** (SKU GA4-6) — $200 CLP × 6 = $1.200 CLP\n- **Resistencia 1 kΩ 1/4W** (SKU GK3-17) — $100 CLP × 6 = $600 CLP\n- **Resistencia 220 Ω 1/4W** (SKU GK1-18) — $100 CLP × 7 = $700 CLP *(el original usa 120 Ω, que no está en stock; con 220 Ω brilla algo menos pero protege más)*\n- **Breadboard 830 puntos MB102** (SKU C-302) — $3.790 CLP × 2 = $7.580 CLP\n- **Botón pulsador 4 pines 6×6×4.3mm** (SKU GA1-3) — $290 CLP × 2 = $580 CLP\n- **Pack 65 cables macho-macho** (SKU C-280) — $3.490 CLP\n\nEquivalencia: el tutorial original usa **Arduino Nano Every** (variante con ATMega4809). El **Nano V3 con ATmega328P** funciona idéntico para este proyecto — la diferencia entre ambas placas solo importa con código que use periféricos avanzados del 4809.\n\nTotal estimado: **~$28.150 CLP** para armar el reloj completo desde cero.\n\n## Recursos\n\n- **Proyecto original** (español, México): [Reloj digital con Arduino y displays de 7 segmentos — Geek Factory](https://www.geekfactory.mx/proyectos-de-electronica/proyecto-de-reloj-digital-con-arduino-y-displays-de-7-segmentos/)\n- **Repositorio del autor con librerías GFDisplay7S, GFButton, GFRTC y código del reloj**: enlace en la sección \"Lecturas recomendadas\" del proyecto original\n- **Librería TimerOne**: [PaulStoffregen/TimerOne](https://github.com/PaulStoffregen/TimerOne)\n- **Datasheet DS3231**: [Maxim DS3231](https://datasheets.maximintegrated.com/en/ds/DS3231.pdf)\n\nVersión chilena con componentes en stock local en MechatronicStore — inspirada en el proyecto de Geek Factory.",
-      "materials_list": [
-        {
-          "name": "Arduino Nano V3 (alternativa a Nano Every)",
-          "qty": 1,
-          "role": "core"
-        },
-        {
-          "name": "Módulo RTC DS3231",
-          "qty": 1,
-          "role": "base de tiempo"
-        },
-        {
-          "name": "Display 7 segmentos cátodo común 0.56",
-          "qty": 6,
-          "role": "visualización"
-        },
-        {
-          "name": "Transistor 2N2222 NPN",
-          "qty": 6,
-          "role": "switching cátodo"
-        },
-        {
-          "name": "Resistencia 1kΩ 1/4W",
-          "qty": 6,
-          "role": "limitación base transistor"
-        },
-        {
-          "name": "Resistencia 220Ω 1/4W",
-          "qty": 7,
-          "role": "limitación corriente segmentos"
-        },
-        {
-          "name": "Pushbutton 4 pines 6x6mm",
-          "qty": 2,
-          "role": "ajuste hora"
-        },
-        {
-          "name": "Protoboard 830 puntos",
-          "qty": 2,
-          "role": "prototipado"
-        },
-        {
-          "name": "Pack cables macho-macho",
-          "qty": 1,
-          "role": "conexiones"
-        }
-      ],
-      "steps": [
-        {
-          "position": 1,
-          "name": "Conectar segmentos de los 6 displays en paralelo",
-          "text": "Une todos los A entre sí, todos los B entre sí, etc. Cada bus de segmento va por una resistencia de 220 Ω a un pin del Arduino (D5–D11).",
-          "image_url": "https://www.geekfactory.mx/wp-content/uploads/diagrama-esquematico-reloj-con-displays-7-segmentos-arduino-nano-1-1024x499.png.webp"
-        },
-        {
-          "position": 2,
-          "name": "Conectar cátodo común vía transistor 2N2222",
-          "text": "El cátodo de cada display va al colector de un 2N2222; emisor a GND; base por resistencia 1 kΩ al pin de selección (D12, D13, A0–A3).",
-          "image_url": null
-        },
-        {
-          "position": 3,
-          "name": "Conectar DS3231 por I²C y SQW",
-          "text": "SDA→A4, SCL→A5, VCC→5V, GND→GND, SQW→D2. El SQW genera el pulso de 1 Hz que dispara la interrupción.",
-          "image_url": null
-        },
-        {
-          "position": 4,
-          "name": "Conectar botones SET y UP",
-          "text": "Pulsadores entre D3/D4 y GND, con pull-up interno habilitado por la librería GFButton.",
-          "image_url": null
-        },
-        {
-          "position": 5,
-          "name": "Instalar librerías y subir el sketch",
-          "text": "Instalá GFDisplay7S, GFButton, GFRTC y TimerOne desde el repo del autor, compilá y cargá al Arduino Nano.",
-          "image_url": null
-        },
-        {
-          "position": 6,
-          "name": "Ajustar la hora con SET y UP",
-          "text": "Mantén SET 5 s para entrar a ajuste; UP incrementa, SET corto pasa al siguiente campo; SET 5 s para guardar.",
-          "image_url": null
-        }
-      ],
-      "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "Setup del reloj con timer + interrupción 1Hz desde DS3231",
-          "code": "#include \"GFDisplay7S.h\"\n#include \"GFButton.h\"\n#include \"GFRTC.h\"\n#include \"TimerOne.h\"\n\nGFButton setButton(3);\nGFButton upButton(4);\nGFDisplay7S display(\n  (const uint8_t[]){ 5, 6, 7, 8, 9, 10, 11, 0xFF },\n  (const uint8_t[]){ 12, 13, A0, A1, A2, A3 },\n  6\n);\n\nvolatile bool rtcflag = false;\nstruct timelib_tm datetime;\n\nvoid setup() {\n  display.begin();\n  Timer1.initialize(3000);   // refresco 333 Hz\n  Timer1.attachInterrupt(interrupt_display_refresh);\n  GFRTC.begin(true);\n  if (!GFRTC.isPresent()) { display.print(\"E1\"); for(;;); }\n  GFRTC.setIntSqwMode(E_SQRWAVE_1_HZ);\n  pinMode(2, INPUT);\n  attachInterrupt(digitalPinToInterrupt(2), interrupt_rtc, FALLING);\n}\n\nvoid interrupt_display_refresh() { display.process(); }\nvoid interrupt_rtc() { rtcflag = true; }"
-        }
-      ],
-      "linked_products": [
-        {
-          "name_original": "Arduino Nano V3 (alternativa a Nano Every)",
-          "product_id": "N-302",
-          "product_url": "https://www.mechatronicstore.cl/arduino-nano-v3-0-atmega328-cable/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=N-302",
-          "price_clp": 4490,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Módulo RTC DS3231",
-          "product_id": "G-101V2",
-          "product_url": "https://www.mechatronicstore.cl/modulo-reloj-rtc-ds3231/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=G-101V2",
-          "price_clp": 6490,
-          "stock_available": true,
-          "match_score": 0.97
-        },
-        {
-          "name_original": "Display 7 segmentos cátodo común 0.56",
-          "product_id": "D-208",
-          "product_url": "https://www.mechatronicstore.cl/7-segmentos-de-1-digito/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=D-208",
-          "price_clp": 490,
           "stock_available": true,
           "match_score": 0.92
         },
         {
-          "name_original": "Transistor 2N2222 NPN",
-          "product_id": "GA4-6",
-          "product_url": "https://www.mechatronicstore.cl/transistor-2n2222/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=GA4-6",
-          "price_clp": 200,
-          "stock_available": true,
-          "match_score": 0.96
-        },
-        {
-          "name_original": "Resistencia 1kΩ 1/4W",
-          "product_id": "GK3-17",
-          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=GK3-17&attribute_valores=1k%CE%A9",
-          "price_clp": 100,
-          "stock_available": true,
-          "match_score": 0.93
-        },
-        {
-          "name_original": "Resistencia 220Ω 1/4W",
-          "product_id": "GK1-18",
-          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=GK1-18&attribute_valores=220%CE%A9",
-          "price_clp": 100,
-          "stock_available": true,
-          "match_score": 0.9
-        },
-        {
-          "name_original": "Pushbutton 4 pines 6x6mm",
-          "product_id": "GA1-3",
-          "product_url": "https://www.mechatronicstore.cl/push-button-4-pines/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=GA1-3",
-          "price_clp": 290,
-          "stock_available": true,
-          "match_score": 0.86
-        },
-        {
-          "name_original": "Protoboard 830 puntos",
-          "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=C-302",
-          "price_clp": 3790,
+          "name_original": "Controlador háptico DRV2605L",
+          "product_id": "GL2-6",
+          "product_url": "https://www.mechatronicstore.cl/gravity-haptic-motor-driver/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GL2-6",
+          "price_clp": 10650,
           "stock_available": true,
           "match_score": 0.95
         },
         {
-          "name_original": "Pack cables macho-macho",
-          "product_id": "C-280",
-          "product_url": "https://www.mechatronicstore.cl/pack-65-cable-macho-macho-diferentes-tamanos/?utm_source=blog&utm_medium=tutorial&utm_campaign=reloj-arduino-displays-7-segmentos-multiplexados-rtc-ds3231&utm_content=C-280",
+          "name_original": "Motor de vibración 3.3V",
+          "product_id": "GB3-6V2",
+          "product_url": "https://www.mechatronicstore.cl/motor-de-vibracion-3-3v-micro-impermeable/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GB3-6V2",
+          "price_clp": 2490,
+          "stock_available": true,
+          "match_score": 0.85
+        },
+        {
+          "name_original": "Acelerómetro ADXL345 GY-291",
+          "product_id": "GN3-4",
+          "product_url": "https://www.mechatronicstore.cl/acelerometro-digital-3-ejes-adxl345-gy-291/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GN3-4",
           "price_clp": 3490,
           "stock_available": true,
-          "match_score": 0.83
+          "match_score": 0.75
+        },
+        {
+          "name_original": "Sensor de luz BH1750 GY-302",
+          "product_id": "GN1-6",
+          "product_url": "https://www.mechatronicstore.cl/modulo-sensor-de-intensidad-luminosa-gy-302/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GN1-6",
+          "price_clp": 3990,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Buzzer activo 5V",
+          "product_id": "GA3-2",
+          "product_url": "https://www.mechatronicstore.cl/mini-buzzer-activo-5v/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GA3-2",
+          "price_clp": 500,
+          "stock_available": true,
+          "match_score": 0.85
+        },
+        {
+          "name_original": "Protoboard 830 puntos MB102",
+          "product_id": "C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=C-302",
+          "price_clp": 3790,
+          "stock_available": true,
+          "match_score": 0.88
+        },
+        {
+          "name_original": "Pack Pin Header Macho 40 pines 2.54mm",
+          "product_id": "E-101",
+          "product_url": "https://www.mechatronicstore.cl/pack-12-filas-de-pin-header-macho-40-pines-2-54mm-colores/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=E-101",
+          "price_clp": 3990,
+          "stock_available": true,
+          "match_score": 0.82
+        },
+        {
+          "name_original": "Cables Dupont macho-hembra 30cm",
+          "product_id": "C-418",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=C-418",
+          "price_clp": 1990,
+          "stock_available": true,
+          "match_score": 0.86
+        },
+        {
+          "name_original": "Cable USB-C a USB-A 1m",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=B-101",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.88
         }
       ],
       "github_url": null,
       "download_urls": [
-        {
-          "label": "Tutorial original con código completo y diagrama esquemático PDF",
-          "url": "https://www.geekfactory.mx/proyectos-de-electronica/proyecto-de-reloj-digital-con-arduino-y-displays-de-7-segmentos/",
-          "kind": "page"
-        }
+        {"label": "PDF original (Adafruit Learning System)", "url": "https://cdn-learn.adafruit.com/downloads/pdf/llm-agent-embodiment-kit.pdf", "kind": "pdf"},
+        {"label": "Bundle de librerías CircuitPython", "url": "https://circuitpython.org/libraries", "kind": "library"}
       ],
-      "category": "arduino",
+      "category": "esp32",
       "difficulty": "intermediate",
       "estimated_time_minutes": 180,
-      "estimated_cost_clp": 28150,
-      "tags": [
-        "arduino",
-        "ds3231",
-        "7-segmentos",
-        "multiplexado",
-        "reloj",
-        "rtc"
-      ],
-      "source_language": "es",
-      "re_angulation_applied": "original conversacional en primera persona plural → guía instructiva en segunda persona singular; reordenamiento macro de lineal (intro→materiales→código→uso) a bloques temáticos (Concepto multiplexado → Hardware con tabla y mapa pines → Software con patrón de interrupciones → Variantes); agregado de 3 explicaciones técnicas que no estaban (qué significa multiplexar y por qué baja de 48 a 13 pines; rol del flag rtcflag + interrupción 1Hz vs polling I²C; fail-fast del error E1); reemplazo de gancho inicial 'En esta página te enseñaremos' por pregunta retórica sobre OLED vs displays físicos; sección Variantes nueva (ánodo común con PNP, brillo regulable con LDR, sincro NTP via ESP32) que el original no tiene; adaptación a stock chileno con sustitución 120Ω→220Ω documentada y Nano Every→Nano V3.",
+      "estimated_cost_clp": 65920,
+      "tags": ["esp32", "circuitpython", "llm", "ia", "sensores", "neopixel", "iot"],
+      "source_language": "en",
+      "re_angulation_applied": "Tercera persona técnica + sustitución de hardware específico de Adafruit por equivalentes del catálogo MS (XIAO ESP32-S3, INMP441, BH1750, ADXL345) + ángulo en 'bucles de auto-verificación' como concepto central + sección de variantes con Claude API y Ollama local",
       "editorial_checklist": {
         "title_distinct": true,
         "has_unique_section": true,
@@ -395,169 +171,141 @@
         "body_word_ratio": 1.45,
         "tone_or_structure_changed": true
       },
-      "editorial_quality_warning": false
+      "editorial_quality_warning": false,
+      "editorial_notes": "BME280 sin match directo en catálogo MS — se sustituye por combo HTU21D + BMP180 que cubre las mismas magnitudes (temperatura, humedad, presión). VEML7700 sustituido por BH1750 (GY-302) que es funcionalmente equivalente para lectura lux I2C."
     },
     {
-      "id": "175efb849587",
-      "slug": "control-remoto-ir-esp32-receptor-hx1838-protocolo-nec",
-      "title_es": "Control remoto IR para ESP32: módulo HX1838 y librería en modo NEC optimizado",
-      "subtitle_es": "Conecta un receptor HX1838 al ESP32 sin quemar GPIOs, optimiza la librería IRremoteESP8266 para que ocupe 8 KB en vez de 45 KB.",
-      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp",
-      "body_es": "## El problema que descubres a medio proyecto\n\nQuieres que tu proyecto con ESP32 obedezca a un control remoto — sin tener que cablear 10 pulsadores ni inventar un menú por Bluetooth. Aparente solución de fin de semana: desarmás un equipo viejo, sacás el receptor IR de tres pines del tablero y lo conectás. Compila, sube, y… nada. O peor: a veces decodifica, a veces no, y otras devuelve códigos basura que nunca se repiten.\n\nEste tutorial cubre lo que pasa entre esa primera frustración y un sistema que funciona estable: por qué los receptores reciclados fallan, qué sensor económico te resuelve el problema, cómo cablearlo al ESP32 sin quemarle un GPIO, y cómo configurar la librería de IR para que **no se coma 30 KB de flash** por incluir protocolos que nunca vas a usar.\n\nEstá inspirado en el artículo de Soloelectronicos.com — re-orientado a la práctica chilena y con foco en optimización de memoria.\n\n![Conexión típica del receptor IR al ESP32](https://soloelectronicos.com/wp-content/uploads/2026/04/irda2.webp?w=900)\n\n## Por qué un receptor reciclado falla más de lo que parece\n\nLos receptores IR de tres pines de un VCR, una radio o una TV antigua **se ven idénticos** al HX1838 que comprás nuevo. Pero hay tres trampas técnicas que la mayoría no nota:\n\n1. **Pinout no estandarizado**. El orden VCC/GND/OUT cambia según el fabricante. Si te equivocás, prendés VCC en GND y el componente se calienta o muere silenciosamente.\n2. **Voltaje de salida a 5 V**. Muchos receptores antiguos operan a 5 V y entregan la señal demodulada también a 5 V. El **ESP32 no es tolerante a 5 V** en sus pines GPIO — un solo pulso a 5 V puede romper el pin (o todo el SoC).\n3. **Componente degradado**. Los filtros internos del receptor (que demodulan los pulsos a 38 kHz) se desgastan con los años. El síntoma es una señal \"sucia\": tren de pulsos con jitter, que la librería no puede mapear a ningún protocolo conocido.\n\n**Diagnóstico rápido sin osciloscopio**: si tenés un multímetro con modo Hz/frecuencia, mide la salida del receptor mientras apretás un botón del mando — debería ver pulsos a ~38 kHz. Si solo ves DC o ruido, el receptor está malo. Si tenés osciloscopio, esperá ráfagas que bajen de 3.3 V a 0 V en patrones reconocibles. Nada de eso → al tarro.\n\n## La solución: un sensor nuevo, barato y a 3.3 V\n\nEl **HX1838** (o sus equivalentes **VS1838B** y **TSOP1838**) es un receptor IR moderno con filtros estables, alimentación 3.3–5 V, y salida digital limpia. Cuesta menos de $1.000 CLP en el catálogo chileno y normalmente viene en kit con un control remoto NEC genérico — exactamente lo que necesitás para empezar.\n\n![Comparativa entre receptor reciclado y módulo HX1838 nuevo](https://soloelectronicos.com/wp-content/uploads/2026/04/irda3.webp?w=768)\n\n## Hardware: cableado mínimo al ESP32\n\nTres cables y opcionalmente una resistencia:\n\n| HX1838 | ESP32 | Nota |\n|--------|-------|------|\n| VCC    | 3.3V  | NO 5V con el ESP32 |\n| GND    | GND   | tierra común |\n| OUT    | GPIO 34 | (también sirve GPIO 35) |\n\n### ¿Por qué GPIO 34?\n\nLos pines **34, 35, 36 y 39 del ESP32 son \"solo entrada\"** — no pueden ser configurados como salida ni tienen pull-up/pull-down internos. Justo por eso son **ideales para sensores de lectura**: no compiten con otros periféricos del ESP32 (la pantalla por SPI, el bus I²C de un DHT, etc.) y no te equivocás escribiéndolos accidentalmente. Reservalos siempre para señales digitales entrantes que no necesiten interrupciones complejas.\n\n### Resistencia pull-up de 10 kΩ (opcional)\n\nSi usás el módulo HX1838 con su PCB la resistencia pull-up ya viene integrada en placa. Si soldaste un HX1838 desnudo, agregá una **resistencia de 10 kΩ entre OUT y 3.3 V** — sin ella, la línea queda flotando entre pulsos y podés leer ruido.\n\n## Software: librería IRremoteESP8266 optimizada\n\nLa librería estándar para IR en ESP32 es **IRremoteESP8266**. El problema: por defecto incluye decoders para 30+ protocolos (NEC, Sony, RC5, Panasonic, LG, Samsung, etc.) y eso pesa **30-50 KB de flash y RAM**. La gran mayoría de controles remotos chinos baratos usan **solo NEC**. Si ya tenés un proyecto con WiFi + display + sensores, esos 30 KB pueden ser la diferencia entre compilar y no.\n\n### Activar SOLO el protocolo NEC\n\nCreá un archivo llamado `build_opt.h` en la carpeta del proyecto (al lado del .ino) con este contenido:\n\n```cpp\n-DIR_ENABLE_DEFAULT=false\n-DDECODE_NEC=true\n```\n\n`IR_ENABLE_DEFAULT=false` apaga todos los protocolos por defecto. `DECODE_NEC=true` activa explícitamente solo NEC. Resultado: la librería pasa de ~45 KB a ~8 KB de flash.\n\n### Sketch mínimo con mapeo a teclas\n\nEste código mapea los 17 botones más comunes de un control remoto NEC genérico (1-9, 0, ★, #, OK, flechas) a un enum, listo para conectar con la lógica de tu proyecto:\n\n```cpp\n#include <Arduino.h>\n#include <IRremoteESP8266.h>\n#include <IRrecv.h>\n\n#define IR_PIN 34\nIRrecv irrecv(IR_PIN);\ndecode_results results;\n\nenum IRKey : uint8_t {\n  IR_NONE = 0, IR_0, IR_1, IR_2, IR_3, IR_4, IR_5, IR_6, IR_7, IR_8, IR_9,\n  IR_STAR, IR_HASH, IR_OK, IR_UP, IR_DOWN, IR_LEFT, IR_RIGHT\n};\n\nstatic IRKey readIRKey() {\n  if (!irrecv.decode(&results)) return IR_NONE;\n  const uint32_t code = (uint32_t)results.value;\n  irrecv.resume();\n  switch (code) {\n    case 0xFFA25D: return IR_1;\n    case 0xFF629D: return IR_2;\n    case 0xFFE21D: return IR_3;\n    case 0xFF22DD: return IR_4;\n    case 0xFF02FD: return IR_5;\n    case 0xFFC23D: return IR_6;\n    case 0xFFE01F: return IR_7;\n    case 0xFFA857: return IR_8;\n    case 0xFF906F: return IR_9;\n    case 0xFF6897: return IR_STAR;\n    case 0xFF9867: return IR_0;\n    case 0xFFB04F: return IR_HASH;\n    case 0xFF18E7: return IR_UP;\n    case 0xFF4AB5: return IR_DOWN;\n    case 0xFF10EF: return IR_LEFT;\n    case 0xFF5AA5: return IR_RIGHT;\n    case 0xFF38C7: return IR_OK;\n    default: return IR_NONE;\n  }\n}\n\nvoid setup() {\n  pinMode(IR_PIN, INPUT);\n  irrecv.enableIRIn();\n}\n\nvoid loop() {\n  IRKey key = readIRKey();\n  if (key == IR_NONE) return;\n  // tu lógica acá: navegar menús, controlar relés, ajustar valores, etc.\n  // ejemplo: if (key == IR_OK) toggleRele();\n}\n```\n\n### Cómo saber los códigos de TU mando\n\nLos códigos `0xFFA25D` etc. son del **mando NEC genérico** que viene con el HX1838. Si querés usar el control de tu TV o un mando distinto, agregá un `Serial.printf(\"0x%X\\n\", code);` antes del `switch` y leé los códigos de tu mando uno a uno desde el monitor serial.\n\n## Pruebas: confirmar que funciona\n\n1. Compilá y subí el sketch al ESP32.\n2. Abrí el monitor serial a 115200 baud.\n3. Apuntá el mando hacia el HX1838 y apretá un botón.\n4. Si todo está bien, vas a ver el código del botón en el monitor (si dejaste el `Serial.printf` de diagnóstico).\n\nSi no ves nada:\n\n- **Línea muerta**: revisá pull-up — sin ella la lectura es ruido.\n- **Códigos siempre 0xFFFFFFFF**: es el código de \"repetición\" NEC. Pulsá brevemente, no mantengas.\n- **Códigos al azar distintos**: receptor degradado (volvé al tarro) o mando agotado (cambiá pila).\n\n## Variantes y mejoras\n\nTres extensiones que el artículo original no incluye:\n\n1. **Modo low-power con interrupción IR**: si tu proyecto corre con batería, dejá el ESP32 en **light sleep** y configurá GPIO 34 como wake-source con `esp_sleep_enable_ext0_wakeup(GPIO_NUM_34, 0)`. El ESP32 duerme con ~1 mA y se despierta solo cuando llega un pulso IR. Útil para un control de luces con duración de meses por carga.\n\n2. **Aprender el mando una sola vez y guardarlo en NVS**: en lugar de hardcodear los códigos, hacé un modo de \"aprendizaje\" donde el usuario aprieta cada tecla del mando una vez, y el ESP32 los guarda en **NVS (NonVolatile Storage)** con la librería **Preferences**. Así el mismo firmware sirve con cualquier mando.\n\n3. **Repetidor IR sobre WiFi**: combiná un HX1838 (recibe) + un **LED IR + transistor** (emite) y un endpoint REST en el ESP32. Resultado: control universal vía HTTP que podés disparar desde Home Assistant o cualquier app web. Perfecto para ese aire acondicionado viejo sin app oficial.\n\n## Personalización para Chile\n\nEn MechatronicStore (precios mayo 2026):\n\n- **ESP32 ESP-WROOM-32 (USB-C)** (SKU X2-10V2) — $7.990 CLP\n- **Control remoto IR + módulo receptor (kit)** (SKU G-111) — $2.600 CLP *(viene con HX1838 + mando NEC compatible con los códigos del sketch — la opción más completa)*\n- **LED receptor infrarrojo 3 pin (HX1838 suelto)** (SKU GF1-16) — $990 CLP *(si ya tenés un mando)*\n- **Resistencia 10 kΩ 1/4W** (SKU GK2-15) — $100 CLP *(solo si usás el HX1838 desnudo)*\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP\n- **Cables jumpers macho-hembra** (SKU C-415) — $1.990 CLP\n\nTotal mínimo (kit + ESP32 + cables): **~$12.580 CLP**.\n\n## Recursos\n\n- **Artículo original** (español): [Cómo conectar un receptor de infrarrojos (IR) al ESP32: Del reciclaje a la solución profesional — Soloelectronicos.com](https://soloelectronicos.com/2026/04/21/como-conectar-un-receptor-de-infrarrojos-ir-al-esp32-del-reciclaje-a-la-solucion-profesional/)\n- **Librería IRremoteESP8266**: [crankyoldgit/IRremoteESP8266](https://github.com/crankyoldgit/IRremoteESP8266)\n- **Documentación protocolo NEC**: [Vishay NEC IR Protocol PDF](https://www.vishay.com/docs/80071/dataform.pdf)\n- **GPIOs solo-input del ESP32 (referencia oficial)**: [Random Nerd Tutorials — ESP32 GPIO Reference](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)\n\nVersión chilena con componentes en stock local en MechatronicStore — basada en el artículo de Soloelectronicos.com.",
+      "id": "5d7a0aa10e39",
+      "slug": "controlador-leverless-fighting-raspberry-pi-pico-gp2040",
+      "title_es": "Controlador leverless para fighting games con Raspberry Pi Pico y GP2040-CE",
+      "subtitle_es": "Arma tu propio mando estilo Hit Box con Raspberry Pi Pico, botones arcade y firmware GP2040-CE — sin código, sin lever, máxima velocidad.",
+      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp",
+      "body_es": "## El stick que no tiene stick\n\nEn la escena competitiva de fighting games (Street Fighter, Tekken, Guilty Gear) los \"leverless\" o estilo Hit Box están reemplazando a las palancas tradicionales. La razón es simple: pulsar un botón es mecánicamente más rápido y preciso que mover una palanca en un arco. Esta guía adapta el proyecto original de John Park (Adafruit) al catálogo chileno, cambiando el QT Py RP2040 por una **Raspberry Pi Pico** estándar — el mismo chip RP2040, mucho más disponible localmente y al mismo precio.\n\nLo bueno: **no escribes una sola línea de código**. El firmware open source GP2040-CE detecta el RP2040, levanta un servidor web propio en el chip, y desde el navegador configuras todo: mapeo de pines, modo de plataforma (PlayStation, Switch, Xbox, PC), hotkeys, SOCD cleaning. El único trabajo manual es imprimir el chasis y soldar los cables.\n\n![Controlador leverless armado mostrando layout de botones](https://cdn-learn.adafruit.com/assets/assets/000/144/189/medium800/gaming_lvrls-1917.jpg?1779300361)\n\n## Antes de comprar: qué decisiones definen tu mando\n\nNo es un proyecto plug-and-play sin opciones. Tres decisiones que afectan el resultado:\n\n### 1. Tamaño de botón: 24mm vs 30mm\nLos botones de \"acción\" (puños/patadas, 4 a 8 botones) suelen ser de **30mm**. Los de \"dirección\" (las 4 flechas equivalentes al stick) clásicamente son de **24mm**, aunque hay layouts \"all 30mm\" como el Hit Box original.\n\nEn el catálogo MS los botones arcade disponibles son de 33mm. Son ligeramente más grandes que los 30mm estándar pero el feeling es muy similar; solo asegúrate que tu archivo STL del chasis tenga huecos compatibles (33mm o reborde lateral grande). Si necesitas 24mm exactos para las direccionales, hay versiones con resorte más suave que se pueden encontrar en distribuidores especializados, pero puedes hacer el primer prototipo con todos 33mm.\n\n### 2. SOCD cleaning: la regla más importante\nSOCD = Simultaneous Opposite Cardinal Directions. ¿Qué pasa si aprietas ← y → al mismo tiempo?\n\n- **Neutral**: nada se registra (más estricto, lo más común para PlayStation tournaments).\n- **Last input priority**: gana el último apretado (favorito de Smash players).\n- **Up priority** para ↑+↓: prioridad arriba (estilo Hit Box original).\n\nGP2040-CE permite elegir cada combinación. Decidir esto antes de tu primera sesión ranked te evita malos hábitos.\n\n### 3. Modo de input: HID, XInput, Switch, PS3/4\nEl mismo hardware puede presentarse al sistema como cualquiera de los 8+ tipos de controlador soportados. Al apretar un botón específico durante el boot, eliges el modo. Esto significa que el mismo mando funciona en tu PC, Switch, PS4 y arcade cabinet sin reflashear.\n\n## Hardware: por qué Pico funciona igual que QT Py\n\nEl QT Py RP2040 de Adafruit tiene el chip Raspberry Pi RP2040 y headers integrados al Terminal Block BFF. La **Raspberry Pi Pico** estándar tiene **el mismo chip RP2040** y más GPIOs disponibles (26 vs 11). GP2040-CE corre nativo en ambos.\n\nDiferencias prácticas adaptando a Pico:\n\n| Aspecto | QT Py RP2040 (original) | Raspberry Pi Pico (adaptación) |\n|---|---|---|\n| Chip | RP2040 | RP2040 (idéntico) |\n| GPIOs disponibles | 11 | 26 |\n| Conexión a botones | Terminal Block BFF (atornillable) | Soldadura directa o bornera atornillable PCB |\n| Tamaño físico | 22 × 18 mm | 51 × 21 mm |\n| Precio CLP | — | $8.990 |\n| Firmware UF2 | versión QT Py específica | versión Pico oficial |\n\nLa única molestia: con QT Py el Terminal Block BFF te ahorra soldar; con Pico necesitas soldar los cables directo a los GPIOs o usar borneras KF301 atornillables (más limpio si vas a iterar el cableado).\n\n## Cableado: un botón = un GPIO + un GND compartido\n\nCada uno de los 11 botones (8 de acción + 3 de dirección si sigues el layout Hit Box mínimo, o 14 si quieres layout completo) se conecta así:\n\n- **Terminal 1 del switch** → GPIO del Pico (cualquiera de los GP0-GP28, evitando GP25 que es el LED on-board).\n- **Terminal 2 del switch** → GND compartido (chainea todos los GNDs juntos con conector terminal o soldadura directa al pin GND del Pico).\n\nLos LEDs internos del botón (terminales \"+/-\") **no se usan** en este proyecto. Si quieres iluminación, agrega una tira NeoPixel WS2812 aparte y configúrala en GP2040-CE (soporta efectos LED nativos).\n\n### Mapeo por defecto en GP2040-CE para Pico\n\n```\nFunción              GPIO\nB1 (✕ / A)           GP2\nB2 (○ / B)           GP3\nB3 (□ / X)           GP4\nB4 (△ / Y)           GP5\nL1                   GP6\nR1                   GP7\nL2                   GP8\nR2                   GP9\nS1 (Select)          GP10\nS2 (Start)           GP11\nFlecha izquierda     GP12\nFlecha abajo         GP13\nFlecha derecha       GP14\nFlecha arriba        GP15\n```\n\n## Software: flashear y configurar\n\n1. **Descarga el firmware**: en [github.com/OpenStickCommunity/GP2040-CE/releases](https://github.com/OpenStickCommunity/GP2040-CE/releases) busca la build para `Pico` (no QT Py).\n2. **Modo BOOTSEL**: mantén apretado el botón BOOTSEL del Pico mientras conectas el cable USB. Te va a montar un drive llamado `RPI-RP2`.\n3. **Drag & drop**: arrastra el `GP2040-CE_x.x.x_Pico.uf2` al drive. El Pico se reinicia solo.\n4. **Entrar a config**: con el mando ya enchufado, mantén apretado el botón S2 (Start) y toca el RESET o desconecta/reconecta el USB. Va a aparecer un servidor web en `http://192.168.7.1` (mando configurando vía USB Ethernet emulado).\n5. **Configurar todo desde el navegador**: GPIO mapping, SOCD, perfiles, LEDs, hotkeys.\n6. **Reboot to controller**: botón \"Reboot\" → modo Controller. Listo para jugar.\n\n## Impresión 3D del chasis\n\nLos STL originales (links abajo) están preparados para FDM con PLA. Settings de slicing recomendados (Bambu Studio / Cura / PrusaSlicer):\n\n- Filamento: PLA 1.75mm\n- Temperatura extrusor: 220°C (boquilla 0.4mm)\n- Altura de capa: 0.2mm\n- Relleno (infill): 15% grid\n- Velocidad: 200 mm/s (Bambu) o 60 mm/s (impresoras más comunes)\n- Brim: 5mm para mejor adhesión de la base ancha\n\nUna versión \"PLA tournament-grade\" más rígida usa 25% infill y soportes solo en huecos de botones. Si quieres un chasis aún más pesado y estable (no se mueve durante combos), imprime en PETG o agrega una placa de aluminio adhesiva en la base.\n\n## Variantes y mejoras\n\n- **Versión all-wireless con Pico 2 W**: la Raspberry Pi Pico 2 W (RP2350 + Wi-Fi/BT, $15.990 CLP en MS) corre una rama experimental de GP2040-CE con soporte Bluetooth. Útil si quieres jugar en consolas que aceptan controles BT (Switch, móvil con BlueStacks).\n- **LEDs WS2812 reactivos por botón**: agregando una tira de NeoPixel de 11 LEDs y mapeando cada uno a un botón, GP2040-CE enciende el LED correspondiente cuando aprietas. Visualmente bestial para streamings.\n- **Lever switch híbrido**: para players que vienen de palanca y quieren transicionar gradualmente, GP2040-CE tiene un \"hybrid mode\" donde un switch físico cambia entre input de dirección por botones o por una palanca arcade tradicional (Sanwa JLF) conectada en paralelo.\n- **Display OLED de status**: agregando un OLED SSD1306 I2C a GP4/GP5 (con el bus I2C compartido), GP2040-CE muestra modo activo (PS / Switch / XInput), perfil de teclas y SOCD configurado. Lujito de torneo.\n\n## Personalización para Chile\n\nComponentes equivalentes en stock en MechatronicStore:\n\n- **Raspberry Pi Pico USB-C** (SKU N-221) — $8.990 CLP. Reemplazo directo del QT Py RP2040: mismo chip RP2040, más GPIOs, USB-C nativo.\n- **Raspberry Pi Pico Micro USB** (SKU N-207) — $7.990 CLP. Alternativa más barata si te da lo mismo el conector.\n- **Botones arcade 33mm con MicroSwitch — Rojo** (SKU C-313V1) — $2.190 CLP c/u. Para los botones de acción. Necesitas 8.\n- **Botones arcade 33mm con MicroSwitch — Azul** (SKU C-313V2) — $2.190 CLP c/u. Variantes de color para diferenciar acción de direcciones.\n- **Filamento PLA SunLu 1kg 1.75mm — Blanco/Transparente/Gris** (SKU SL-003 / SL-014 / SL-017) — $13.390 CLP. Para imprimir el chasis. Con 1kg sobra para 2-3 chasis.\n- **Cable USB Tipo C a USB Tipo A 1mt** (SKU B-101) — $2.190 CLP. Para conectar a PC/consola.\n- **Cables macho-hembra 30cm** (SKU C-418) — $1.990 CLP. Para el cableado de botones al Pico.\n- **Cables macho-macho 30cm** (SKU C-417) — $2.990 CLP. Para chainear los GND comunes en protoboard si no sueldas directo.\n- **Pin Header Macho 40 pines** (SKU E-101) — $3.990 CLP. Si decides soldar headers al Pico para conectar borneras.\n- **Conector Terminal 2 Pines KF301-2** (SKU GC2-1) — $290 CLP c/u. Bornera atornillable PCB, gran sustituto del Terminal Block BFF de Adafruit. Necesitas varias.\n\n**Costo aproximado del proyecto:**\n- 1× Pico USB-C: $8.990\n- 11× Botones arcade 33mm: $24.090 ($2.190 × 11)\n- 1× rollo PLA: $13.390\n- 1× cable USB-C: $2.190\n- 1× pack cables macho-hembra: $1.990\n- 12× borneras KF301-2: $3.480 ($290 × 12)\n\n**Total: ~$54.130 CLP** versus un Hit Box original importado (~$200 USD = ~$190.000 CLP).\n\n## Recursos\n\n- **Tutorial original** (inglés): [Leverless Controller — Adafruit Learning System](https://learn.adafruit.com/leverless-controller)\n- **PDF descargable del original**: [leverless-controller.pdf](https://cdn-learn.adafruit.com/downloads/pdf/leverless-controller.pdf)\n- **Repositorio GP2040-CE**: [github.com/OpenStickCommunity/GP2040-CE](https://github.com/OpenStickCommunity/GP2040-CE)\n- **Web configurator (docs)**: [gp2040-ce.info](https://gp2040-ce.info/)\n- **Archivos 3D**: STEP y STL originales descargables desde el tutorial original.\n\nVersión chilena inspirada en el diseño de John Park, adaptada a Raspberry Pi Pico estándar con componentes en stock local en MechatronicStore.\n",
       "materials_list": [
-        {
-          "name": "ESP32 DevKit (WROOM-32)",
-          "qty": 1,
-          "role": "core"
-        },
-        {
-          "name": "Módulo receptor IR HX1838 con control remoto",
-          "qty": 1,
-          "role": "sensor + mando"
-        },
-        {
-          "name": "Resistencia 10kΩ 1/4W",
-          "qty": 1,
-          "role": "pull-up opcional"
-        },
-        {
-          "name": "Protoboard 830 puntos",
-          "qty": 1,
-          "role": "prototipado"
-        },
-        {
-          "name": "Cables jumpers macho-hembra",
-          "qty": 1,
-          "role": "conexiones"
-        }
+        {"name": "Raspberry Pi Pico USB-C RP2040", "qty": 1, "role": "core"},
+        {"name": "Botones arcade 33mm con MicroSwitch", "qty": 11, "role": "input principal"},
+        {"name": "Filamento PLA 1.75mm 1kg", "qty": 1, "role": "chasis 3D"},
+        {"name": "Cable USB-C a USB-A 1m", "qty": 1, "role": "alimentación y datos"},
+        {"name": "Cables Dupont macho-hembra 30cm", "qty": 1, "role": "cableado botones"},
+        {"name": "Cables macho-macho 30cm", "qty": 1, "role": "cadena de GND"},
+        {"name": "Conector Terminal 2 Pines KF301-2", "qty": 12, "role": "borneras atornillables"},
+        {"name": "Pin Header Macho 40 pines 2.54mm", "qty": 1, "role": "headers Pico"}
       ],
       "steps": [
-        {
-          "position": 1,
-          "name": "Verificar el sensor con multímetro u osciloscopio",
-          "text": "Si reciclás un receptor, mide ~38 kHz en la salida al apretar el mando. Sin esa señal, descártalo y compra un HX1838 nuevo.",
-          "image_url": "https://soloelectronicos.com/wp-content/uploads/2026/04/irda2.webp?w=900"
-        },
-        {
-          "position": 2,
-          "name": "Conectar HX1838 a 3.3V y GPIO 34",
-          "text": "VCC→3.3V, GND→GND, OUT→GPIO 34. NUNCA conectes el sensor a 5V con el ESP32 — quemás el pin.",
-          "image_url": "https://soloelectronicos.com/wp-content/uploads/2026/04/irda3.webp?w=768"
-        },
-        {
-          "position": 3,
-          "name": "Crear build_opt.h para limitar protocolos",
-          "text": "Archivo al lado del .ino con '-DIR_ENABLE_DEFAULT=false -DDECODE_NEC=true' para usar solo NEC y ahorrar 30+ KB de flash.",
-          "image_url": null
-        },
-        {
-          "position": 4,
-          "name": "Subir sketch con mapeo de teclas",
-          "text": "Compila e instala el código que mapea los 17 botones del mando NEC al enum IRKey. Asegurate de tener instalada IRremoteESP8266.",
-          "image_url": null
-        },
-        {
-          "position": 5,
-          "name": "Probar lectura desde el monitor serial",
-          "text": "Abre el monitor a 115200 baud, apretá teclas del mando y verifica que llegan códigos hexadecimales únicos por tecla.",
-          "image_url": null
-        },
-        {
-          "position": 6,
-          "name": "Integrar con la lógica de tu proyecto",
-          "text": "Reemplaza el comentario en loop() con tus acciones: controlar relés, navegar menús, ajustar valores, etc.",
-          "image_url": null
-        }
+        {"position": 1, "name": "Imprimir el chasis en PLA", "text": "Descarga los STL del tutorial original, slícealos con PLA a 0.2mm de capa, 15% infill grid, 220°C extrusor. Toma 6-8 horas según tamaño del chasis. Imprime también la tapa por separado.", "image_url": null},
+        {"position": 2, "name": "Soldar headers al Raspberry Pi Pico", "text": "Suelda pin headers macho a los 40 pads del Pico (si no vinieron pre-soldados). Si vas a usar borneras KF301 atornillables, primero suelda las borneras a un protoboard PCB y los headers van a esa PCB intermedia.", "image_url": null},
+        {"position": 3, "name": "Montar los 11 botones arcade", "text": "Inserta cada botón desde arriba del chasis y enrosca la contratuerca por adentro. Usa distintos colores para diferenciar las direcciones de los botones de acción (típico: blanco para acción, rojo o azul para direcciones).", "image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/189/medium800/gaming_lvrls-1917.jpg?1779300361"},
+        {"position": 4, "name": "Cablear los GPIOs", "text": "Conecta un cable desde uno de los 2 terminales superiores de cada microswitch al GPIO correspondiente del Pico siguiendo la tabla de mapeo (GP2 a GP15 para los 14 botones del layout completo). Los terminales inferiores son los del LED y se ignoran.", "image_url": null},
+        {"position": 5, "name": "Cablear el GND común", "text": "Corta un cable de 20cm, conéctalo del pin GND del Pico a uno de los terminales restantes del primer botón. Después chainea los otros botones con cables cortos: terminal libre del botón N al terminal libre del botón N+1. Es más limpio que correr 11 cables independientes al Pico.", "image_url": null},
+        {"position": 6, "name": "Flashear GP2040-CE en modo BOOTSEL", "text": "Aprieta el botón BOOTSEL del Pico y conecta el USB-C. Aparece el drive RPI-RP2. Arrastra el archivo GP2040-CE_x.x.x_Pico.uf2 (versión Pico, no QT Py). El Pico se reinicia automáticamente con el firmware corriendo.", "image_url": null},
+        {"position": 7, "name": "Configurar desde el navegador", "text": "Entra al modo config manteniendo S2 (Start) apretado mientras desconectas y reconectas el USB. Abre http://192.168.7.1 en tu navegador. Ajusta GPIO Pin Mapping, Hotkey Settings, SOCD Cleaning y Boot Input Modes. Guarda con Save.", "image_url": null},
+        {"position": 8, "name": "Cerrar el chasis y testear", "text": "Press fit de la tapa al chasis. Conecta el mando al PC y entra a un gamepad tester online (gamepad-tester.com) para confirmar que cada botón registra. Si alguno falla, revisa soldadura y mapeo en el web config.", "image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/182/medium800/gaming_IMG_1912B_2k.jpg?1779235651"}
       ],
-      "code_blocks": [
-        {
-          "lang": "cpp",
-          "caption": "build_opt.h — limita librería a solo NEC",
-          "code": "-DIR_ENABLE_DEFAULT=false\n-DDECODE_NEC=true"
-        },
-        {
-          "lang": "cpp",
-          "caption": "Sketch mínimo: lectura IR con mapeo a enum de teclas",
-          "code": "#include <Arduino.h>\n#include <IRremoteESP8266.h>\n#include <IRrecv.h>\n\n#define IR_PIN 34\nIRrecv irrecv(IR_PIN);\ndecode_results results;\n\nenum IRKey : uint8_t {\n  IR_NONE = 0, IR_0, IR_1, IR_2, IR_3, IR_4, IR_5, IR_6, IR_7, IR_8, IR_9,\n  IR_STAR, IR_HASH, IR_OK, IR_UP, IR_DOWN, IR_LEFT, IR_RIGHT\n};\n\nstatic IRKey readIRKey() {\n  if (!irrecv.decode(&results)) return IR_NONE;\n  const uint32_t code = (uint32_t)results.value;\n  irrecv.resume();\n  switch (code) {\n    case 0xFFA25D: return IR_1;\n    case 0xFF629D: return IR_2;\n    case 0xFFE21D: return IR_3;\n    case 0xFF38C7: return IR_OK;\n    case 0xFF18E7: return IR_UP;\n    case 0xFF4AB5: return IR_DOWN;\n    case 0xFF10EF: return IR_LEFT;\n    case 0xFF5AA5: return IR_RIGHT;\n    default: return IR_NONE;\n  }\n}\n\nvoid setup() {\n  pinMode(IR_PIN, INPUT);\n  irrecv.enableIRIn();\n}\n\nvoid loop() {\n  IRKey key = readIRKey();\n  if (key == IR_NONE) return;\n  // tu lógica acá\n}"
-        }
-      ],
+      "code_blocks": [],
       "linked_products": [
         {
-          "name_original": "ESP32 DevKit (WROOM-32)",
-          "product_id": "X2-10V2",
-          "product_url": "https://www.mechatronicstore.cl/esp32/?utm_source=blog&utm_medium=tutorial&utm_campaign=control-remoto-ir-esp32-receptor-hx1838-protocolo-nec&utm_content=X2-10V2&attribute_entrada=Tipo+C",
+          "name_original": "Raspberry Pi Pico USB-C",
+          "product_id": "N-221",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=N-221",
+          "price_clp": 8990,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "Raspberry Pi Pico Micro USB",
+          "product_id": "N-207",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico/?attribute_entrada-usb=Micro+USB&utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=N-207",
           "price_clp": 7990,
           "stock_available": true,
           "match_score": 0.88
         },
         {
-          "name_original": "Módulo receptor IR HX1838 con control remoto",
-          "product_id": "G-111",
-          "product_url": "https://www.mechatronicstore.cl/control-remoto-inalambrico-infrarrojo-kit/?utm_source=blog&utm_medium=tutorial&utm_campaign=control-remoto-ir-esp32-receptor-hx1838-protocolo-nec&utm_content=G-111",
-          "price_clp": 2600,
+          "name_original": "Botones arcade 33mm con MicroSwitch — Rojo",
+          "product_id": "C-313V1",
+          "product_url": "https://www.mechatronicstore.cl/boton-video-arcade-33mm-microswitch/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-313V1",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Botones arcade 33mm con MicroSwitch — Azul",
+          "product_id": "C-313V2",
+          "product_url": "https://www.mechatronicstore.cl/boton-video-arcade-33mm-microswitch/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-313V2",
+          "price_clp": 2190,
+          "stock_available": true,
+          "match_score": 0.78
+        },
+        {
+          "name_original": "Filamento PLA 1.75mm 1kg — Blanco",
+          "product_id": "SL-003",
+          "product_url": "https://www.mechatronicstore.cl/filamento-pla-sunlu-1kg-1-75mm-colores/?attribute_pa_color=blanco&utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=SL-003",
+          "price_clp": 13390,
+          "stock_available": true,
+          "match_score": 0.92
+        },
+        {
+          "name_original": "Cable USB-C a USB-A 1m",
+          "product_id": "B-101",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=B-101",
+          "price_clp": 2190,
           "stock_available": true,
           "match_score": 0.88
         },
         {
-          "name_original": "Resistencia 10kΩ 1/4W",
-          "product_id": "GK2-15",
-          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=control-remoto-ir-esp32-receptor-hx1838-protocolo-nec&utm_content=GK2-15&attribute_valores=10k%CE%A9",
-          "price_clp": 100,
-          "stock_available": true,
-          "match_score": 0.93
-        },
-        {
-          "name_original": "Protoboard 830 puntos",
-          "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=control-remoto-ir-esp32-receptor-hx1838-protocolo-nec&utm_content=C-302",
-          "price_clp": 3790,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Cables jumpers macho-hembra",
-          "product_id": "C-415",
-          "product_url": "https://www.mechatronicstore.cl/cable-macho-hembra-40-piezas-10-cm/?utm_source=blog&utm_medium=tutorial&utm_campaign=control-remoto-ir-esp32-receptor-hx1838-protocolo-nec&utm_content=C-415",
+          "name_original": "Cables Dupont macho-hembra 30cm",
+          "product_id": "C-418",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-418",
           "price_clp": 1990,
           "stock_available": true,
-          "match_score": 0.88
-        }
-      ],
-      "github_url": "https://github.com/crankyoldgit/IRremoteESP8266",
-      "download_urls": [
-        {
-          "label": "Artículo original con explicación del problema",
-          "url": "https://soloelectronicos.com/2026/04/21/como-conectar-un-receptor-de-infrarrojos-ir-al-esp32-del-reciclaje-a-la-solucion-profesional/",
-          "kind": "page"
+          "match_score": 0.86
         },
         {
-          "label": "Librería IRremoteESP8266 (GitHub)",
-          "url": "https://github.com/crankyoldgit/IRremoteESP8266",
-          "kind": "library"
+          "name_original": "Cables macho-macho 30cm",
+          "product_id": "C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-417",
+          "price_clp": 2990,
+          "stock_available": true,
+          "match_score": 0.84
+        },
+        {
+          "name_original": "Conector Terminal 2 Pines KF301-2",
+          "product_id": "GC2-1",
+          "product_url": "https://www.mechatronicstore.cl/conector-terminal-2-pines-con-tornillo-kf301-2/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=GC2-1",
+          "price_clp": 290,
+          "stock_available": true,
+          "match_score": 0.80
+        },
+        {
+          "name_original": "Pin Header Macho 40 pines 2.54mm",
+          "product_id": "E-101",
+          "product_url": "https://www.mechatronicstore.cl/pack-12-filas-de-pin-header-macho-40-pines-2-54mm-colores/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=E-101",
+          "price_clp": 3990,
+          "stock_available": true,
+          "match_score": 0.82
         }
       ],
-      "category": "esp32",
-      "difficulty": "beginner",
-      "estimated_time_minutes": 45,
-      "estimated_cost_clp": 16470,
-      "tags": [
-        "esp32",
-        "infrarrojo",
-        "hx1838",
-        "control-remoto",
-        "nec",
-        "ir"
+      "github_url": "https://github.com/OpenStickCommunity/GP2040-CE",
+      "download_urls": [
+        {"label": "PDF original (Adafruit Learning System)", "url": "https://cdn-learn.adafruit.com/downloads/pdf/leverless-controller.pdf", "kind": "pdf"},
+        {"label": "Firmware GP2040-CE releases", "url": "https://github.com/OpenStickCommunity/GP2040-CE/releases", "kind": "firmware"},
+        {"label": "Documentación GP2040-CE", "url": "https://gp2040-ce.info/", "kind": "docs"}
       ],
-      "source_language": "es",
-      "re_angulation_applied": "original conversacional español-Europa con 'vosotros' implícito → guía instructiva en tuteo chileno y segunda persona singular ('quieres', 'cableás', 'reciclás'); macro-estructura del original era lineal (problema reciclado → solución HX1838 → cableado → código → conclusión) → re-ordenado a (Problema concreto → Por qué reciclados fallan → Hardware con tabla y nota técnica de pines solo-entrada → Software optimizado → Pruebas con debugging → Variantes); 3 explicaciones técnicas nuevas: (1) por qué GPIO 34 específicamente y qué significa 'solo entrada', (2) impacto en memoria de la librería completa vs NEC-only con cifras concretas (45→8 KB), (3) guía de debugging cuando no ve nada (pull-up flotando, código de repetición FFFFFFFF, mando agotado); sección Variantes nueva con light-sleep wake-up, modo aprendizaje en NVS, repetidor IR sobre WiFi — ninguno en original; gancho inicial cambiado de 'Añadir control remoto a nuestros proyectos…' a narrativa de frustración concreta ('Quieres que tu proyecto obedezca a un control... Aparente solución de fin de semana...').",
+      "category": "rpi",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 240,
+      "estimated_cost_clp": 54130,
+      "tags": ["raspberry-pi-pico", "rp2040", "arcade", "fighting-games", "gp2040-ce", "3d-printing", "leverless"],
+      "source_language": "en",
+      "re_angulation_applied": "Sustitución hardware QT Py RP2040 -> Raspberry Pi Pico estándar (re_angulation_hint explícito) + sección 'Antes de comprar' nueva con decisiones de SOCD + tabla comparativa Pico vs QT Py + mapeo GPIO detallado para Pico + análisis de costo total Chile vs Hit Box importado",
       "editorial_checklist": {
         "title_distinct": true,
         "has_unique_section": true,
         "has_downloadable": true,
-        "body_word_ratio": 2.1,
+        "body_word_ratio": 1.55,
         "tone_or_structure_changed": true
       },
-      "editorial_quality_warning": false
+      "editorial_quality_warning": false,
+      "editorial_notes": "Botones 24mm exactos no están en catálogo MS — se sustituye por arcade 33mm (C-313) que cumple función similar; se anota en el body que el STL debe adaptarse al diámetro. Terminal Block BFF (Adafruit) sin equivalente directo — se reemplaza por borneras KF301-2 atornillables más cables Dupont. Tornillos M2.5 exactos no encontrados (solo M3); el lector puede usar M3 con espaciadores o adquirir en ferretería local."
     }
   ]
 }
