@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-27T18:32:00Z",
+  "ranked_at": "2026-05-28T18:31:44Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,7 +25,7 @@
   },
   "rankings": [
     {
-      "id": "e4e116961cc3",
+      "id": "84a7aca78cda",
       "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
@@ -37,247 +37,23 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 6,
-        "code_quality": 6,
-        "materials_clarity": 7,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 9,
-        "value_added": 3,
-        "originality_potential": 3
-      },
-      "combined_score": 0.565,
-      "verdict": "Tutorial PIR muy básico sin downloadables. Código inline trivial. Repetido en miles de blogs, originalidad baja pese a relevancia con catálogo.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno", "PIR HC-SR501", "Módulo Relé 5V"],
-      "re_angulation_hint": "Agregar control MQTT + LDR día/noche para versión IoT diferenciada"
-    },
-    {
-      "id": "a165bae66888",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 3,
-        "code_quality": 0,
-        "materials_clarity": 2,
+        "pedagogy": 4,
+        "code_quality": 1,
+        "materials_clarity": 3,
         "step_completeness": 2,
-        "relevance_to_store_catalog": 7,
+        "relevance_to_store_catalog": 3,
         "value_added": 2,
         "originality_potential": 3
       },
-      "combined_score": 0.310,
-      "verdict": "Listado curado sin código ni pasos propios, sólo links externos a otros tutoriales. Aporte editorial mínimo, prácticamente sin valor único.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno"],
-      "re_angulation_hint": "Descartar; eventualmente armar listado propio con productos MechatronicStore"
+      "combined_score": 0.265,
+      "verdict": "Review comercial del xTool M2 Color Craft Laser sin proyecto tecnico ni downloadables. No es tutorial, no aporta valor reproducible y el equipo no encaja con catalogo MechatronicStore. Bloqueado por politica editorial.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial de producto sin proyecto tecnico reproducible (regla editorial: no reviews comerciales sin proyecto tecnico).",
+      "matched_products_hint": [],
+      "re_angulation_hint": "No re-angulable: review comercial sin proyecto tecnico reproducible"
     },
     {
-      "id": "76f99eedc817",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 6,
-        "code_quality": 6,
-        "materials_clarity": 7,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 9,
-        "value_added": 3,
-        "originality_potential": 4
-      },
-      "combined_score": 0.580,
-      "verdict": "Puerta automática con L298N y HC-SR04: pedagogía aceptable pero sin downloadables ni STL del mecanismo, originalidad media-baja.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno", "L298N", "Motor DC reductor", "HC-SR04"],
-      "re_angulation_hint": "Sumar STL para soporte del motor y app RFID/mobile para diferenciar"
-    },
-    {
-      "id": "fdcde56aa17a",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 6,
-        "code_quality": 5,
-        "materials_clarity": 6,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 8,
-        "value_added": 3,
-        "originality_potential": 4
-      },
-      "combined_score": 0.540,
-      "verdict": "Chaser 15 LEDs con dos IR: código con en-dash en operador (no compila tal cual). Sin downloadables, proyecto decorativo poco diferenciador.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno", "LED 5mm", "Sensor IR", "Resistencias 220 ohm"],
-      "re_angulation_hint": "Migrar a WS2812 con efectos sincronizados a música y STL del case"
-    },
-    {
-      "id": "a9184c5a6468",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 5,
-        "code_quality": 3,
-        "materials_clarity": 6,
-        "step_completeness": 5,
-        "relevance_to_store_catalog": 9,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "combined_score": 0.530,
-      "verdict": "Tema interesante WS2812 sound reactive, pero el código publicado corresponde a motores y ultrasónicos (no a LEDs). Inutilizable sin re-escritura completa.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno", "Tira WS2812", "Sensor de sonido KY-038"],
-      "re_angulation_hint": "Re-escribir con FastLED + análisis FFT y patrones drop sincronizados"
-    },
-    {
-      "id": "00c87afc53c4",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 9,
-        "value_added": 4,
-        "originality_potential": 5
-      },
-      "combined_score": 0.650,
-      "verdict": "Alarma nivel agua con OLED y 3 LEDs: tutorial decente y catálogo muy cubierto, pero sin downloadables. Originalidad media.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Nano", "Sensor nivel agua", "OLED 0.96 I2C", "Buzzer", "LED"],
-      "re_angulation_hint": "Sumar conectividad ESP32 + dashboard web y código en GitHub"
-    },
-    {
-      "id": "0251e390bcd2",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 9,
-        "value_added": 4,
-        "originality_potential": 4
-      },
-      "combined_score": 0.635,
-      "verdict": "Medidor distancia ultrasónico con OLED y semáforo LED: instructivo claro, sin downloadables. Muy reproducido en internet.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno", "HC-SR04", "OLED 0.96 I2C", "Buzzer", "LED"],
-      "re_angulation_hint": "Adaptar a parking inteligente con logging y app móvil"
-    },
-    {
-      "id": "9f3d4e4191da",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 6,
-        "code_quality": 6,
-        "materials_clarity": 6,
-        "step_completeness": 6,
-        "relevance_to_store_catalog": 8,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "combined_score": 0.565,
-      "verdict": "Comedero pet con IR + servo: simple y reproducible. Sin downloadables ni STL del mecanismo, originalidad media-baja sin un giro novedoso.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Uno", "Sensor IR", "Servo SG90"],
-      "re_angulation_hint": "Agregar STL del contenedor y dosificación temporizada con RTC"
-    },
-    {
-      "id": "7cbe6944da28",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 7,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 9,
-        "value_added": 4,
-        "originality_potential": 6
-      },
-      "combined_score": 0.665,
-      "verdict": "Medición velocidad con 2 IR y LCD I2C: bien explicada la fórmula, sin downloadables. Aplicación atractiva pero falta material descargable.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Arduino Nano", "Sensor IR", "LCD 16x2 I2C", "Buzzer"],
-      "re_angulation_hint": "Sumar logging SD + alarma SMS GSM para uso real en escuela"
-    },
-    {
-      "id": "2bcdbd64daec",
+      "id": "65a048d29c15",
       "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
@@ -290,75 +66,19 @@
       },
       "scores": {
         "pedagogy": 2,
-        "code_quality": 0,
+        "code_quality": 1,
         "materials_clarity": 1,
         "step_completeness": 1,
         "relevance_to_store_catalog": 2,
         "value_added": 1,
         "originality_potential": 2
       },
-      "combined_score": 0.140,
-      "verdict": "Anuncio de evento Make: Live y promo Volume 97 de Make Magazine. Contenido editorial/promocional, no es tutorial reproducible.",
+      "combined_score": 0.150,
+      "verdict": "Cobertura de evento Maker Faire Sardinia 2026, sin tutorial ni componentes tecnicos. Es noticia/evento, no aporta proyecto reproducible ni encaja con catalogo. Bloqueado por politica editorial.",
       "is_blocked": true,
-      "blocked_reason": "Anuncio promocional de evento livestream y número de revista, sin tutorial técnico reproducible",
+      "blocked_reason": "Contenido de evento/noticia sin proyecto tecnico (regla editorial: no eventos ni noticias).",
       "matched_products_hint": [],
-      "re_angulation_hint": "No aplica: contenido editorial/promocional"
-    },
-    {
-      "id": "5d7a0aa10e39",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 1,
-        "stl_files": 1,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 3
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 8,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 5,
-        "value_added": 7,
-        "originality_potential": 7
-      },
-      "combined_score": 0.695,
-      "verdict": "Controlador leverless con QT Py RP2040 + GP2040-CE: incluye STL/3MF/STEP y firmware UF2. Bien estructurado, pero usa boards Adafruit muy específicos.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi Pico RP2040", "Botones arcade 24mm", "Filamento PLA", "Cable USB-C"],
-      "re_angulation_hint": "Adaptar a Raspberry Pi Pico (más común en catálogo) con mismo firmware"
-    },
-    {
-      "id": "077cc6e117a4",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 1,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 1,
-        "pdf_schemas": 1,
-        "total_distinct": 4
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 8,
-        "materials_clarity": 8,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 5,
-        "value_added": 8,
-        "originality_potential": 9
-      },
-      "combined_score": 0.755,
-      "verdict": "Kit embodiment LLM con ESP32-S3 Feather y múltiples sensores: GitHub + paper Zenodo, ángulo único IA+hardware muy actual. Boards Feather específicos.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["ESP32-S3", "BME280", "Micrófono MEMS PDM", "NeoPixel stick", "Motor háptico DRV2605", "LIS3DH"],
-      "re_angulation_hint": "Portar a ESP32 DevKit estándar y demos en español con prompts Claude"
+      "re_angulation_hint": "No re-angulable: noticia de evento sin proyecto tecnico reproducible"
     }
   ]
 }
