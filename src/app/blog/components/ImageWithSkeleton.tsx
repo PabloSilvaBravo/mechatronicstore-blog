@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, type ImgHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type ImgHTMLAttributes } from "react";
 
 // Pablo 21-may-2026 Tier A: img con skeleton loader gris animado.
 // Reemplaza el flash blanco/transparente mientras la img carga. Inspirado
 // en MechaNoticias/ImageWithSkeleton.tsx.
 //
+// Pablo 29-may-2026 fix: cuando la imagen YA esta en el browser cache (caso
+// MUY comun en reloads, hard refresh, navegacion interna), el `onLoad` event
+// NO se dispara confiablemente porque el browser sirve la imagen sincronicamente.
+// Resultado anterior: `loaded` quedaba false para siempre, `opacity: 0`, imagen
+// invisible aunque presente en DOM con `naturalWidth > 0`.
+//
+// Fix: en mount checkear `imgRef.current.complete && naturalWidth > 0`. Si es
+// true, settear `loaded = true` inmediato (skip skeleton).
+//
 // Uso:
 //   <ImageWithSkeleton src={hero} alt="..." className="card-img w-full h-44" />
-//
-// Mantiene compatibilidad con todos los attrs nativos (referrerPolicy,
-// loading, etc.). El skeleton se desvanece smooth cuando onLoad dispara.
 
 interface Props extends Omit<ImgHTMLAttributes<HTMLImageElement>, "onLoad" | "onError"> {
   aspectRatio?: string;     // "16/9", "3/2"; default sin aspect-ratio (usa className)
@@ -28,6 +34,22 @@ export default function ImageWithSkeleton({
 }: Props) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Si la imagen ya estaba cacheada cuando el component monto, onLoad no
+  // se va a disparar - el browser ya tiene la image data lista. Forzamos
+  // loaded=true en este caso para evitar opacity:0 permanente.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete) {
+      if (img.naturalWidth > 0) {
+        setLoaded(true);
+      } else {
+        // complete=true + naturalWidth=0 = imagen fallo en cargar
+        setErrored(true);
+      }
+    }
+  }, [src]);
 
   if (!src) return null;
 
@@ -53,6 +75,7 @@ export default function ImageWithSkeleton({
         />
       )}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         onLoad={() => setLoaded(true)}
