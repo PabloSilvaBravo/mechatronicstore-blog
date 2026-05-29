@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-05-29T22:17:45.154253+00:00",
+  "checked_at": "2026-05-29T23:17:47.379654+00:00",
   "metrics": {
     "drafts_pending": 0,
-    "published_24h": 0,
-    "ranked_stuck": 1,
-    "rejected_ratio_48h": 0.923,
-    "published_48h": 2,
+    "published_24h": 1,
+    "ranked_stuck": 0,
+    "rejected_ratio_48h": 0.889,
+    "published_48h": 3,
     "rejected_48h": 24,
     "sources_active": 33,
     "sources_silent_48h": 0,
@@ -17,23 +17,7 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/97265dc38684/adc43cc0518dd7c4.webp"
       },
       {
         "status": 403,
@@ -41,40 +25,48 @@
       },
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/7be61afcb336ea89.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp"
+      },
+      {
+        "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
       },
       {
         "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/2018/06/display-oled-091-128x32-i2c-2.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Captura-de-pantalla-2023-02-27-a-las-14.28.45.png"
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
       }
     ],
-    "ranked_aging_hours": 1,
-    "published_7d": 4,
+    "ranked_aging_hours": 0,
+    "published_7d": 5,
     "rank_runs_24h": 1,
-    "translate_runs_24h": 0,
+    "translate_runs_24h": 1,
     "counts_by_status": {
       "draft": 11,
-      "published": 38,
-      "ranked": 1,
+      "published": 39,
       "rejected": 559
     }
   },
   "alerts": [
-    {
-      "severity": "critical",
-      "metric": "published_24h",
-      "value": 0,
-      "threshold": 1,
-      "message": "Cero publicaciones en últimas 24h. Pipeline congelado — revisar Routine C + workflow translate-persist."
-    },
     {
       "severity": "warning",
       "metric": "heros_broken",
@@ -85,17 +77,10 @@
     {
       "severity": "warning",
       "metric": "published_7d",
-      "value": 4,
+      "value": 5,
       "threshold": 15,
-      "message": "Solo 4 publicaciones en 7d (baseline pre-bajada 22-may era ~35/7d). Si sostenido 3+ días, revertir cadencia a 3/día via RemoteTrigger (cron viejo en AGENTS.md)."
-    },
-    {
-      "severity": "critical",
-      "metric": "translate_runs_24h",
-      "value": 0,
-      "threshold": 1,
-      "message": "Cero corridas de Translation en 24h (debería ser 2/día). Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
+      "message": "Solo 5 publicaciones en 7d (baseline pre-bajada 22-may era ~35/7d). Si sostenido 3+ días, revertir cadencia a 3/día via RemoteTrigger (cron viejo en AGENTS.md)."
     }
   ],
-  "status": "critical"
+  "status": "warning"
 }
