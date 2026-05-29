@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-05-29T04:03:48.641475+00:00",
+  "checked_at": "2026-05-29T10:01:55.938219+00:00",
   "metrics": {
-    "drafts_pending": 0,
-    "published_24h": 2,
+    "drafts_pending": 4,
+    "published_24h": 0,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.865,
+    "rejected_ratio_48h": 0.861,
     "published_48h": 5,
-    "rejected_48h": 32,
+    "rejected_48h": 31,
     "sources_active": 33,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,7 +17,7 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp"
       },
       {
         "status": 403,
@@ -29,7 +29,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/ca35c83050a0/e771f3943cdb0e68.webp"
       },
       {
         "status": 403,
@@ -37,11 +37,15 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/1ec722f7c21b/5b8761b287371f9f.webp"
       },
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/Pico-2-W-RP2350.png"
+      },
+      {
+        "status": 403,
+        "url": "https://www.mechatronicstore.cl/wp-content/uploads/Diseno-sin-titulo-2024-02-07T124139.705.png"
       },
       {
         "status": 403,
@@ -50,23 +54,26 @@
       {
         "status": 403,
         "url": "https://www.mechatronicstore.cl/wp-content/uploads/D_NQ_NP_2X_711002-MLC41889377655_052020-F.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://www.mechatronicstore.cl/wp-content/uploads/resistencias.webp"
       }
     ],
     "ranked_aging_hours": 0,
     "published_7d": 4,
     "rank_runs_24h": 1,
-    "translate_runs_24h": 1,
+    "translate_runs_24h": 0,
     "counts_by_status": {
-      "draft": 11,
+      "draft": 15,
       "published": 38,
-      "rejected": 546
+      "rejected": 556
     }
   },
   "alerts": [
+    {
+      "severity": "critical",
+      "metric": "published_24h",
+      "value": 0,
+      "threshold": 1,
+      "message": "Cero publicaciones en últimas 24h. Pipeline congelado — revisar Routine C + workflow translate-persist."
+    },
     {
       "severity": "warning",
       "metric": "heros_broken",
@@ -80,7 +87,14 @@
       "value": 4,
       "threshold": 15,
       "message": "Solo 4 publicaciones en 7d (baseline pre-bajada 22-may era ~35/7d). Si sostenido 3+ días, revertir cadencia a 3/día via RemoteTrigger (cron viejo en AGENTS.md)."
+    },
+    {
+      "severity": "critical",
+      "metric": "translate_runs_24h",
+      "value": 0,
+      "threshold": 1,
+      "message": "Cero corridas de Translation en 24h (debería ser 2/día). Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
     }
   ],
-  "status": "warning"
+  "status": "critical"
 }
