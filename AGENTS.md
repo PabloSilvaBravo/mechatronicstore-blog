@@ -150,51 +150,63 @@ Si en el dashboard Vercel ves todos los deploys del blog en "Error —" sin tiem
 
 Pablo mantiene skills SIEMPRE en `~/.claude/skills/<nombre>.md` (global), nunca en `.claude/skills/` del proyecto. Si una skill se acumula info específica del blog, va igual en global, con descripción que aclare cuándo aplica.
 
-## MechaBlog cadencia revertida 2026-05-27 (pipeline congelado)
+## MechaBlog cadencia: 3/día es el régimen definitivo (experimento 2/día FALLIDO, 2026-05-29)
 
-El 22-may-2026 bajamos la cadencia de Routine B (ranking) y Routine C
-(translation) de 3/día → 2/día con caps duplicados (rank 30→60, translate
-10→10). La justificación: backlog 0 y ratio rank→publish ~9% sostenido
-sugería que menos corridas con más material por slot serían más eficientes.
+**TL;DR**: el 22-may-2026 bajamos la cadencia 3/día → 2/día con caps
+duplicados (rank 30→60, translate 10→15) como experimento. El monitoring
+de 7 días (chequeos a +2d, +5d, +7d) refutó la hipótesis. **Cadencia
+3/día con caps 30/10 es el régimen sostenido del blog.** No re-intentar
+la bajada sin un plan de revert automatizado y baseline nuevo.
 
-**El +5d cadencia-check (2026-05-27) la revierte.** Reporte:
-`data/cadencia-check-5d-20260527T120740Z.md`. Resumen del verdict
-CRITICAL:
+### Resultado del experimento (chequeos cadencia-check)
 
-- Burst inicial: 36 publishes en las primeras 48h (drenaje del backlog
-  preexistente con el cap nuevo).
-- Después: **0 publishes sostenidos 96+ horas**, **0 translate_runs
-  24h sostenidos 72+ horas**.
-- `published_7d` cayó 36→13 en 3 días (rolling window) y proyecta llegar
-  a 0 el 30-may si nada cambia.
-- `rejected_ratio_48h=1.0` (100% de candidatos descartados) sugiere un
-  problema ortogonal con filtros / thresholds, pero la regla manda
-  revertir primero, diagnosticar después.
+| Chequeo | Fecha | Verdict | Lectura |
+|---|---|---|---|
+| +2d | 2026-05-24 | ⚠️ WARNING | Burst engañoso: 36 publishes en 48h (drenaje del backlog inicial con caps duplicados). |
+| +5d | 2026-05-27 | 🚨 CRITICAL | Pipeline congelado: 0 publishes 96h+, 0 translate_runs 72h+, `published_7d` cayendo 36→13 en línea recta, `rejected_ratio_48h=1.0`. Revert disparado parcial. |
+| +7d | 2026-05-29 | 🚨 CRITICAL | Recuperación parcial post-revert workflow (5 publishes en 48h) pero `published_7d=4` vs baseline 28 (-86%). CCR triggers aún en 2/día. |
 
-### Estado del revert (al 2026-05-27T12:08Z)
+Reportes: `data/cadencia-check-2d-20260524T120318Z.md`,
+`data/cadencia-check-5d-20260527T120740Z.md`,
+`data/cadencia-check-7d-20260529T120225Z.md`.
+
+### Estado del revert (al 2026-05-29T12:02Z)
 
 | Componente | Estado |
 |---|---|
-| `.github/workflows/blog-rank-prep.yml` cron | ✅ revertido a `25 4,12,20 * * *` (3/día) |
-| `data/cadencia-revert-log.md` | ✅ escrito |
-| Esta sección de AGENTS.md | ✅ agregada |
-| CCR trigger `trig_018awZKUDjfX8JqWmh5x5Mi4` (Routine B) | ⏳ PENDIENTE — requiere `RemoteTrigger update ... cron "30 4,12,20 * * *"` |
-| CCR trigger `trig_012SUx3X96ndwjTdzWs4RKZp` (Routine C) | ⏳ PENDIENTE — requiere `RemoteTrigger update ... cron "0 6,14,22 * * *"` |
-| Caps en prep workflow | ⏸ sin cambio (rank=60, translate=15 mantenidos como headroom; revertir a 30/10 sólo si Pablo decide) |
+| `.github/workflows/blog-rank-prep.yml` cron | ✅ revertido a `25 4,12,20 * * *` (3/día) — desde 2026-05-27T12:08Z |
+| `data/cadencia-revert-log.md` | ✅ con entradas de +5d y +7d |
+| Esta sección de AGENTS.md | ✅ marcada como definitiva |
+| CCR trigger `trig_018awZKUDjfX8JqWmh5x5Mi4` (Routine B) | ⏳ PENDIENTE — `RemoteTrigger update ... cron "30 4,12,20 * * *"` |
+| CCR trigger `trig_012SUx3X96ndwjTdzWs4RKZp` (Routine C) | ⏳ PENDIENTE — `RemoteTrigger update ... cron "0 6,14,22 * * *"` |
+| Caps en prep workflow | ⏸ rank=60, translate=15 mantenidos como headroom. Sugerencia documental: revertir a 30/10 para alinear estrictamente con régimen pre-22-may. Decide Pablo. |
 
-**Por qué la parte CCR quedó pendiente**: el MCP `RemoteTrigger` que
-controla los cron schedules de CCR no está expuesto al container de
-`cadencia-check` en Anthropic Cloud. Mismo patrón que TURSO env vars
-no presentes en cloud sessions. Pablo (o cualquier agente con acceso
-a `RemoteTrigger`) tiene que ejecutar el revert manual.
+**Por qué CCR sigue pendiente al +7d**: el MCP `RemoteTrigger` que
+controla los cron schedules de CCR no está expuesto al container
+Anthropic Cloud — confirmado en las 3 corridas consecutivas. Hasta
+que Pablo (o agente con acceso a `RemoteTrigger`) ejecute el revert
+manual, el blog publica a ~14% del ritmo histórico. **Esta es la
+acción crítica pendiente que cierra el ciclo.**
 
-### Reglas operativas que quedan vigentes
+### Reglas operativas vigentes para cadencia
 
-- Si volvés a tocar cadencia, **siempre dejar trazabilidad** en
-  `data/cadencia-baseline.json` ANTES de aplicar el cambio.
-- Antes de declarar una bajada como "exitosa", esperar el +5d check
-  con datos de DB reales — el +2d puede ser engañoso por bursts de
-  drenaje.
-- Si `rejected_ratio_48h` salta a 1.0 o cerca, eso NO es problema de
-  cadencia → es filtros / scoring. Inspeccionar
-  `data/blog-rank-output.json` del último run y `hard_filters.py`.
+- **3/día es el default sostenido**. Si volvés a tocar cadencia,
+  **siempre snapshot baseline nuevo en `data/cadencia-baseline.json`
+  ANTES** del cambio (el actual ya fue consumido por el experimento
+  fallido — no lo reuses).
+- **No re-intentar la bajada sin auto-revert**. La lección clave: con
+  monitoring manual cada 2-3 días, el daño se acumula porque la
+  detección llega tarde. Cualquier futuro experimento de cadencia
+  debe incluir un trigger automatizado que revierta si
+  `published_24h=0` por 48h consecutivas — sin esperar al humano.
+- **Mejorar visibilidad**: la limitación recurrente fue no tener
+  TURSO env en cloud sessions. Resolver con: (a) secretos en
+  Anthropic Cloud env, (b) endpoint HTTP read-only con counts, o
+  (c) export periódico a un JSON committeado. Sin esto, los próximos
+  cadencia-checks van a tener la misma ambigüedad.
+- **No mezclar diagnósticos**: si `rejected_ratio_48h` salta a 1.0,
+  es problema de filtros / scoring, NO de cadencia. Diagnosticar
+  con el pipeline operando en régimen conocido (3/día).
+- **El +2d siempre miente** cuando hay backlog previo a la bajada:
+  el burst de drenaje da números optimistas falsos. Esperar al +5d
+  con datos de DB reales antes de declarar una bajada exitosa.

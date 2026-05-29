@@ -55,3 +55,56 @@ fresh en más slots no hace daño), pero tampoco resuelve el síntoma.
 - Si CCR revertido en <24h: dejar correr 48h y re-evaluar.
 - Si CCR no revertido en <24h: escalar a Pablo directo (Slack /
   mensaje) y postergar el +7d check.
+
+---
+
+## 2026-05-29T12:02:25Z — +7d check confirma revert DEFINITIVO
+
+**Resumen**: el +7d check no encontró señales para volver a 2/día.
+Verdict: CRITICAL sostenido (3er chequeo consecutivo en alerta).
+Reporte: `data/cadencia-check-7d-20260529T120225Z.md`.
+
+### Datos del +7d
+
+- `published_24h=0`, `published_48h=5`, `published_7d=4` (baseline 28).
+- `translate_runs_24h=0` sostenido (último translate visible: 28-may ~08:10Z).
+- `rank_runs_24h=1` (el ranking sí dispara, pero produce poco).
+- `rejected_ratio_48h=0.861` (vs 1.0 en +5d, mejora).
+- `drafts_pending=4` (vs 12 en +5d, mejora).
+
+### Lectura
+
+- El revert parcial del +5d (workflow `blog-rank-prep.yml` a 3/día)
+  destrabó algo: post-27-may aparecen commits `chore(rank): blog scored
+  12 candidates` (27-may), `chore(translate): blog translated 2
+  tutorials` (28-may), `chore(rank): blog scored 2 candidates`
+  (28-may). El pipeline NO está congelado como en +5d.
+- Pero published_7d=4 vs baseline 28 = -86%. Aun con el revert parcial
+  funcionando, el blog publica al ~14% del baseline. CCR triggers
+  todavía en 2/día son el bottleneck.
+
+### Acciones de esta corrida
+
+1. ✅ Reporte +7d escrito.
+2. ✅ `AGENTS.md` actualizado: sección renombrada a "cadencia 3/día es
+   el régimen definitivo (experimento 2/día FALLIDO)". Cierra el ciclo
+   del experimento.
+3. ✅ Este log actualizado.
+
+### Acción pendiente (sigue siendo la misma del +5d)
+
+Pablo o agente con `RemoteTrigger` MCP:
+
+```
+RemoteTrigger update trig_018awZKUDjfX8JqWmh5x5Mi4 cron "30 4,12,20 * * *"
+RemoteTrigger update trig_012SUx3X96ndwjTdzWs4RKZp cron "0 6,14,22 * * *"
+```
+
+Hasta que esto pase, el blog publica al ~14% del ritmo histórico.
+
+### Cierre del ciclo de monitoring
+
+No se programa +10d ni siguientes. La hipótesis "2/día con caps
+duplicados es más eficiente" queda **refutada empíricamente** por
+3 chequeos consecutivos. Cadencia 3/día con caps 30/10 es el
+régimen sostenido del blog.
