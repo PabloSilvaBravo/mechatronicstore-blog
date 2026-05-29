@@ -1,311 +1,115 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-28T08:25:00Z",
+  "translated_at": "2026-05-29T22:15:00Z",
   "translations": [
     {
-      "id": "077cc6e117a4",
-      "slug": "kit-percepcion-fisica-llm-esp32-sensores-feedback",
-      "title_es": "Kit de percepción física para un LLM con ESP32 y sensores con feedback",
-      "subtitle_es": "Construye un dispositivo que le da a un agente LLM ojos, oídos y manos: sensores ambientales, NeoPixels, motor háptico y bucles de auto-verificación.",
-      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp",
-      "body_es": "## La idea: que el modelo realmente \"sienta\" lo que pasa\n\nUn LLM corriendo en la nube es brillante leyendo texto, pero está completamente desconectado del mundo físico que rodea a su usuario. Este proyecto cierra esa brecha con un \"sidecar\" embebido: un ESP32 con micrófono, sensor ambiental, acelerómetro, sensor de luz, NeoPixels, motor de vibración y buzzer. El modelo conversa con el dispositivo por MQTT o HTTP y puede medir el entorno, expresarse en él y —lo más interesante— verificar que sus salidas efectivamente ocurrieron en la realidad física.\n\nLa propuesta original es de Olivia Zhu en su paper *A Minimal Self-Perceiving Embodiment for Large Language Models* (Zenodo, 2026). Esta versión chilena adapta el hardware al catálogo local: cambia el ESP32-S3 Reverse TFT Feather de Adafruit por un XIAO ESP32-S3 o ESP32 WROOM estándar, sustituye el micrófono PDM por un INMP441 I2S, y reemplaza el VEML7700 por un sensor BH1750 (GY-302). El código sigue siendo CircuitPython y la arquitectura de bucles de feedback es idéntica.\n\nAl terminar vas a tener un agente que puede pedir \"avísame cuando suba la temperatura sobre 25°C vibrando el motor y poniendo los LED en rojo\" y comprobar por sí mismo, con su propio micrófono y acelerómetro, que el aviso realmente sonó y vibró.\n\n![Render del kit completo armado en perma-proto con todos los sensores conectados](https://cdn-learn.adafruit.com/assets/assets/000/144/252/medium800/sensors_full_build.png?1779386051)\n\n## Tres bloques: percepción, expresión y auto-percepción\n\nLo que hace \"corporeizado\" a este agente no es la lista de sensores, es el cierre del bucle. Casi cualquier proyecto IoT puede leer un BME280 y publicar al cloud. Lo que diferencia a este kit es que cada salida está emparejada con un sensor que confirma su efecto:\n\n- El **buzzer piezo** suena → el **micrófono I2S** detecta el nivel de presión sonora.\n- Los **NeoPixels** se encienden → el **sensor de luz BH1750** registra el cambio de luminancia.\n- El **motor de vibración** pulsa → el **acelerómetro** detecta la oscilación.\n\nEsta verificación cierra el lazo. El agente no \"asume\" que su comando llegó: lo comprueba. Si manda encender NeoPixels en azul y el lux no cambia, sabe que algo falló (cable suelto, GPIO mal mapeado, sensor tapado). Eso lo distingue de un bot con sensores: está **anclado** en la realidad.\n\n### Modalidades de percepción\n\n| Magnitud | Sensor sugerido (catálogo MS) | Bus |\n|---|---|---|\n| Temperatura / humedad / presión | HTU21D (temp+hum) + BMP180 (presión) o AHT10 | I2C |\n| Nivel de sonido | Micrófono I2S INMP441 | I2S |\n| Luminancia | Módulo BH1750 GY-302 | I2C |\n| Movimiento / orientación | Acelerómetro ADXL345 GY-291 | I2C / SPI |\n| Entrada del usuario | 3 botones GPIO | digital |\n\n### Modalidades de expresión\n\n| Acción | Actuador | Bucle de verificación |\n|---|---|---|\n| Sonido | Buzzer activo 5V | Micrófono I2S |\n| Luz RGB | Anillo / módulo NeoPixel 8x5050 | Sensor de luz BH1750 |\n| Háptico | DRV2605L + motor de vibración 3.3V | Acelerómetro |\n| Visual (cara/texto) | TFT del ESP32 Feather (o display externo I2C) | — (sin loop) |\n\n## Hardware: por qué ESP32 estándar funciona igual\n\nEl tutorial original usa el ESP32-S3 Reverse TFT Feather de Adafruit porque tiene 3 botones integrados, pantalla TFT a bordo y conectores STEMMA QT para I2C plug-and-play. En Chile esa placa específica es difícil de conseguir, pero el **mismo firmware CircuitPython corre en casi cualquier ESP32-S3 o ESP32 WROOM** con dos ajustes:\n\n1. **Los botones**: en lugar de los 3 integrados, agregá 3 pulsadores táctiles a GPIOs libres con resistencias pull-up internas (`digitalio.DigitalInOut` con `Pull.UP`).\n2. **La pantalla**: si usás un ESP32 WROOM sin TFT, conectá un display OLED SSD1306 0.96\" I2C aparte. La librería `adafruit_displayio_ssd1306` reemplaza la TFT integrada sin cambios mayores en la lógica de \"caritas\".\n\nPara las conexiones I2C de los sensores, en vez de cables STEMMA QT, usá protoboard 830 puntos + jumpers macho-hembra. Funcionalmente idéntico, solo menos elegante.\n\n## Software: CircuitPython, MQTT y un mini HTTP server\n\nEl flujo es:\n\n1. Flasheá el ESP32 con CircuitPython 9.x (`esptool.py --port /dev/ttyUSB0 erase_flash` y después arrastrar el `.bin` correspondiente a tu chip).\n2. Copiá las librerías necesarias a `/lib`: `adafruit_bme280` (o `adafruit_bmp280` + `adafruit_htu21d` si combinás), `adafruit_drv2605`, `neopixel`, `adafruit_lis3dh` (o `adafruit_adxl34x` si usás el ADXL345), `adafruit_minimqtt`.\n3. Creá tu `settings.toml` con SSID, password Wi-Fi y credenciales de Adafruit IO (o tu broker MQTT preferido — Mosquitto local funciona perfecto).\n4. Subí el `code.py` del repo de Tim C ajustando los pines a tu placa.\n\n### Esqueleto del bucle principal\n\n```python\nimport board, busio, time\nimport neopixel, pwmio\nfrom adafruit_bh1750 import BH1750\nfrom adafruit_adxl34x import ADXL345\n\ni2c = busio.I2C(board.GP5, board.GP4)  # ajusta pines a tu ESP32\nlux = BH1750(i2c)\naccel = ADXL345(i2c)\npixels = neopixel.NeoPixel(board.GP2, 8, brightness=0.3)\nbuzzer = pwmio.PWMOut(board.GP3, variable_frequency=True)\n\ndef expresar_y_verificar(color, freq_hz):\n    lux_antes = lux.lux\n    pixels.fill(color)\n    buzzer.frequency = freq_hz\n    buzzer.duty_cycle = 2**15\n    time.sleep(0.5)\n    lux_despues = lux.lux\n    buzzer.duty_cycle = 0\n    return (lux_despues - lux_antes) > 50  # confirmacion fisica\n```\n\nEste patrón es el corazón del proyecto: cada vez que el agente actúa, el código reporta de vuelta un booleano de \"sí, lo percibí\". El LLM remoto recibe ese ACK y entiende que el comando aterrizó.\n\n## Variantes y mejoras\n\n- **Modo offline con LLM local**: en vez de Adafruit IO, puedes correr un Ollama con `llama3.2:3b` en una Raspberry Pi 4 dentro de la misma red y exponerlo por HTTP. El ESP32 hace POST con las lecturas de sensores cada N segundos y el modelo decide qué actuador disparar. Cero cuenta cloud.\n- **Reemplazar el motor háptico por un servo SG90**: si lo háptico te queda largo, un servo barato puede mover una \"banderita\" física que el acelerómetro detecta igual. Más visual, más barato y mismo bucle de auto-verificación.\n- **Agregar Claude vía API**: el watcher MQTT puede llamar a la API de Anthropic con `claude-haiku-4-5-20251001` (rápido y económico) pasándole las lecturas de sensores como tool inputs y dejando que decida acciones. El prompt caching reduce el costo a ~$0.01 USD por hora de operación continua.\n- **Logging local en microSD**: agregando un módulo microSD SPI puedes guardar todas las lecturas + decisiones del agente, útil para debug o para entrenar fine-tunes después.\n\n## Personalización para Chile\n\nLista de componentes equivalentes en stock en MechatronicStore:\n\n- **Seeed Studio XIAO ESP32-S3** (SKU GS1-3) — $13.670 CLP. Reemplazo directo del ESP32-S3 Feather: dual core, Wi-Fi, BLE, USB-C nativo.\n- **ESP32 WROOM-32 USB-C** (SKU X2-10V2) — $7.990 CLP. Alternativa más barata si no necesitas los periféricos extra del S3.\n- **Módulo Sensor de Temperatura y Humedad HTU21D** (SKU GE2-6) — $4.490 CLP. Cubre temperatura y humedad del BME280.\n- **Sensor de Presión Barométrica BMP180 GY-68** (SKU GE1-10) — $2.490 CLP. Completa la parte de presión.\n- **Módulo Micrófono I2S INMP441** (SKU GL3-12) — $5.890 CLP. Equivalente funcional del PDM mic de Adafruit (también MEMS, bus distinto pero compatible).\n- **Módulo RGB LED 8 bits 5050 WS2812** (SKU GN3-11) — $1.990 CLP. NeoPixel stick clónico al precio justo.\n- **Controlador Háptico Gravity DRV2605L** (SKU GL2-6) — $10.650 CLP. Es el mismo chip DRV2605 del original.\n- **Motor de vibración 3.3V** (SKU GB3-6V2) — $2.490 CLP. El \"haptic motor\" que va al DRV2605L.\n- **Acelerómetro ADXL345 GY-291** (SKU GN3-4) — $3.490 CLP. Reemplazo del LIS3DH; mismo bus I2C, similar rango ±2g/4g/8g/16g.\n- **Módulo Sensor de Intensidad Luminosa BH1750 GY-302** (SKU GN1-6) — $3.990 CLP. Sustituto del VEML7700, sensor lux I2C estándar.\n- **Buzzer activo 5V** (SKU GA3-2) — $500 CLP.\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP. Sustituye la Perma-Proto half-size de Adafruit; ideal para prototipar antes de soldar.\n- **Pack 12 filas Pin Header Macho 40 pines 2.54mm** (SKU E-101) — $3.990 CLP.\n- **Cables macho-hembra 30cm** (SKU C-418) — $1.990 CLP. Para las conexiones I2C entre módulos.\n- **Cable USB Tipo C a USB Tipo A 1mt** (SKU B-101) — $2.190 CLP. Para flashear y alimentar el ESP32-S3.\n\n**Costo total aproximado: $65.920 CLP** (versus ~USD $80-100 + envío internacional armando con las piezas exactas de Adafruit).\n\n## Recursos\n\n- **Tutorial original** (inglés): [LLM Agent Embodiment Kit — Adafruit Learning System](https://learn.adafruit.com/llm-agent-embodiment-kit)\n- **Paper de referencia**: *A Minimal Self-Perceiving Embodiment for Large Language Models* — Olivia Zhu (Zenodo, 2026)\n- **PDF descargable del original**: [llm-agent-embodiment-kit.pdf](https://cdn-learn.adafruit.com/downloads/pdf/llm-agent-embodiment-kit.pdf)\n- **Librerías CircuitPython**: [circuitpython.org/libraries](https://circuitpython.org/libraries) (bundle oficial)\n\nVersión chilena inspirada en el trabajo de Tim C, con componentes equivalentes en stock local en MechatronicStore.\n",
+      "id": "97265dc38684",
+      "slug": "raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython",
+      "title_es": "Servidor web en Raspberry Pi Pico W con archivos HTML, CSS y JS desde el filesystem",
+      "subtitle_es": "Aprende a separar tu interfaz web del script MicroPython sirviendo cada archivo desde la memoria interna del Pico W.",
+      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/97265dc38684/adc43cc0518dd7c4.webp",
+      "body_es": "## Por qué dejar de escribir el HTML dentro del .py\n\nSi ya armaste un servidor web simple con la Raspberry Pi Pico W, seguramente terminaste con un string gigante de HTML pegado en medio de tu script MicroPython. Funciona, pero apenas tu interfaz crece — un par de botones, algo de CSS, un poquito de JavaScript — el archivo se vuelve imposible de mantener. Cualquier cambio visual te obliga a editar el código del servidor y volver a flashear todo.\n\nLa solución es la misma que usa cualquier servidor web \"de verdad\": guardar `index.html`, `style.css` y `script.js` como archivos separados en el filesystem del Pico y que el script MicroPython solo se encargue de leerlos y servirlos según la URL que pida el navegador. En este tutorial vas a montar exactamente eso, terminando con un panel web que controla el LED onboard y muestra el sensor interno de temperatura del RP2040/RP2350 — sin recargar la página gracias a fetch() y JSON.\n\n![Servidor web Raspberry Pi Pico sirviendo archivos desde el filesystem](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/Raspberry-Pi-Pico-Web-Server-Filesystem.jpg?resize=828%2C466&quality=100&strip=all&ssl=1)\n\n> **Importante**: este proyecto solo corre en variantes con Wi-Fi. Necesitas una **Raspberry Pi Pico W** o **Raspberry Pi Pico 2 W**. Las versiones sin W (Pico clásica o Pico 2) no tienen radio CYW43439 y no pueden levantar el servidor.\n\n## Concepto: el Pico como mini servidor de archivos\n\nLa Pico W tiene ~2 MB de memoria flash disponible para tu código y datos. Eso es suficiente para almacenar varios archivos estáticos pequeños y servirlos por HTTP. La lógica es siempre la misma:\n\n1. El navegador pide una URL (`/`, `/style.css`, `/script.js`, `/lighton`, etc.).\n2. Tu script MicroPython parsea la línea de request y mira qué path se pidió.\n3. Según el path, lee el archivo correspondiente del filesystem y arma una respuesta HTTP con el `Content-type` correcto (`text/html`, `text/css`, `text/javascript`, `application/json`).\n4. Envía el cuerpo y cierra la conexión.\n\nLa ventaja real no es técnica, es de mantenibilidad: el diseñador puede tocar `style.css` sin entender Python, y el HTML deja de ser un string escapado dentro de comillas triples.\n\n## Hardware necesario\n\n- Una **Raspberry Pi Pico W** o **Raspberry Pi Pico 2 W** (esta última con RP2350, más rápida y con más RAM).\n- Un **cable micro USB de datos** para conectar al PC (no cualquier cable USB sirve: tiene que transferir datos, no solo cargar).\n- Un computador con **Thonny IDE** instalado.\n- Opcionalmente, una **protoboard** y **jumpers** si querés extender el proyecto con un LED externo, un DHT22 o cualquier hardware adicional. Para el ejemplo base alcanza con el LED onboard.\n\nNo se requiere protoboard ni componentes extra para la versión inicial — todo corre con el LED y el sensor de temperatura internos de la placa.\n\n## Preparación del entorno\n\nAntes de empezar, asegúrate de tener:\n\n- **Firmware MicroPython** flasheado en tu Pico W. Si no lo tienes, sigue [esta guía oficial](https://randomnerdtutorials.com/getting-started-raspberry-pi-pico-w/) para hacerlo.\n- **Thonny IDE** instalado y conectado a la Pico.\n- El paquete **picozero** instalado desde Thonny: `Tools > Manage packages... > picozero @PyPI > Install`. Lo usamos para leer el sensor interno de temperatura del chip.\n\n## Etapa 1 — Servidor mínimo sirviendo un solo archivo HTML\n\nAntes de ir al panel completo, vamos a hacer el Hello World: el Pico W recibe una petición HTTP y devuelve el contenido de un `index.html` guardado en su filesystem. Esto te muestra el patrón básico sin distracciones.\n\n### 1) Crea el `index.html`\n\nEn Thonny, abre un archivo nuevo y pega esto:\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Pico Web Server</title>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n</head>\n<body>\n    <h1>Raspberry Pi Pico Web Server</h1>\n    <p>Hello, World!</p>\n</body>\n</html>\n```\n\nGuárdalo en el filesystem de la Pico (no en tu PC): **File > Save as...** y elige **Raspberry Pi Pico**, con el nombre exacto `index.html`.\n\n![HTML guardado en el filesystem del Pico](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/HTML-file-saved-pico-filesystem.png?resize=824%2C708&quality=100&strip=all&ssl=1)\n\n### 2) Crea el script MicroPython\n\n```python\n# Servidor web mínimo - lee index.html desde filesystem\nimport network\nimport socket\nimport time\n\nssid = 'REPLACE_WITH_YOUR_SSID'\npassword = 'REPLACE_WITH_YOUR_PASSWORD'\n\nHTML_FILE_PATH = \"index.html\"\n\ndef read_file(filepath):\n    with open(filepath, \"r\") as file:\n        return file.read()\n\ndef init_wifi(ssid, password):\n    wlan = network.WLAN(network.STA_IF)\n    wlan.active(True)\n    wlan.connect(ssid, password)\n    timeout = 10\n    while timeout > 0:\n        if wlan.status() >= 3:\n            break\n        timeout -= 1\n        print('Esperando Wi-Fi...')\n        time.sleep(1)\n    if wlan.status() != 3:\n        print('No se pudo conectar')\n        return False\n    print('IP:', wlan.ifconfig()[0])\n    return True\n\nif init_wifi(ssid, password):\n    addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]\n    s = socket.socket()\n    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    s.bind(addr)\n    s.listen()\n    print('Escuchando en', addr)\n    while True:\n        try:\n            conn, addr = s.accept()\n            conn.recv(1024)\n            response = read_file(HTML_FILE_PATH)\n            conn.send('HTTP/1.0 200 OK\\r\\nContent-type: text/html\\r\\n\\r\\n')\n            conn.send(response)\n            conn.close()\n        except OSError:\n            conn.close()\n```\n\nGuárdalo como `main.py` también en el filesystem del Pico. Reemplaza las credenciales Wi-Fi y ejecuta. La consola Serial te imprimirá la IP — abre esa dirección en tu navegador y verás el \"Hello, World!\".\n\nNota: solo respondemos a la URL raíz (`/`). Cualquier path adicional también devuelve el mismo HTML. Eso lo arreglamos en la etapa 2.\n\n## Etapa 2 — Panel web con HTML + CSS + JS separados y endpoints JSON\n\nAhora viene la parte interesante: el navegador va a pedir tres archivos distintos (`index.html`, `style.css`, `script.js`) y también va a hacer llamadas asíncronas con `fetch()` a endpoints que devuelven JSON. El panel tendrá:\n\n- Indicador del estado del LED (ON / OFF).\n- Dos botones para prender y apagar el LED onboard.\n- Lectura del sensor interno de temperatura en °C y °F.\n- Botón \"Get New Reading\" que refresca la temperatura sin recargar la página.\n\n![Panel web funcionando: estado de LED, botones y lectura de temperatura](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/RPi-Pico-Web-Server-Files-from-Filesystem.png?resize=828%2C508&quality=100&strip=all&ssl=1)\n\n### 1) `index.html` con placeholders\n\nGuárdalo en el filesystem del Pico como `index.html` (sobrescribe el anterior):\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Pico Web Server</title>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n    <script src=\"script.js\" defer></script>\n</head>\n<body>\n    <h1>Raspberry Pi Pico Web Server</h1>\n    <p>LED State: <strong id=\"led-status\" class=\"status\">{state}</strong></p>\n    <p>\n        <button onclick=\"turnOn()\" class=\"button\">ON</button>\n        <button onclick=\"turnOff()\" class=\"button button2\">OFF</button>\n    </p>\n    <p>\n        <span class=\"sensor-labels\">Temperature:</span>\n        <span id=\"temp_c\" class=\"temp-value\">{temperature_c}</span><span class=\"units\">°C</span>\n        &nbsp; / &nbsp;\n        <span id=\"temp_f\" class=\"temp-value\">{temperature_f}</span><span class=\"units\">°F</span>\n    </p>\n    <p>\n        <button onclick=\"getNewReading()\" class=\"button-refresh\" style=\"width: 220px;\">Get New Reading</button>\n    </p>\n</body>\n</html>\n```\n\nLos placeholders `{state}`, `{temperature_c}` y `{temperature_f}` se rellenan desde MicroPython con `str.format()` antes de enviar la respuesta.\n\n### 2) `script.js` — peticiones asíncronas\n\nGuarda este JavaScript como `script.js` en el filesystem del Pico:\n\n```javascript\nasync function turnOn() {\n    try {\n        const response = await fetch('/lighton');\n        const data = await response.json();\n        document.getElementById('led-status').textContent = data.state;\n    } catch (error) {\n        console.error('Error turning LED ON:', error);\n        alert('Failed to turn LED ON');\n    }\n}\n\nasync function turnOff() {\n    try {\n        const response = await fetch('/lightoff');\n        const data = await response.json();\n        document.getElementById('led-status').textContent = data.state;\n    } catch (error) {\n        console.error('Error turning LED OFF:', error);\n        alert('Failed to turn LED OFF');\n    }\n}\n\nasync function getNewReading() {\n    try {\n        const response = await fetch('/temperature');\n        const data = await response.json();\n        document.getElementById('temp_c').textContent = data.temperature_c;\n        document.getElementById('temp_f').textContent = data.temperature_f;\n    } catch (error) {\n        console.error('Error fetching temperature:', error);\n        alert('Failed to get new reading');\n    }\n}\n```\n\nCada función dispara un `fetch()` a un endpoint distinto del servidor y actualiza solo el elemento HTML que cambió, sin recargar nada. Esa es la magia de los servidores con endpoints JSON: el HTML se carga una vez y después solo se intercambian datos.\n\n### 3) `style.css` — el panel se ve decente\n\nGuárdalo como `style.css` en el filesystem:\n\n```css\nhtml { font-family: Arial; background-color: #FFFFF7; color: #333; margin: 0; padding: 0; }\nbody { max-width: 920px; margin: 0 auto; text-align: center; padding: 15px; }\nh1 { color: #0F3376; padding: 25px 0 15px 0; font-size: 2.1rem; }\np { font-size: 1.55rem; margin: 20px auto; }\n.button { display: inline-block; background-color: #00A676; border: none; border-radius: 6px;\n  color: white; padding: 14px 32px; font-size: 1.25rem; margin: 8px 12px; cursor: pointer;\n  box-shadow: 0 3px 8px rgba(0,0,0,0.2); width: 170px; }\n.button:hover { background-color: #008c63; transform: translateY(-2px); }\n.button2 { background-color: #f44336; }\n.button2:hover { background-color: #d32f2f; }\n.button-refresh { background-color: #f0f0f0; color: #444; border: 1px solid #bbb;\n  font-size: 1.15rem; width: 230px; padding: 12px 24px; }\n.sensor-labels { font-size: 1.55rem; font-weight: bold; color: #444; margin-right: 12px; }\n.temp-value { font-size: 1.9rem; color: #0F3376; }\n.units { font-size: 1.45rem; color: #555; margin-left: 3px; }\n.status { font-weight: bold; color: #0F3376; }\n```\n\n### 4) `main.py` — el router HTTP\n\nEste es el script principal. Sube y guarda como `main.py` en el filesystem:\n\n```python\nimport network\nimport socket\nimport time\nimport json\nfrom picozero import pico_temp_sensor\nfrom machine import Pin\n\nssid = 'REPLACE_WITH_YOUR_SSID'\npassword = 'REPLACE_WITH_YOUR_PASSWORD'\n\nHTML_FILE_PATH = \"index.html\"\nCSS_FILE_PATH = \"style.css\"\nJS_FILE_PATH = \"script.js\"\n\nled = Pin('LED', Pin.OUT)\nstate = 'OFF'\n\ndef read_file(filepath):\n    with open(filepath, \"r\") as file:\n        return file.read()\n\ndef get_temperature():\n    c = pico_temp_sensor.temp\n    f = c * (9/5) + 32\n    return round(c), round(f)\n\ndef webpage(state):\n    html_content = read_file(HTML_FILE_PATH)\n    temperature_c, temperature_f = get_temperature()\n    return html_content.format(state=state, temperature_c=temperature_c, temperature_f=temperature_f)\n\ndef init_wifi(ssid, password):\n    wlan = network.WLAN(network.STA_IF)\n    wlan.active(True)\n    wlan.connect(ssid, password)\n    timeout = 10\n    while timeout > 0 and wlan.status() < 3:\n        timeout -= 1\n        time.sleep(1)\n    if wlan.status() != 3:\n        print('Wi-Fi falló')\n        return False\n    print('IP:', wlan.ifconfig()[0])\n    return True\n\nif init_wifi(ssid, password):\n    addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]\n    s = socket.socket()\n    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    s.bind(addr)\n    s.listen()\n    print('Escuchando en', addr)\n    while True:\n        try:\n            conn, addr = s.accept()\n            request = conn.recv(1024)\n            try:\n                path = request.split()[1]\n            except IndexError:\n                path = b'/'\n\n            if path == b'/lighton':\n                led.value(1); state = 'ON'\n                response = json.dumps({\"state\": state}); content_type = 'application/json'\n            elif path == b'/lightoff':\n                led.value(0); state = 'OFF'\n                response = json.dumps({\"state\": state}); content_type = 'application/json'\n            elif path == b'/temperature':\n                c, f = get_temperature()\n                response = json.dumps({\"temperature_c\": c, \"temperature_f\": f})\n                content_type = 'application/json'\n            elif path == b'/style.css':\n                response = read_file(CSS_FILE_PATH); content_type = 'text/css'\n            elif path == b'/script.js':\n                response = read_file(JS_FILE_PATH); content_type = 'text/javascript'\n            else:\n                response = webpage(state); content_type = 'text/html'\n\n            conn.send(f'HTTP/1.0 200 OK\\r\\nContent-type: {content_type}\\r\\n\\r\\n')\n            conn.send(response)\n            conn.close()\n        except OSError:\n            conn.close()\n```\n\nLa lógica clave está en el `if / elif`: según la URL pedida, leemos un archivo distinto del filesystem o armamos un JSON de respuesta, y ajustamos el `Content-type` que va en el header HTTP. El navegador necesita ese header para saber si lo que recibe es HTML, CSS, JS o JSON.\n\n## Probando todo\n\nVerifica que en el filesystem del Pico tengas estos 4 archivos: `index.html`, `style.css`, `script.js` y `main.py`. En Thonny, **View > Files** te muestra el contenido del filesystem.\n\n![Archivos guardados en el filesystem del Pico](https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/Files-saved-on-RPi-Pico-filesystem.png?resize=318%2C172&quality=100&strip=all&ssl=1)\n\nReinicia la placa o ejecuta `main.py`, anota la IP que aparece en la consola y ábrela en tu navegador. Vas a ver el panel completo: prende y apaga el LED desde los botones, pide una temperatura nueva con el botón verde y observa cómo los valores cambian sin que la página recargue.\n\n## Variantes y mejoras\n\n- **Dashboard live con WebSocket y sensor DHT22 externo**: el patrón `fetch()` que usamos es polling — el navegador pregunta cada vez que el usuario pulsa un botón. Para una lectura continua sin que el usuario haga nada, reemplaza fetch por WebSocket usando `microdot` o `MicroWebSrv2` en el Pico, conecta un DHT22 a un GPIO y envía las lecturas cada 2 segundos al frontend. El JS solo escucha eventos y actualiza el DOM.\n- **Servir múltiples páginas**: agrega `about.html`, `historial.html`, etc. al filesystem y agrega más ramas al router de `main.py`. El Pico W puede servir tranquilamente un sitio estático completo de varios MB siempre que cada archivo individual no sea descomunal.\n- **Login básico con sesión**: agrega un cookie de sesión rudimentario (un token aleatorio guardado en una variable global) y un endpoint `/login` que lo emite. Útil para que no cualquiera en la red local pueda apagar tu LED.\n- **Almacenar lecturas en una microSD vía SPI**: si conectas un módulo microSD, podés guardar el histórico de temperaturas en un CSV y servirlo en `/data.csv` para descargar.\n\n## Personalización para Chile\n\nEn MechatronicStore tienes todo el hardware necesario:\n\n- **Raspberry Pi Pico 2 W (RP2350)** — SKU `GS3-4` — **$15.990 CLP**. La variante recomendada con Wi-Fi/Bluetooth, doble núcleo Arm Cortex-M33 a 150 MHz y 520 KB de SRAM. Reemplazo directo y mejorado de la Pico W original.\n- **Raspberry Pi Pico USB-C** — SKU `N-221` — **$8.990 CLP**. Si solo necesitas la Pico clásica (sin Wi-Fi) para otros proyectos. Para este tutorial **necesitas la versión W**, pero suele venir bien tener una clásica en el cajón.\n- **Cable USB a Micro USB** — SKU `X3-10` — **$1.290 CLP**. Conexión entre tu PC y la Pico W (la Pico 2 W usa micro-USB).\n- **Protoboard 830 puntos MB102** — SKU `C-302` — **$3.790 CLP**. Si querés extender el proyecto con sensores externos como en la sección de variantes.\n- **Cables macho-macho 30cm** — SKU `C-417` — **$2.990 CLP**. Para las conexiones a sensores adicionales.\n- **LED 5mm variedad de colores** — SKU `GA2-5` — **$100 CLP**. Si querés probar con un LED externo en lugar del onboard.\n- **Resistencias 1/4W 220 Ω** — SKU `GK1-18` — **$100 CLP**. Para limitar corriente del LED externo (no es necesaria para el LED onboard).\n\n**Costo total del proyecto base: ~$17.280 CLP** (Pico 2 W + cable). Mucho más económico que cualquier kit \"Pico starter\" importado, y con stock local.\n\n## Recursos\n\n- **Tutorial original** (inglés): [Raspberry Pi Pico Web Server: Files from Filesystem (MicroPython) — Random Nerd Tutorials](https://randomnerdtutorials.com/raspberry-pi-pico-web-server-filesystem-micropython/)\n- **Repositorio GitHub con el código completo**: [RuiSantosdotme/Random-Nerd-Tutorials — web_server_filesystem](https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/tree/master/Projects/Raspberry-Pi-Pico/MicroPython/web_server_filesystem)\n- **Documentación oficial Raspberry Pi Pico**: [raspberrypi.com/documentation/microcontrollers](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html)\n- **Librería picozero**: [picozero @ PyPI](https://pypi.org/project/picozero/)\n\nVersión chilena inspirada en el tutorial de Rui & Sara Santos, con componentes en stock local en MechatronicStore.\n",
       "materials_list": [
-        {"name": "Placa ESP32-S3 (XIAO o equivalente)", "qty": 1, "role": "core"},
-        {"name": "Sensor de temperatura y humedad HTU21D", "qty": 1, "role": "sensor ambiental"},
-        {"name": "Sensor de presión barométrica BMP180", "qty": 1, "role": "sensor ambiental"},
-        {"name": "Módulo Micrófono I2S INMP441", "qty": 1, "role": "captura de sonido"},
-        {"name": "Módulo NeoPixel 8 LEDs WS2812 5050", "qty": 1, "role": "expresión visual"},
-        {"name": "Controlador háptico DRV2605L", "qty": 1, "role": "driver motor"},
-        {"name": "Motor de vibración 3.3V", "qty": 1, "role": "actuador háptico"},
-        {"name": "Acelerómetro ADXL345 GY-291", "qty": 1, "role": "verificación háptica"},
-        {"name": "Sensor de luz BH1750 GY-302", "qty": 1, "role": "verificación visual"},
-        {"name": "Buzzer activo 5V", "qty": 1, "role": "expresión sonora"},
-        {"name": "Protoboard 830 puntos MB102", "qty": 1, "role": "prototipado"},
-        {"name": "Pack Pin Header Macho 40 pines 2.54mm", "qty": 1, "role": "conectores"},
-        {"name": "Cables Dupont macho-hembra 30cm", "qty": 1, "role": "cableado I2C"},
-        {"name": "Cable USB-C a USB-A 1m", "qty": 1, "role": "alimentación y datos"}
+        {"name": "Raspberry Pi Pico 2 W (RP2350)", "qty": 1, "role": "core"},
+        {"name": "Cable USB a Micro USB", "qty": 1, "role": "alimentación y datos"},
+        {"name": "Protoboard 830 puntos MB102", "qty": 1, "role": "prototipado (opcional, para extensiones)"},
+        {"name": "Cables macho-macho 30cm", "qty": 1, "role": "cableado (opcional, para extensiones)"},
+        {"name": "LED 5mm variedad de colores", "qty": 1, "role": "expansión (opcional)"},
+        {"name": "Resistencias 1/4W 220 Ω", "qty": 1, "role": "expansión (opcional)"}
       ],
       "steps": [
-        {"position": 1, "name": "Flashear CircuitPython 9.x en el ESP32-S3", "text": "Conecta la placa por USB-C y corre esptool.py --port <PUERTO> erase_flash, luego arrastra el binario CircuitPython para tu chip al drive RPI-RP2 / CIRCUITPY. Verifica que aparezca el REPL en el monitor serial.", "image_url": null},
-        {"position": 2, "name": "Cablear los módulos I2C al protoboard", "text": "En el protoboard 830 puntos comparte líneas de 3.3V y GND, luego conecta SDA/SCL de cada módulo (HTU21D, BMP180, BH1750, ADXL345, DRV2605L) al bus I2C del ESP32. Cables macho-hembra suficientes para todo.", "image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/252/medium800/sensors_full_build.png?1779386051"},
-        {"position": 3, "name": "Conectar actuadores: NeoPixels, buzzer y motor", "text": "NeoPixels van a un GPIO con resistencia 330Ω en serie a la línea DIN. El buzzer activo a otro GPIO con PWM. El motor de vibración se conecta a la salida del DRV2605L (no directo a un GPIO, el driver maneja el efecto).", "image_url": null},
-        {"position": 4, "name": "Copiar librerías y settings.toml", "text": "Descarga el bundle oficial de circuitpython.org/libraries y copia a /lib las librerías de cada sensor más adafruit_minimqtt. Crea settings.toml con CIRCUITPY_WIFI_SSID, CIRCUITPY_WIFI_PASSWORD y AIO_USERNAME / AIO_KEY (o el broker MQTT que prefieras).", "image_url": null},
-        {"position": 5, "name": "Probar cada sensor en aislamiento", "text": "Antes de orquestar todo, haz un script mínimo por sensor que imprima al serial sus lecturas. Si algún módulo no responde, revisa direcciones I2C con i2c.scan().", "image_url": null},
-        {"position": 6, "name": "Integrar los bucles de auto-verificación", "text": "Implementa la función expresar_y_verificar(color, freq_hz) del ejemplo: mide lux antes/después de encender NeoPixels y devuelve True si el delta es significativo. Replica el patrón para buzzer↔micrófono y motor↔acelerómetro.", "image_url": null},
-        {"position": 7, "name": "Conectar con el agente LLM", "text": "El ESP32 publica lecturas en feeds MQTT (env/temp, env/lux, env/sound) y se suscribe a comandos (cmd/neopixels, cmd/haptic, cmd/buzzer). El cliente LLM (script Python con anthropic SDK o el broker de Adafruit IO) lee y responde con acciones.", "image_url": null}
+        {"position": 1, "name": "Flashear MicroPython e instalar picozero", "text": "Conecta tu Raspberry Pi Pico W o Pico 2 W al PC manteniendo presionado el botón BOOTSEL y arrastra el firmware MicroPython (.uf2) al drive RPI-RP2. Después abre Thonny IDE, conecta a la Pico y desde Tools > Manage packages instala picozero @ PyPI para poder leer el sensor interno de temperatura.", "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/HTML-file-Thonny-IDE-RPi-Pico.png?resize=733%2C708&quality=100&strip=all&ssl=1"},
+        {"position": 2, "name": "Subir index.html al filesystem del Pico", "text": "Crea un archivo nuevo en Thonny con el HTML que incluye placeholders {state}, {temperature_c} y {temperature_f}, además del link a style.css y al script.js. Guárdalo en el filesystem de la Pico (no en tu PC) con File > Save as... > Raspberry Pi Pico, con el nombre exacto index.html.", "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/save-index-html-RPi-Pico-filesystem.png?resize=493%2C302&quality=100&strip=all&ssl=1"},
+        {"position": 3, "name": "Subir script.js y style.css al filesystem", "text": "Crea otro archivo con el JavaScript que define turnOn(), turnOff() y getNewReading() usando fetch a /lighton, /lightoff y /temperature. Guárdalo en el Pico como script.js. Repite el mismo procedimiento para style.css con los estilos de los botones y la tipografía.", "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/Files-saved-on-RPi-Pico-filesystem.png?resize=318%2C172&quality=100&strip=all&ssl=1"},
+        {"position": 4, "name": "Subir main.py con el router HTTP", "text": "Copia el script MicroPython al Pico como main.py. Importa network, socket, json, picozero y machine.Pin. Reemplaza las variables ssid y password con tus credenciales Wi-Fi. La lógica clave está en el if/elif que enruta cada path (/, /style.css, /script.js, /lighton, /lightoff, /temperature) a su archivo o respuesta JSON correspondiente con el Content-type correcto.", "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/RPi-Pi-Pico-save-main-file.png?resize=545%2C327&quality=100&strip=all&ssl=1"},
+        {"position": 5, "name": "Ejecutar y abrir el panel en el navegador", "text": "Presiona el botón verde Run en Thonny. En la consola Serial vas a ver la IP que asignó tu router al Pico. Abre esa dirección en cualquier navegador de la misma red Wi-Fi. Deberías ver el panel con el estado del LED, los botones ON/OFF y la temperatura interna del chip actualizándose con el botón Get New Reading.", "image_url": "https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2026/05/RPi-Pico-Web-Server-Files-from-Filesystem.png?resize=828%2C508&quality=100&strip=all&ssl=1"},
+        {"position": 6, "name": "Verificar respuestas y debuggear", "text": "Si los botones no responden, abre DevTools del navegador (F12) y mira la pestaña Network: cada clic debería disparar un GET a /lighton o /lightoff con respuesta JSON 200 OK. Si el CSS no se aplica, revisa que style.css esté guardado en el filesystem del Pico (no en tu PC) y que el Content-type sea text/css en el header de respuesta.", "image_url": null}
       ],
       "code_blocks": [
-        {"lang": "python", "caption": "Bucle de expresión y auto-verificación visual con NeoPixels y BH1750", "code": "import board, busio, time\nimport neopixel, pwmio\nfrom adafruit_bh1750 import BH1750\nfrom adafruit_adxl34x import ADXL345\n\ni2c = busio.I2C(board.GP5, board.GP4)\nlux = BH1750(i2c)\naccel = ADXL345(i2c)\npixels = neopixel.NeoPixel(board.GP2, 8, brightness=0.3)\nbuzzer = pwmio.PWMOut(board.GP3, variable_frequency=True)\n\ndef expresar_y_verificar(color, freq_hz):\n    lux_antes = lux.lux\n    pixels.fill(color)\n    buzzer.frequency = freq_hz\n    buzzer.duty_cycle = 2**15\n    time.sleep(0.5)\n    lux_despues = lux.lux\n    buzzer.duty_cycle = 0\n    return (lux_despues - lux_antes) > 50"},
-        {"lang": "python", "caption": "Reproducción de escala musical con buzzer piezo", "code": "import time, board, pwmio\n\nTONE_FREQ = [262, 294, 330, 349, 392, 440, 494]\nbuzzer = pwmio.PWMOut(board.D5, variable_frequency=True)\nbuzzer.duty_cycle = 2**15\n\nwhile True:\n    for f in TONE_FREQ:\n        buzzer.frequency = f\n        time.sleep(0.5)\n    for f in reversed(TONE_FREQ):\n        buzzer.frequency = f\n        time.sleep(0.5)"}
+        {"lang": "python", "caption": "main.py completo — router HTTP que sirve archivos del filesystem y endpoints JSON", "code": "import network\nimport socket\nimport time\nimport json\nfrom picozero import pico_temp_sensor\nfrom machine import Pin\n\nssid = 'REPLACE_WITH_YOUR_SSID'\npassword = 'REPLACE_WITH_YOUR_PASSWORD'\n\nHTML_FILE_PATH = \"index.html\"\nCSS_FILE_PATH = \"style.css\"\nJS_FILE_PATH = \"script.js\"\n\nled = Pin('LED', Pin.OUT)\nstate = 'OFF'\n\ndef read_file(filepath):\n    with open(filepath, \"r\") as file:\n        return file.read()\n\ndef get_temperature():\n    c = pico_temp_sensor.temp\n    f = c * (9/5) + 32\n    return round(c), round(f)\n\ndef webpage(state):\n    html_content = read_file(HTML_FILE_PATH)\n    c, f = get_temperature()\n    return html_content.format(state=state, temperature_c=c, temperature_f=f)\n\ndef init_wifi(ssid, password):\n    wlan = network.WLAN(network.STA_IF)\n    wlan.active(True)\n    wlan.connect(ssid, password)\n    timeout = 10\n    while timeout > 0 and wlan.status() < 3:\n        timeout -= 1\n        time.sleep(1)\n    if wlan.status() != 3:\n        return False\n    print('IP:', wlan.ifconfig()[0])\n    return True\n\nif init_wifi(ssid, password):\n    addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]\n    s = socket.socket()\n    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    s.bind(addr)\n    s.listen()\n    while True:\n        try:\n            conn, addr = s.accept()\n            request = conn.recv(1024)\n            try:\n                path = request.split()[1]\n            except IndexError:\n                path = b'/'\n            if path == b'/lighton':\n                led.value(1); state = 'ON'\n                response = json.dumps({\"state\": state}); content_type = 'application/json'\n            elif path == b'/lightoff':\n                led.value(0); state = 'OFF'\n                response = json.dumps({\"state\": state}); content_type = 'application/json'\n            elif path == b'/temperature':\n                c, f = get_temperature()\n                response = json.dumps({\"temperature_c\": c, \"temperature_f\": f})\n                content_type = 'application/json'\n            elif path == b'/style.css':\n                response = read_file(CSS_FILE_PATH); content_type = 'text/css'\n            elif path == b'/script.js':\n                response = read_file(JS_FILE_PATH); content_type = 'text/javascript'\n            else:\n                response = webpage(state); content_type = 'text/html'\n            conn.send(f'HTTP/1.0 200 OK\\r\\nContent-type: {content_type}\\r\\n\\r\\n')\n            conn.send(response)\n            conn.close()\n        except OSError:\n            conn.close()"},
+        {"lang": "html", "caption": "index.html con placeholders para state, temperatura y links a CSS/JS externos", "code": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Pico Web Server</title>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n    <script src=\"script.js\" defer></script>\n</head>\n<body>\n    <h1>Raspberry Pi Pico Web Server</h1>\n    <p>LED State: <strong id=\"led-status\" class=\"status\">{state}</strong></p>\n    <p>\n        <button onclick=\"turnOn()\" class=\"button\">ON</button>\n        <button onclick=\"turnOff()\" class=\"button button2\">OFF</button>\n    </p>\n    <p>\n        <span class=\"sensor-labels\">Temperature:</span>\n        <span id=\"temp_c\" class=\"temp-value\">{temperature_c}</span><span class=\"units\">°C</span>\n        &nbsp; / &nbsp;\n        <span id=\"temp_f\" class=\"temp-value\">{temperature_f}</span><span class=\"units\">°F</span>\n    </p>\n    <p>\n        <button onclick=\"getNewReading()\" class=\"button-refresh\" style=\"width: 220px;\">Get New Reading</button>\n    </p>\n</body>\n</html>"},
+        {"lang": "javascript", "caption": "script.js — llamadas asíncronas con fetch() a los endpoints JSON del servidor", "code": "async function turnOn() {\n    try {\n        const response = await fetch('/lighton');\n        const data = await response.json();\n        document.getElementById('led-status').textContent = data.state;\n    } catch (error) {\n        console.error('Error turning LED ON:', error);\n        alert('Failed to turn LED ON');\n    }\n}\n\nasync function turnOff() {\n    try {\n        const response = await fetch('/lightoff');\n        const data = await response.json();\n        document.getElementById('led-status').textContent = data.state;\n    } catch (error) {\n        console.error('Error turning LED OFF:', error);\n        alert('Failed to turn LED OFF');\n    }\n}\n\nasync function getNewReading() {\n    try {\n        const response = await fetch('/temperature');\n        const data = await response.json();\n        document.getElementById('temp_c').textContent = data.temperature_c;\n        document.getElementById('temp_f').textContent = data.temperature_f;\n    } catch (error) {\n        console.error('Error fetching temperature:', error);\n        alert('Failed to get new reading');\n    }\n}"}
       ],
       "linked_products": [
         {
-          "name_original": "Placa ESP32-S3 XIAO",
-          "product_id": "GS1-3",
-          "product_url": "https://www.mechatronicstore.cl/seeed-studio-xiao-esp32-s3/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GS1-3",
-          "price_clp": 13670,
-          "stock_available": true,
-          "match_score": 0.82
-        },
-        {
-          "name_original": "Sensor de temperatura y humedad HTU21D",
-          "product_id": "GE2-6",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-temperatura-y-humedad-htu21d/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GE2-6",
-          "price_clp": 4490,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Sensor de presión barométrica BMP180",
-          "product_id": "GE1-10",
-          "product_url": "https://www.mechatronicstore.cl/sensor-de-presion-barometrica-bmp180-digital-gy-68/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GE1-10",
-          "price_clp": 2490,
-          "stock_available": true,
-          "match_score": 0.75
-        },
-        {
-          "name_original": "Módulo Micrófono I2S INMP441",
-          "product_id": "GL3-12",
-          "product_url": "https://www.mechatronicstore.cl/modulo-microfono-i2s-inmp441/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GL3-12",
-          "price_clp": 5890,
-          "stock_available": true,
-          "match_score": 0.80
-        },
-        {
-          "name_original": "Módulo NeoPixel 8 LEDs RGB WS2812 5050",
-          "product_id": "GN3-11",
-          "product_url": "https://www.mechatronicstore.cl/modulo-rgb-led-de-8-bits-5050/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GN3-11",
-          "price_clp": 1990,
+          "name_original": "Raspberry Pi Pico 2 W (RP2350)",
+          "product_id": "GS3-4",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico-2-w-raspberry-pi-rp2350-chip/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=GS3-4",
+          "price_clp": 15990,
           "stock_available": true,
           "match_score": 0.92
         },
         {
-          "name_original": "Controlador háptico DRV2605L",
-          "product_id": "GL2-6",
-          "product_url": "https://www.mechatronicstore.cl/gravity-haptic-motor-driver/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GL2-6",
-          "price_clp": 10650,
-          "stock_available": true,
-          "match_score": 0.95
-        },
-        {
-          "name_original": "Motor de vibración 3.3V",
-          "product_id": "GB3-6V2",
-          "product_url": "https://www.mechatronicstore.cl/motor-de-vibracion-3-3v-micro-impermeable/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GB3-6V2",
-          "price_clp": 2490,
-          "stock_available": true,
-          "match_score": 0.85
-        },
-        {
-          "name_original": "Acelerómetro ADXL345 GY-291",
-          "product_id": "GN3-4",
-          "product_url": "https://www.mechatronicstore.cl/acelerometro-digital-3-ejes-adxl345-gy-291/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GN3-4",
-          "price_clp": 3490,
+          "name_original": "Raspberry Pi Pico USB-C",
+          "product_id": "N-221",
+          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=N-221",
+          "price_clp": 8990,
           "stock_available": true,
           "match_score": 0.75
         },
         {
-          "name_original": "Sensor de luz BH1750 GY-302",
-          "product_id": "GN1-6",
-          "product_url": "https://www.mechatronicstore.cl/modulo-sensor-de-intensidad-luminosa-gy-302/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GN1-6",
-          "price_clp": 3990,
+          "name_original": "Cable USB a Micro USB",
+          "product_id": "X3-10",
+          "product_url": "https://www.mechatronicstore.cl/cable-usb-a-micro-usb/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=X3-10",
+          "price_clp": 1290,
           "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Buzzer activo 5V",
-          "product_id": "GA3-2",
-          "product_url": "https://www.mechatronicstore.cl/mini-buzzer-activo-5v/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=GA3-2",
-          "price_clp": 500,
-          "stock_available": true,
-          "match_score": 0.85
+          "match_score": 0.93
         },
         {
           "name_original": "Protoboard 830 puntos MB102",
           "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=C-302",
+          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=C-302",
           "price_clp": 3790,
           "stock_available": true,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Pack Pin Header Macho 40 pines 2.54mm",
-          "product_id": "E-101",
-          "product_url": "https://www.mechatronicstore.cl/pack-12-filas-de-pin-header-macho-40-pines-2-54mm-colores/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=E-101",
-          "price_clp": 3990,
-          "stock_available": true,
-          "match_score": 0.82
-        },
-        {
-          "name_original": "Cables Dupont macho-hembra 30cm",
-          "product_id": "C-418",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=C-418",
-          "price_clp": 1990,
-          "stock_available": true,
-          "match_score": 0.86
-        },
-        {
-          "name_original": "Cable USB-C a USB-A 1m",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=kit-percepcion-fisica-llm-esp32-sensores-feedback&utm_content=B-101",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.88
-        }
-      ],
-      "github_url": null,
-      "download_urls": [
-        {"label": "PDF original (Adafruit Learning System)", "url": "https://cdn-learn.adafruit.com/downloads/pdf/llm-agent-embodiment-kit.pdf", "kind": "pdf"},
-        {"label": "Bundle de librerías CircuitPython", "url": "https://circuitpython.org/libraries", "kind": "library"}
-      ],
-      "category": "esp32",
-      "difficulty": "intermediate",
-      "estimated_time_minutes": 180,
-      "estimated_cost_clp": 65920,
-      "tags": ["esp32", "circuitpython", "llm", "ia", "sensores", "neopixel", "iot"],
-      "source_language": "en",
-      "re_angulation_applied": "Tercera persona técnica + sustitución de hardware específico de Adafruit por equivalentes del catálogo MS (XIAO ESP32-S3, INMP441, BH1750, ADXL345) + ángulo en 'bucles de auto-verificación' como concepto central + sección de variantes con Claude API y Ollama local",
-      "editorial_checklist": {
-        "title_distinct": true,
-        "has_unique_section": true,
-        "has_downloadable": true,
-        "body_word_ratio": 1.45,
-        "tone_or_structure_changed": true
-      },
-      "editorial_quality_warning": false,
-      "editorial_notes": "BME280 sin match directo en catálogo MS — se sustituye por combo HTU21D + BMP180 que cubre las mismas magnitudes (temperatura, humedad, presión). VEML7700 sustituido por BH1750 (GY-302) que es funcionalmente equivalente para lectura lux I2C."
-    },
-    {
-      "id": "5d7a0aa10e39",
-      "slug": "controlador-leverless-fighting-raspberry-pi-pico-gp2040",
-      "title_es": "Controlador leverless para fighting games con Raspberry Pi Pico y GP2040-CE",
-      "subtitle_es": "Arma tu propio mando estilo Hit Box con Raspberry Pi Pico, botones arcade y firmware GP2040-CE — sin código, sin lever, máxima velocidad.",
-      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp",
-      "body_es": "## El stick que no tiene stick\n\nEn la escena competitiva de fighting games (Street Fighter, Tekken, Guilty Gear) los \"leverless\" o estilo Hit Box están reemplazando a las palancas tradicionales. La razón es simple: pulsar un botón es mecánicamente más rápido y preciso que mover una palanca en un arco. Esta guía adapta el proyecto original de John Park (Adafruit) al catálogo chileno, cambiando el QT Py RP2040 por una **Raspberry Pi Pico** estándar — el mismo chip RP2040, mucho más disponible localmente y al mismo precio.\n\nLo bueno: **no escribes una sola línea de código**. El firmware open source GP2040-CE detecta el RP2040, levanta un servidor web propio en el chip, y desde el navegador configuras todo: mapeo de pines, modo de plataforma (PlayStation, Switch, Xbox, PC), hotkeys, SOCD cleaning. El único trabajo manual es imprimir el chasis y soldar los cables.\n\n![Controlador leverless armado mostrando layout de botones](https://cdn-learn.adafruit.com/assets/assets/000/144/189/medium800/gaming_lvrls-1917.jpg?1779300361)\n\n## Antes de comprar: qué decisiones definen tu mando\n\nNo es un proyecto plug-and-play sin opciones. Tres decisiones que afectan el resultado:\n\n### 1. Tamaño de botón: 24mm vs 30mm\nLos botones de \"acción\" (puños/patadas, 4 a 8 botones) suelen ser de **30mm**. Los de \"dirección\" (las 4 flechas equivalentes al stick) clásicamente son de **24mm**, aunque hay layouts \"all 30mm\" como el Hit Box original.\n\nEn el catálogo MS los botones arcade disponibles son de 33mm. Son ligeramente más grandes que los 30mm estándar pero el feeling es muy similar; solo asegúrate que tu archivo STL del chasis tenga huecos compatibles (33mm o reborde lateral grande). Si necesitas 24mm exactos para las direccionales, hay versiones con resorte más suave que se pueden encontrar en distribuidores especializados, pero puedes hacer el primer prototipo con todos 33mm.\n\n### 2. SOCD cleaning: la regla más importante\nSOCD = Simultaneous Opposite Cardinal Directions. ¿Qué pasa si aprietas ← y → al mismo tiempo?\n\n- **Neutral**: nada se registra (más estricto, lo más común para PlayStation tournaments).\n- **Last input priority**: gana el último apretado (favorito de Smash players).\n- **Up priority** para ↑+↓: prioridad arriba (estilo Hit Box original).\n\nGP2040-CE permite elegir cada combinación. Decidir esto antes de tu primera sesión ranked te evita malos hábitos.\n\n### 3. Modo de input: HID, XInput, Switch, PS3/4\nEl mismo hardware puede presentarse al sistema como cualquiera de los 8+ tipos de controlador soportados. Al apretar un botón específico durante el boot, eliges el modo. Esto significa que el mismo mando funciona en tu PC, Switch, PS4 y arcade cabinet sin reflashear.\n\n## Hardware: por qué Pico funciona igual que QT Py\n\nEl QT Py RP2040 de Adafruit tiene el chip Raspberry Pi RP2040 y headers integrados al Terminal Block BFF. La **Raspberry Pi Pico** estándar tiene **el mismo chip RP2040** y más GPIOs disponibles (26 vs 11). GP2040-CE corre nativo en ambos.\n\nDiferencias prácticas adaptando a Pico:\n\n| Aspecto | QT Py RP2040 (original) | Raspberry Pi Pico (adaptación) |\n|---|---|---|\n| Chip | RP2040 | RP2040 (idéntico) |\n| GPIOs disponibles | 11 | 26 |\n| Conexión a botones | Terminal Block BFF (atornillable) | Soldadura directa o bornera atornillable PCB |\n| Tamaño físico | 22 × 18 mm | 51 × 21 mm |\n| Precio CLP | — | $8.990 |\n| Firmware UF2 | versión QT Py específica | versión Pico oficial |\n\nLa única molestia: con QT Py el Terminal Block BFF te ahorra soldar; con Pico necesitas soldar los cables directo a los GPIOs o usar borneras KF301 atornillables (más limpio si vas a iterar el cableado).\n\n## Cableado: un botón = un GPIO + un GND compartido\n\nCada uno de los 11 botones (8 de acción + 3 de dirección si sigues el layout Hit Box mínimo, o 14 si quieres layout completo) se conecta así:\n\n- **Terminal 1 del switch** → GPIO del Pico (cualquiera de los GP0-GP28, evitando GP25 que es el LED on-board).\n- **Terminal 2 del switch** → GND compartido (chainea todos los GNDs juntos con conector terminal o soldadura directa al pin GND del Pico).\n\nLos LEDs internos del botón (terminales \"+/-\") **no se usan** en este proyecto. Si quieres iluminación, agrega una tira NeoPixel WS2812 aparte y configúrala en GP2040-CE (soporta efectos LED nativos).\n\n### Mapeo por defecto en GP2040-CE para Pico\n\n```\nFunción              GPIO\nB1 (✕ / A)           GP2\nB2 (○ / B)           GP3\nB3 (□ / X)           GP4\nB4 (△ / Y)           GP5\nL1                   GP6\nR1                   GP7\nL2                   GP8\nR2                   GP9\nS1 (Select)          GP10\nS2 (Start)           GP11\nFlecha izquierda     GP12\nFlecha abajo         GP13\nFlecha derecha       GP14\nFlecha arriba        GP15\n```\n\n## Software: flashear y configurar\n\n1. **Descarga el firmware**: en [github.com/OpenStickCommunity/GP2040-CE/releases](https://github.com/OpenStickCommunity/GP2040-CE/releases) busca la build para `Pico` (no QT Py).\n2. **Modo BOOTSEL**: mantén apretado el botón BOOTSEL del Pico mientras conectas el cable USB. Te va a montar un drive llamado `RPI-RP2`.\n3. **Drag & drop**: arrastra el `GP2040-CE_x.x.x_Pico.uf2` al drive. El Pico se reinicia solo.\n4. **Entrar a config**: con el mando ya enchufado, mantén apretado el botón S2 (Start) y toca el RESET o desconecta/reconecta el USB. Va a aparecer un servidor web en `http://192.168.7.1` (mando configurando vía USB Ethernet emulado).\n5. **Configurar todo desde el navegador**: GPIO mapping, SOCD, perfiles, LEDs, hotkeys.\n6. **Reboot to controller**: botón \"Reboot\" → modo Controller. Listo para jugar.\n\n## Impresión 3D del chasis\n\nLos STL originales (links abajo) están preparados para FDM con PLA. Settings de slicing recomendados (Bambu Studio / Cura / PrusaSlicer):\n\n- Filamento: PLA 1.75mm\n- Temperatura extrusor: 220°C (boquilla 0.4mm)\n- Altura de capa: 0.2mm\n- Relleno (infill): 15% grid\n- Velocidad: 200 mm/s (Bambu) o 60 mm/s (impresoras más comunes)\n- Brim: 5mm para mejor adhesión de la base ancha\n\nUna versión \"PLA tournament-grade\" más rígida usa 25% infill y soportes solo en huecos de botones. Si quieres un chasis aún más pesado y estable (no se mueve durante combos), imprime en PETG o agrega una placa de aluminio adhesiva en la base.\n\n## Variantes y mejoras\n\n- **Versión all-wireless con Pico 2 W**: la Raspberry Pi Pico 2 W (RP2350 + Wi-Fi/BT, $15.990 CLP en MS) corre una rama experimental de GP2040-CE con soporte Bluetooth. Útil si quieres jugar en consolas que aceptan controles BT (Switch, móvil con BlueStacks).\n- **LEDs WS2812 reactivos por botón**: agregando una tira de NeoPixel de 11 LEDs y mapeando cada uno a un botón, GP2040-CE enciende el LED correspondiente cuando aprietas. Visualmente bestial para streamings.\n- **Lever switch híbrido**: para players que vienen de palanca y quieren transicionar gradualmente, GP2040-CE tiene un \"hybrid mode\" donde un switch físico cambia entre input de dirección por botones o por una palanca arcade tradicional (Sanwa JLF) conectada en paralelo.\n- **Display OLED de status**: agregando un OLED SSD1306 I2C a GP4/GP5 (con el bus I2C compartido), GP2040-CE muestra modo activo (PS / Switch / XInput), perfil de teclas y SOCD configurado. Lujito de torneo.\n\n## Personalización para Chile\n\nComponentes equivalentes en stock en MechatronicStore:\n\n- **Raspberry Pi Pico USB-C** (SKU N-221) — $8.990 CLP. Reemplazo directo del QT Py RP2040: mismo chip RP2040, más GPIOs, USB-C nativo.\n- **Raspberry Pi Pico Micro USB** (SKU N-207) — $7.990 CLP. Alternativa más barata si te da lo mismo el conector.\n- **Botones arcade 33mm con MicroSwitch — Rojo** (SKU C-313V1) — $2.190 CLP c/u. Para los botones de acción. Necesitas 8.\n- **Botones arcade 33mm con MicroSwitch — Azul** (SKU C-313V2) — $2.190 CLP c/u. Variantes de color para diferenciar acción de direcciones.\n- **Filamento PLA SunLu 1kg 1.75mm — Blanco/Transparente/Gris** (SKU SL-003 / SL-014 / SL-017) — $13.390 CLP. Para imprimir el chasis. Con 1kg sobra para 2-3 chasis.\n- **Cable USB Tipo C a USB Tipo A 1mt** (SKU B-101) — $2.190 CLP. Para conectar a PC/consola.\n- **Cables macho-hembra 30cm** (SKU C-418) — $1.990 CLP. Para el cableado de botones al Pico.\n- **Cables macho-macho 30cm** (SKU C-417) — $2.990 CLP. Para chainear los GND comunes en protoboard si no sueldas directo.\n- **Pin Header Macho 40 pines** (SKU E-101) — $3.990 CLP. Si decides soldar headers al Pico para conectar borneras.\n- **Conector Terminal 2 Pines KF301-2** (SKU GC2-1) — $290 CLP c/u. Bornera atornillable PCB, gran sustituto del Terminal Block BFF de Adafruit. Necesitas varias.\n\n**Costo aproximado del proyecto:**\n- 1× Pico USB-C: $8.990\n- 11× Botones arcade 33mm: $24.090 ($2.190 × 11)\n- 1× rollo PLA: $13.390\n- 1× cable USB-C: $2.190\n- 1× pack cables macho-hembra: $1.990\n- 12× borneras KF301-2: $3.480 ($290 × 12)\n\n**Total: ~$54.130 CLP** versus un Hit Box original importado (~$200 USD = ~$190.000 CLP).\n\n## Recursos\n\n- **Tutorial original** (inglés): [Leverless Controller — Adafruit Learning System](https://learn.adafruit.com/leverless-controller)\n- **PDF descargable del original**: [leverless-controller.pdf](https://cdn-learn.adafruit.com/downloads/pdf/leverless-controller.pdf)\n- **Repositorio GP2040-CE**: [github.com/OpenStickCommunity/GP2040-CE](https://github.com/OpenStickCommunity/GP2040-CE)\n- **Web configurator (docs)**: [gp2040-ce.info](https://gp2040-ce.info/)\n- **Archivos 3D**: STEP y STL originales descargables desde el tutorial original.\n\nVersión chilena inspirada en el diseño de John Park, adaptada a Raspberry Pi Pico estándar con componentes en stock local en MechatronicStore.\n",
-      "materials_list": [
-        {"name": "Raspberry Pi Pico USB-C RP2040", "qty": 1, "role": "core"},
-        {"name": "Botones arcade 33mm con MicroSwitch", "qty": 11, "role": "input principal"},
-        {"name": "Filamento PLA 1.75mm 1kg", "qty": 1, "role": "chasis 3D"},
-        {"name": "Cable USB-C a USB-A 1m", "qty": 1, "role": "alimentación y datos"},
-        {"name": "Cables Dupont macho-hembra 30cm", "qty": 1, "role": "cableado botones"},
-        {"name": "Cables macho-macho 30cm", "qty": 1, "role": "cadena de GND"},
-        {"name": "Conector Terminal 2 Pines KF301-2", "qty": 12, "role": "borneras atornillables"},
-        {"name": "Pin Header Macho 40 pines 2.54mm", "qty": 1, "role": "headers Pico"}
-      ],
-      "steps": [
-        {"position": 1, "name": "Imprimir el chasis en PLA", "text": "Descarga los STL del tutorial original, slícealos con PLA a 0.2mm de capa, 15% infill grid, 220°C extrusor. Toma 6-8 horas según tamaño del chasis. Imprime también la tapa por separado.", "image_url": null},
-        {"position": 2, "name": "Soldar headers al Raspberry Pi Pico", "text": "Suelda pin headers macho a los 40 pads del Pico (si no vinieron pre-soldados). Si vas a usar borneras KF301 atornillables, primero suelda las borneras a un protoboard PCB y los headers van a esa PCB intermedia.", "image_url": null},
-        {"position": 3, "name": "Montar los 11 botones arcade", "text": "Inserta cada botón desde arriba del chasis y enrosca la contratuerca por adentro. Usa distintos colores para diferenciar las direcciones de los botones de acción (típico: blanco para acción, rojo o azul para direcciones).", "image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/189/medium800/gaming_lvrls-1917.jpg?1779300361"},
-        {"position": 4, "name": "Cablear los GPIOs", "text": "Conecta un cable desde uno de los 2 terminales superiores de cada microswitch al GPIO correspondiente del Pico siguiendo la tabla de mapeo (GP2 a GP15 para los 14 botones del layout completo). Los terminales inferiores son los del LED y se ignoran.", "image_url": null},
-        {"position": 5, "name": "Cablear el GND común", "text": "Corta un cable de 20cm, conéctalo del pin GND del Pico a uno de los terminales restantes del primer botón. Después chainea los otros botones con cables cortos: terminal libre del botón N al terminal libre del botón N+1. Es más limpio que correr 11 cables independientes al Pico.", "image_url": null},
-        {"position": 6, "name": "Flashear GP2040-CE en modo BOOTSEL", "text": "Aprieta el botón BOOTSEL del Pico y conecta el USB-C. Aparece el drive RPI-RP2. Arrastra el archivo GP2040-CE_x.x.x_Pico.uf2 (versión Pico, no QT Py). El Pico se reinicia automáticamente con el firmware corriendo.", "image_url": null},
-        {"position": 7, "name": "Configurar desde el navegador", "text": "Entra al modo config manteniendo S2 (Start) apretado mientras desconectas y reconectas el USB. Abre http://192.168.7.1 en tu navegador. Ajusta GPIO Pin Mapping, Hotkey Settings, SOCD Cleaning y Boot Input Modes. Guarda con Save.", "image_url": null},
-        {"position": 8, "name": "Cerrar el chasis y testear", "text": "Press fit de la tapa al chasis. Conecta el mando al PC y entra a un gamepad tester online (gamepad-tester.com) para confirmar que cada botón registra. Si alguno falla, revisa soldadura y mapeo en el web config.", "image_url": "https://cdn-learn.adafruit.com/assets/assets/000/144/182/medium800/gaming_IMG_1912B_2k.jpg?1779235651"}
-      ],
-      "code_blocks": [],
-      "linked_products": [
-        {
-          "name_original": "Raspberry Pi Pico USB-C",
-          "product_id": "N-221",
-          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=N-221",
-          "price_clp": 8990,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Raspberry Pi Pico Micro USB",
-          "product_id": "N-207",
-          "product_url": "https://www.mechatronicstore.cl/raspberry-pi-pico/?attribute_entrada-usb=Micro+USB&utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=N-207",
-          "price_clp": 7990,
-          "stock_available": true,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Botones arcade 33mm con MicroSwitch — Rojo",
-          "product_id": "C-313V1",
-          "product_url": "https://www.mechatronicstore.cl/boton-video-arcade-33mm-microswitch/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-313V1",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Botones arcade 33mm con MicroSwitch — Azul",
-          "product_id": "C-313V2",
-          "product_url": "https://www.mechatronicstore.cl/boton-video-arcade-33mm-microswitch/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-313V2",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.78
-        },
-        {
-          "name_original": "Filamento PLA 1.75mm 1kg — Blanco",
-          "product_id": "SL-003",
-          "product_url": "https://www.mechatronicstore.cl/filamento-pla-sunlu-1kg-1-75mm-colores/?attribute_pa_color=blanco&utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=SL-003",
-          "price_clp": 13390,
-          "stock_available": true,
-          "match_score": 0.92
-        },
-        {
-          "name_original": "Cable USB-C a USB-A 1m",
-          "product_id": "B-101",
-          "product_url": "https://www.mechatronicstore.cl/cable-usb-tipo-c-a-usb-a-1mt/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=B-101",
-          "price_clp": 2190,
-          "stock_available": true,
-          "match_score": 0.88
-        },
-        {
-          "name_original": "Cables Dupont macho-hembra 30cm",
-          "product_id": "C-418",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-hembra-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-418",
-          "price_clp": 1990,
-          "stock_available": true,
-          "match_score": 0.86
+          "match_score": 0.95
         },
         {
           "name_original": "Cables macho-macho 30cm",
           "product_id": "C-417",
-          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=C-417",
+          "product_url": "https://www.mechatronicstore.cl/cables-macho-macho-para-arduino/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=C-417",
           "price_clp": 2990,
           "stock_available": true,
-          "match_score": 0.84
+          "match_score": 0.88
         },
         {
-          "name_original": "Conector Terminal 2 Pines KF301-2",
-          "product_id": "GC2-1",
-          "product_url": "https://www.mechatronicstore.cl/conector-terminal-2-pines-con-tornillo-kf301-2/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=GC2-1",
-          "price_clp": 290,
+          "name_original": "LED 5mm variedad de colores",
+          "product_id": "GA2-5",
+          "product_url": "https://www.mechatronicstore.cl/led-3mm-5mm/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=GA2-5",
+          "price_clp": 100,
           "stock_available": true,
           "match_score": 0.80
         },
         {
-          "name_original": "Pin Header Macho 40 pines 2.54mm",
-          "product_id": "E-101",
-          "product_url": "https://www.mechatronicstore.cl/pack-12-filas-de-pin-header-macho-40-pines-2-54mm-colores/?utm_source=blog&utm_medium=tutorial&utm_campaign=controlador-leverless-fighting-raspberry-pi-pico-gp2040&utm_content=E-101",
-          "price_clp": 3990,
+          "name_original": "Resistencias 1/4W 220 Ω",
+          "product_id": "GK1-18",
+          "product_url": "https://www.mechatronicstore.cl/resistencia/?utm_source=blog&utm_medium=tutorial&utm_campaign=raspberry-pi-pico-w-servidor-web-archivos-filesystem-micropython&utm_content=GK1-18",
+          "price_clp": 100,
           "stock_available": true,
-          "match_score": 0.82
+          "match_score": 0.85
         }
       ],
-      "github_url": "https://github.com/OpenStickCommunity/GP2040-CE",
+      "github_url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/tree/master/Projects/Raspberry-Pi-Pico/MicroPython/web_server_filesystem",
       "download_urls": [
-        {"label": "PDF original (Adafruit Learning System)", "url": "https://cdn-learn.adafruit.com/downloads/pdf/leverless-controller.pdf", "kind": "pdf"},
-        {"label": "Firmware GP2040-CE releases", "url": "https://github.com/OpenStickCommunity/GP2040-CE/releases", "kind": "firmware"},
-        {"label": "Documentación GP2040-CE", "url": "https://gp2040-ce.info/", "kind": "docs"}
+        {"label": "main.py (servidor con archivos del filesystem)", "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/Raspberry-Pi-Pico/MicroPython/web_server_filesystem/main.py", "kind": "py"},
+        {"label": "index.html", "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/Raspberry-Pi-Pico/MicroPython/web_server_filesystem/index.html", "kind": "html"},
+        {"label": "script.js", "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/Raspberry-Pi-Pico/MicroPython/web_server_filesystem/script.js", "kind": "js"},
+        {"label": "style.css", "url": "https://github.com/RuiSantosdotme/Random-Nerd-Tutorials/raw/master/Projects/Raspberry-Pi-Pico/MicroPython/web_server_filesystem/style.css", "kind": "css"}
       ],
       "category": "rpi",
       "difficulty": "intermediate",
-      "estimated_time_minutes": 240,
-      "estimated_cost_clp": 54130,
-      "tags": ["raspberry-pi-pico", "rp2040", "arcade", "fighting-games", "gp2040-ce", "3d-printing", "leverless"],
+      "estimated_time_minutes": 45,
+      "estimated_cost_clp": 17280,
+      "tags": ["raspberry-pi-pico", "pico-w", "micropython", "web-server", "thonny", "iot", "filesystem"],
       "source_language": "en",
-      "re_angulation_applied": "Sustitución hardware QT Py RP2040 -> Raspberry Pi Pico estándar (re_angulation_hint explícito) + sección 'Antes de comprar' nueva con decisiones de SOCD + tabla comparativa Pico vs QT Py + mapeo GPIO detallado para Pico + análisis de costo total Chile vs Hit Box importado",
+      "re_angulation_applied": "Cambio de estructura lineal del original a bloques temáticos (Concepto / Hardware / Etapa 1 mínima / Etapa 2 panel completo / Variantes con WebSocket+DHT22). Gancho diferente: arranco con el problema real (HTML pegado en el .py se vuelve inmantenible) en vez de 'En este tutorial vamos a...'. Tono instructivo en tuteo chileno. Agregada explicación técnica del por qué del Content-type, sección Variantes con WebSocket+DHT22 según re_angulation_hint, y Personalización Chile con SKUs del catálogo.",
       "editorial_checklist": {
         "title_distinct": true,
         "has_unique_section": true,
         "has_downloadable": true,
-        "body_word_ratio": 1.55,
+        "body_word_ratio": 1.25,
         "tone_or_structure_changed": true
       },
-      "editorial_quality_warning": false,
-      "editorial_notes": "Botones 24mm exactos no están en catálogo MS — se sustituye por arcade 33mm (C-313) que cumple función similar; se anota en el body que el STL debe adaptarse al diámetro. Terminal Block BFF (Adafruit) sin equivalente directo — se reemplaza por borneras KF301-2 atornillables más cables Dupont. Tornillos M2.5 exactos no encontrados (solo M3); el lector puede usar M3 con espaciadores o adquirir en ferretería local."
+      "editorial_quality_warning": false
     }
   ]
 }
