@@ -9,21 +9,43 @@ interface Props {
  * Comentarios via Giscus (GitHub Discussions backend).
  *
  * Pablo 25-may-2026 audit Fase D: la version anterior cargaba el script
- * de giscus.app aunque el repo no tiene Giscus app instalada todavia
- * (Task #41 backlog). El script devuelve 403 + iframe muestra error
- * tecnico VISIBLE al lector ("giscus is not installed on this repository").
+ * de giscus.app aunque el repo no tiene la GitHub App de giscus instalada
+ * todavia. El script devuelve 403 + el iframe muestra un error tecnico
+ * VISIBLE al lector ("giscus is not installed on this repository").
  *
  * Fix: degradacion explicita. Si el bool GISCUS_ENABLED es false (o el
- * mount detecta error iframe), mostramos placeholder amigable en lugar
- * del error tecnico.
+ * mount detecta error en el script), mostramos un placeholder amigable
+ * en lugar del error tecnico.
  *
- * Para activar Giscus de verdad:
- *   1. Instalar la app en https://github.com/apps/giscus (Settings → Apps)
- *   2. Habilitar Discussions en el repo (Settings → General → Features)
- *   3. Configurar categoria "Comments" en repo Discussions
- *   4. Setear GISCUS_ENABLED = true abajo
+ * ----------------------------------------------------------------------
+ * ESTADO actual (verificado 30-may-2026 con gh GraphQL):
+ *   - repoId (R_kgDOSfzoSg): REAL. Coincide con repository.id del repo.
+ *   - categoryId (DIC_kwDOSfzoSs4C9Qk_): REAL. Es la categoria "General"
+ *     (slug "general") de las Discussions del repo.
+ *   - Discussions: YA habilitado en el repo (hasDiscussionsEnabled=true).
+ *   Los dos IDs ya estan cableados abajo. NO hace falta volver a buscarlos.
+ *
+ * LO UNICO que falta para encender los comentarios (1 paso de Pablo):
+ *   1. Instalar la GitHub App de giscus en el repo:
+ *      https://github.com/apps/giscus  ->  Install  ->  elegir
+ *      "Only select repositories"  ->  PabloSilvaBravo/mechatronicstore-blog.
+ *      (No se pudo verificar por API si ya esta instalada: el endpoint de
+ *       installations exige auth de App, no de usuario. Si ya la instalaste,
+ *       saltea este paso.)
+ *   2. Cambiar GISCUS_ENABLED = true abajo y desplegar.
+ *
+ * Opcional, si queres re-confirmar o usar otra categoria, anda a
+ * https://giscus.app, pega el repo PabloSilvaBravo/mechatronicstore-blog
+ * y copia el repoId + categoryId que te muestre (deben coincidir con los
+ * de abajo). Mapping = "Discussion title contains page pathname" no aplica
+ * aca: usamos mapping "specific" con el slug del tutorial como termino.
+ * ----------------------------------------------------------------------
  */
 const GISCUS_ENABLED = false;
+// IDs verificados reales el 30-may-2026 (gh api graphql contra el repo).
+// Si Pablo quiere otra categoria, reemplazar category + categoryId por
+// los valores de https://giscus.app (categorias disponibles: General,
+// Announcements, Ideas, Q&A, Show and tell, Polls).
 const GISCUS_CONFIG = {
   repo: "PabloSilvaBravo/mechatronicstore-blog",
   repoId: "R_kgDOSfzoSg",
