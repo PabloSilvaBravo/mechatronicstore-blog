@@ -511,6 +511,40 @@ input, textarea, select {
   opacity: 0.6;
 }
 
+/* ───────────────────────────────────────────────────────────────
+ * Estado de foco del SearchBar (Task 14 paridad blog ↔ store)
+ *
+ * Medicion en vivo del store (Ajax Search Pro, 30-may-2026): la caja de
+ * busqueda NO muestra halo, borde ni sombra al enfocar con mouse. Todos
+ * los niveles (.probox / .asp_w / input) devuelven boxShadow:none,
+ * border:0px, outline:none en :focus. Para mantener PARIDAD visual con la
+ * tienda en la interaccion dominante (mouse/touch) no dibujamos halo.
+ *
+ * Pero un foco totalmente invisible rompe accesibilidad por teclado, asi
+ * que aplicamos un anillo SOLO para navegacion por teclado via
+ * :has(:focus-visible). El mouse no dispara :focus-visible en el input
+ * de tipo search, por lo que el usuario con mouse ve exactamente lo mismo
+ * que en la tienda; el usuario con teclado obtiene un indicador claro. */
+.search-form-store:has(:focus-visible) {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-purple) 35%, transparent);
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * Colapso del header al hacer scroll (Task 13 paridad blog ↔ store)
+ *
+ * La fila principal + nav del blog se colapsa con una transicion de
+ * max-height (inline en BlogHeader.tsx) cuando useHideOnScroll detecta
+ * scroll decidido hacia abajo. Para usuarios con motion reducido,
+ * desactivamos la animacion: el colapso ocurre instantaneo, sin el
+ * deslizamiento que puede leerse como "salto". La tienda no anima nada
+ * al scrollear (su header simplemente se va con la pagina), asi que esto
+ * tambien acerca el comportamiento a la referencia. */
+@media (prefers-reduced-motion: reduce) {
+  .blog-header-collapsible {
+    transition: none !important;
+  }
+}
+
 /* Legacy — Pablo 21-may-2026 search-bar-white. Lo dejamos por si algún
  * sitio del codebase aún lo referencia. Si después de una semana nadie
  * lo usa, se puede borrar. */

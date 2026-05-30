@@ -127,7 +127,9 @@ export default function BlogHeader() {
             ROW 2 - Main bar (collapsible). Logo + SearchBar + Actions.
             ============================================================ */}
         <div
-          className={openMegaId ? "overflow-visible" : "overflow-hidden"}
+          className={`blog-header-collapsible ${
+            openMegaId ? "overflow-visible" : "overflow-hidden"
+          }`}
           style={{
             maxHeight: hideMain ? "0" : "200px",
             opacity: hideMain ? 0 : 1,
@@ -139,14 +141,10 @@ export default function BlogHeader() {
             zIndex: openMegaId ? 30 : "auto",
           }}
         >
-          {/* Pablo 25-may-2026 v2 (Playwright DOM inspection): el bug real
-              era el className `h-9 w-auto sm:h-10` aplicado al Logo en linea
-              ~158 — Tailwind h-9 limitaba el container del Logo a 36px, pero
-              el contenido (SVG 38 + BLOG 20 + 2 margin = 60px) overflowea
-              hacia abajo. items-center del flex centraba el container 36px,
-              NO el contenido 60px → BLOG quedaba a 0.5px del borde inferior.
-              Fix: removido h-9 (deja al Logo tomar altura natural) + py-5
-              (~20px) para aire amplio simetrico. */}
+          {/* El Logo toma su altura natural (~60px en md): el flex
+              items-center lo centra con aire simetrico via py-5. No aplicar
+              clases de altura (h-9, etc.) al Logo: recortan su bounding box y
+              descuadran el wordmark. */}
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-5 sm:px-6 sm:py-5 lg:gap-5">
             {/* Logo */}
             <Link
@@ -156,9 +154,6 @@ export default function BlogHeader() {
               aria-label="Blog MechatronicStore, ir al inicio"
               onClick={handleLogoClick}
             >
-              {/* Pablo 25-may-2026: NO pasar h-9 className - rompe el bbox.
-                  Logo toma altura natural (60px md) y el flex items-center lo
-                  centra correctamente en el row de 100px (~20px aire arriba/abajo). */}
               <Logo />
             </Link>
 

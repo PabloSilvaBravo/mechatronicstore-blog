@@ -1,9 +1,5 @@
 "use client";
 
-// Pablo 23-may-2026: bump comment to force Vercel deploy of v4 SearchBar
-// refactor (commit 7f15561 was skipped when a docs-only commit landed
-// right after it, Vercel only honored HEAD^→HEAD diff which only saw docs).
-
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -66,8 +62,6 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Pablo 23-may-2026: removido useState `isMac` — el badge ⌘K/Ctrl K que
-  // lo usaba se quitó al alinear con store (que no muestra ese hint).
 
   // Sync query con URL (back/forward, link share)
   useEffect(() => {
@@ -363,7 +357,7 @@ export default function SearchBar({ variant = "full", className = "" }: Props) {
     >
       <form
         onSubmit={handleSubmit}
-        className="group flex items-center transition-all overflow-hidden"
+        className="search-form-store group flex items-center transition-all overflow-hidden"
         style={{
           background: "var(--brand-purple)",
           border: "none",
