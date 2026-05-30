@@ -34,6 +34,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import db  # carga .env.local + conexion Turso
+from content_swarm_lib import gen_unique_slug  # slug ES limpio al publicar
 
 
 def staged_pending() -> int:
@@ -84,16 +85,22 @@ def main() -> int:
         print("nada que publicar.")
         return 0
 
-    for tid, slug, title in rows:
-        print(f"  -> {tid} | {slug} | {(title or '')[:60]}")
+    for tid, old_slug, title in rows:
+        new_slug = gen_unique_slug(title or tid, tid)
+        print(f"  -> {tid} | {old_slug} -> {new_slug} | {(title or '')[:50]}")
         if not args.dry_run:
+            # Publicacion LIMPIA (Pablo 30-may-2026): slug ES nuevo + TODOS los
+            # timestamps al momento de salida (creacion incluida). Asi la nota
+            # es contenido nuevo del dia, sin huella de creacion en lote.
             db.execute(
                 """UPDATE tutorials
                    SET status = 'published',
+                       slug = ?,
                        published_at = datetime('now'),
+                       ingested_at = datetime('now'),
                        updated_at = datetime('now')
                    WHERE id = ? AND status = 'staged'""",
-                [tid],
+                [new_slug, tid],
             )
 
     if args.dry_run:

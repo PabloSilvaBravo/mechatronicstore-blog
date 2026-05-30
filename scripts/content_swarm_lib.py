@@ -252,8 +252,6 @@ def cmd_stage(tid: str, raw_json: str) -> int:
     except Exception as e:
         print(f"WARN: no se pudo sanear guiones ({e}); sigo igual.", file=sys.stderr)
 
-    new_slug = gen_unique_slug(data["title_es"], tid)
-
     sets, vals = [], []
     for k, v in data.items():
         if k not in PUBLISH_FIELDS:
@@ -262,8 +260,10 @@ def cmd_stage(tid: str, raw_json: str) -> int:
             v = json.dumps(v, ensure_ascii=False)
         sets.append(f"{k} = ?")
         vals.append(v)
-    sets.append("slug = ?")
-    vals.append(new_slug)
+    # El slug definitivo (ES limpio) y los timestamps frescos los asigna el
+    # DRIP al publicar (publish_staged_drip.py): asi la nota que sale al aire
+    # es "contenido nuevo de ese momento" (slug + fecha de creacion/publicacion
+    # del dia de salida), no un flag flipeado sobre un registro viejo.
     sets += [
         "status = 'staged'",
         "translated_at = datetime('now')",
@@ -277,7 +277,7 @@ def cmd_stage(tid: str, raw_json: str) -> int:
     vals.append(tid)
     db.execute(f"UPDATE tutorials SET {', '.join(sets)} WHERE id = ?", vals)
     db.commit()
-    print(json.dumps({"ok": True, "id": tid, "status": "staged", "slug": new_slug, "body_images": len(imgs)}))
+    print(json.dumps({"ok": True, "id": tid, "status": "staged", "body_images": len(imgs)}))
     return 0
 
 
