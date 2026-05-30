@@ -251,7 +251,7 @@ export default function MaterialsList({
             className="text-[11px] font-bold uppercase tracking-[0.12em]"
             style={{ color: "var(--text-accent)" }}
           >
-            Necesitás
+            Necesitas
           </div>
           <h2
             className="font-headline text-xl"

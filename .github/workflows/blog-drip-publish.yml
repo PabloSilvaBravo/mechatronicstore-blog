@@ -1,0 +1,48 @@
+name: blog-drip-publish
+
+# Publica de a pocos los tutoriales en estado 'staged' (Pablo 30-may-2026).
+# Evita el patron de "publicacion masiva el mismo dia" que Google penaliza.
+# Corre 3 veces al dia en horario diurno chileno y publica 1-2 cada vez
+# (~4-6/dia, repartidos), con published_at = momento real de publicacion.
+
+on:
+  schedule:
+    # 13/17/21 UTC = 09/13/17 Chile (manana, mediodia, tarde)
+    - cron: "0 13 * * *"
+    - cron: "0 17 * * *"
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Cantidad fija a publicar ahora (vacio = aleatorio 1-2)"
+        required: false
+        default: ""
+
+concurrency:
+  group: blog-drip-publish
+  cancel-in-progress: false
+
+jobs:
+  drip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - name: Drip publish staged tutorials
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          DRIP_COUNT: ${{ github.event.inputs.count }}
+        run: |
+          if [ -n "$DRIP_COUNT" ]; then
+            python3 scripts/publish_staged_drip.py --count "$DRIP_COUNT"
+          else
+            python3 scripts/publish_staged_drip.py --min 1 --max 2
+          fi

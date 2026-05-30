@@ -34,7 +34,10 @@ export default function BuyAllButton({ linkedProducts, slug }: Props) {
   const addable = linkedProducts.filter((p) => p.wc_id);
   const total = addable.reduce((s, p) => s + p.price_clp, 0);
 
-  if (addable.length === 0) {
+  // Pablo 30-may-2026: el atajo "Comprar todo" solo tiene sentido con 2 o
+  // mas productos reales de MechatronicStore (con wc_id en el carrito). Con
+  // 0 o 1 producto NO se muestra el boton.
+  if (addable.length < 2) {
     return null;
   }
 
