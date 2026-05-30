@@ -287,6 +287,7 @@ def apply_all(
     min_images: int = 2,
     min_words: int = 600,
     code_required_unless_steps: int = 4,
+    extra_image_count: int = 0,
 ) -> dict:
     """Aplica los hard filters. Devuelve resumen.
 
@@ -312,7 +313,11 @@ def apply_all(
     stats = {
         "has_code": has_code(body),
         "steps": count_steps(body),
-        "images": count_images(body),
+        # Pablo 30-may-2026: las imagenes reales suelen venir scrapeadas en
+        # extra_images (no siempre embebidas en el body con <img>). Si el body
+        # llega como texto plano (parser devolvio body_html vacio), count_images
+        # daria 0 aunque haya 20 imagenes disponibles. Contamos el maximo.
+        "images": max(count_images(body), extra_image_count),
         "words": word_count(body),
         "has_materials": has_materials_list(body),
     }
@@ -330,7 +335,15 @@ def apply_all(
         reasons.append(f"images_below_{min_images}")
     if stats["words"] < min_words:
         reasons.append(f"words_below_{min_words}")
-    if not stats["has_materials"]:
+    # Pablo 30-may-2026: no_materials_list es SOFT. Muchos tutoriales validos
+    # (pinout, servidor web, explainer tecnico) no tienen una seccion formal de
+    # "materiales" pero si codigo o pasos suficientes. Solo bloquea si ademas
+    # NO hay codigo Y los pasos son pocos. Antes mataba ~214 tutoriales reales.
+    if (
+        not stats["has_materials"]
+        and not stats["has_code"]
+        and stats["steps"] < min_steps
+    ):
         reasons.append("no_materials_list")
 
     matched_kw = matches_excluded_keyword(body, excluded_keywords)

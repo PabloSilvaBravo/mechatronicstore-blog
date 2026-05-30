@@ -93,10 +93,24 @@ def process_source(source: dict, excluded_kw: list[str], stats: dict, per_source
             stats["scrape_failed"] += 1
             continue
 
-        # Pasar body_html al filter — preserva <pre>, <h2>, <img> structure
-        body_for_filter = page.body_html or page.body_text or ""
+        # Pablo 30-may-2026 FIX (causa raiz de ~100 tutoriales legitimos
+        # rechazados): varios parsers devuelven body_html VACIO pero body_text
+        # completo (10k+ chars de tutorial real). Antes el filtro corria solo
+        # sobre el body_html vacio -> count_images=0 / has_materials=0 -> se
+        # rechazaba como "pocas imagenes / sin materiales" un tutorial entero.
+        # Ahora el filtro ve HTML + texto juntos, y las imagenes reales (que
+        # vienen scrapeadas en extra_images, no siempre embebidas en el body)
+        # cuentan para el minimo de imagenes.
+        body_for_filter = "\n".join(
+            p for p in [page.body_html, page.body_text] if p
+        ) or ""
         body_for_store = page.body_text or ""
-        filter_result = apply_all(body_for_filter, excluded_keywords=excluded_kw)
+        n_extra_imgs = len(page.extra_images or [])
+        filter_result = apply_all(
+            body_for_filter,
+            excluded_keywords=excluded_kw,
+            extra_image_count=n_extra_imgs,
+        )
         body = body_for_store  # Store body_text en DB (más compacto)
 
         # Pablo 23-may-2026 fase 1.2 — persistir también body_html y la
