@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-05-30T21:04:18.057248+00:00",
+  "checked_at": "2026-05-30T22:19:12.538101+00:00",
   "metrics": {
     "drafts_pending": 0,
-    "published_24h": 21,
-    "ranked_stuck": 1,
-    "rejected_ratio_48h": 0.322,
-    "published_48h": 59,
+    "published_24h": 33,
+    "ranked_stuck": 0,
+    "rejected_ratio_48h": 0.28,
+    "published_48h": 72,
     "rejected_48h": 28,
     "sources_active": 43,
     "sources_silent_48h": 10,
@@ -13,66 +13,65 @@
     "editorial_rejected_48h": 0,
     "editorial_rejected_ratio": 0.0,
     "heros_checked": 30,
-    "heros_broken": 30,
+    "heros_broken": 29,
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/43be93fdd11a/5e43fb94f3d7c46f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/c22aeb8cc79f/c217f1739bb17ad2.png"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/10b5450b4af8/7aaf2a1c2e338e94.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/fbcc19d938c6/f858b362614f5596.jpg"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/deffac046dcf/57e5d74703488c3f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/f1640529f263/003fc208d3fa16c1.png"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4e810450f4d7/79084e70a6fec928.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/01f201887f99/f89d7f27bb733a75.jpg"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/1c872115961d/68a7b2e1bfae5ad0.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/fbea5c5530e2/a86ec6dc2d76a4a3.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/56372eb9a162/ca280ba35692486a.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/68fec80c4ba7/8b60641696a5ebdd.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/0374f2eb1a4e/0696a3773294d553.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/4d223e5226bb/f7f24c16d60dd004.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ee522656e1a3/303a9b06eaae639f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/bef179f2ac2f/39a0275a25a9b7b7.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/96b4dab26e1d/d9a64c558684f040.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/515f03401c35/f2472894cac9824c.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5fba58b3b224/fd90987f794199a4.webp"
       }
     ],
-    "ranked_aging_hours": 8,
-    "published_7d": 23,
+    "ranked_aging_hours": 0,
+    "published_7d": 36,
     "rank_runs_24h": 1,
-    "translate_runs_24h": 4,
+    "translate_runs_24h": 5,
     "counts_by_status": {
-      "published": 59,
-      "ranked": 1,
-      "rejected": 554
+      "published": 72,
+      "rejected": 542
     }
   },
   "alerts": [
     {
       "severity": "warning",
       "metric": "heros_broken",
-      "value": 30,
+      "value": 29,
       "threshold": 0,
-      "message": "30/30 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
+      "message": "29/30 hero images devuelven 4xx/5xx/timeout. Verificá hotlink-protection, dominios caídos, o URLs cambiadas en upstream. Para detectar 0×0 in-browser corré el workflow blog-visual-audit (Playwright)."
     }
   ],
   "status": "warning"
