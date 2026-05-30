@@ -413,6 +413,16 @@ que cumplan las TRES condiciones a la vez:
    distinto como si fuera el mismo; si pide un driver A4988, NO linkear un
    L298N. El `name_original` debe describir el componente REAL del tutorial,
    no un primo lejano.
+4. **Componentes que el catálogo NO vende (hasta 2 permitidos, Pablo 30-may-2026)**:
+   `materials_list` (la lista de materiales) DEBE ser COMPLETA y honesta:
+   incluí TODOS los componentes reales que el tutorial usa, aunque
+   MechatronicStore no los venda. Si un componente usado de verdad no está en
+   el catálogo, igual va en `materials_list` (como ítem normal, SIN link de
+   producto), hasta un MÁXIMO de 2 ítems sin equivalente en tienda. NO omitas
+   un componente clave solo porque no se vende acá, y NO fuerces un match de
+   tecnología equivocada para rellenar. Esos ítems sin tienda simplemente no
+   aparecen en `linked_products` (que sigue siendo SOLO productos de
+   MechatronicStore en stock). Así el lector ve el BOM real y completo.
 
 Mejor 3 productos correctos y en stock que 8 con relleno. La calidad del
 interlinking se mide por precisión, no por cantidad.

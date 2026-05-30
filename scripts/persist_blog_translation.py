@@ -727,6 +727,32 @@ def main():
                 print(f"    ✓ guiones de marca saneados: {n}")
 
         if target_status == "published":
+            # Pablo 30-may-2026 — GUARD DE MINIMO 3 IMAGENES (hard-reject).
+            # Pablo: las fotos en un tutorial son criticas (referencia
+            # Instructables). El prompt ya exige 3+ imagenes inline; este guard
+            # lo vuelve un candado: si una nota llega a publicarse con menos de
+            # 3 imagenes en el cuerpo, NO se publica. Queda 'rejected' y el
+            # refetch/Routine C la reprocesa para insertar las que faltan desde
+            # extra_images. El conteo es sobre body_es_final (mismo numero antes
+            # y despues del rehost; rehost solo cambia las URLs).
+            n_body_imgs = len(_MD_IMAGE_RE.findall(body_es_final or ""))
+            if n_body_imgs < 3:
+                stats.setdefault("few_images_blocked", 0)
+                stats["few_images_blocked"] += 1
+                print(
+                    f"  ✗✗ POCAS IMAGENES ({tid}): {n_body_imgs} en el cuerpo "
+                    f"(minimo 3): {tr.get('title_es','')[:50]}"
+                )
+                try:
+                    db.execute(
+                        "UPDATE tutorials SET status='rejected', "
+                        "rejected_reason=?, updated_at=datetime('now') WHERE id=?",
+                        [f"few_images:{n_body_imgs}<3", tid],
+                    )
+                except Exception as e:
+                    print(f"  ✗ no se pudo marcar rejected {tid}: {e}")
+                continue
+
             body_es_final, steps_final, n_rehosted = rehost_inline_images(
                 body_es_final, steps_final, tid,
             )
