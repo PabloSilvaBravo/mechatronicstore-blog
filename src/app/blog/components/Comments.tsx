@@ -41,7 +41,7 @@ interface Props {
  * aca: usamos mapping "specific" con el slug del tutorial como termino.
  * ----------------------------------------------------------------------
  */
-const GISCUS_ENABLED = false;
+const GISCUS_ENABLED = true;
 // IDs verificados reales el 30-may-2026 (gh api graphql contra el repo).
 // Si Pablo quiere otra categoria, reemplazar category + categoryId por
 // los valores de https://giscus.app (categorias disponibles: General,
