@@ -45,6 +45,251 @@ except Exception:
 # Captura el grupo 1 (URL) con alt opcional antes.
 _MD_IMAGE_RE = _re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
+# ---------------------------------------------------------------------------
+# Pablo 30-may-2026 — CHOKEPOINT de validacion + saneo del output de Routine C.
+#
+# El persist era un passthrough ciego: guardaba body_es/title_es/code_blocks
+# exactamente como venian del modelo. La auditoria del enjambre encontro que
+# Routine C produce defectos sistematicos:
+#   - Codigo destruido: angle brackets vaciados (#include <WiFi.h> -> sin <...>),
+#     operadores < > <= borrados, o el bloque entero como la palabra "None".
+#   - Rayas de marca: em (raya), en (guion medio), minus (signo menos) en prosa,
+#     y compuestos como "Wi-Fi" (la marca NUNCA usa guion).
+#   - Cuerpo cortado a media palabra (input al modelo truncado mid-word).
+#
+# Las dos funciones de saneo (dashes de marca) son CODE-FENCE-AWARE: jamas
+# tocan el contenido dentro de bloques cercados (```...```), inline code
+# (`...`) ni URLs. El codigo es sagrado: si "a < b" vive dentro de un fence,
+# queda intacto. La validacion de codigo NO altera nada, solo detecta basura.
+# ---------------------------------------------------------------------------
+
+# Fence cercado: ``` o ~~~ (con lenguaje opcional) hasta el cierre del mismo
+# tipo. DOTALL para que abarque multiples lineas. Non-greedy.
+_FENCE_RE = _re.compile(r"(?:```|~~~)[^\n]*\n.*?(?:```|~~~)", _re.DOTALL)
+# Inline code: 1+ backticks de apertura, mismo numero de cierre. Capturamos
+# corridas de backticks para respetar el largo (``a`b`` es 1 solo span).
+_INLINE_CODE_RE = _re.compile(r"(`+)(?:.+?)\1")
+# URLs crudas (http/https) — no queremos normalizar guiones dentro de una URL.
+_RAW_URL_RE = _re.compile(r"https?://[^\s\)<>\]]+")
+# Markdown link/imagen completo ![alt](url) o [txt](url): protegemos la URL
+# pero NO el texto visible (alt/label SI debe sanearse). Se maneja aparte.
+_MD_LINK_URL_RE = _re.compile(r"(\]\()([^)\s]+)")
+
+# Caracteres de raya/guion prohibidos en copy de marca y su reemplazo por
+# defecto. La raya larga (em) suele ser puntuacion -> punto y espacio.
+_EM_DASH = "—"   # raya (em dash)
+_EN_DASH = "–"   # guion medio (en dash)
+_MINUS = "−"     # signo menos
+_FIG_DASH = "‒"  # figure dash
+_HORBAR = "―"    # horizontal bar
+
+
+def _split_protected(md: str):
+    """Tokeniza el markdown en segmentos (texto, es_protegido).
+
+    Protegido = dentro de fence cercado, inline code, o URL cruda. Esos
+    segmentos NUNCA se tocan. El resto es prosa saneable.
+
+    Returns: lista de tuplas (segmento:str, protegido:bool) en orden, cuya
+    concatenacion reconstruye el markdown original byte a byte.
+    """
+    if not md:
+        return [(md or "", False)]
+    spans: list[tuple[int, int]] = []
+    for rx in (_FENCE_RE, _INLINE_CODE_RE, _RAW_URL_RE):
+        for m in rx.finditer(md):
+            spans.append((m.start(), m.end()))
+    if not spans:
+        return [(md, False)]
+    # Merge de spans solapados/adyacentes para no romper offsets.
+    spans.sort()
+    merged: list[list[int]] = []
+    for s, e in spans:
+        if merged and s <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], e)
+        else:
+            merged.append([s, e])
+    out: list[tuple[str, bool]] = []
+    cur = 0
+    for s, e in merged:
+        if s > cur:
+            out.append((md[cur:s], False))
+        out.append((md[s:e], True))
+        cur = e
+    if cur < len(md):
+        out.append((md[cur:], False))
+    return out
+
+
+def _sanitize_brand_dashes_prose(text: str) -> tuple[str, int]:
+    """Reemplaza rayas/guiones de marca en un fragmento de PROSA (ya sin code).
+
+    Reglas (regla estricta de marca, sin guiones nunca):
+      - Raya larga (em) usada como puntuacion -> punto+espacio si separa
+        oraciones, sino dos puntos. Heuristica simple: ", X — Y" pasa a
+        ", X. Y"; espacios alrededor se normalizan.
+      - Guion medio (en), signo menos, figure dash, horizontal bar -> coma o
+        nada segun contexto.
+      - "Wi-Fi"/"wi-fi" -> "WiFi"; "2-en-1" -> "2 en 1"; rangos "9-12V" se
+        dejan al lector (no son copy de prosa) — pero un guion entre palabras
+        alfabeticas tipo "plug-and-play" -> "plug and play".
+
+    Retorna (texto_saneado, n_cambios).
+    """
+    if not text:
+        return text, 0
+    n = 0
+
+    # 1. Compuestos de marca conocidos primero (case-insensitive).
+    def _wifi(m):
+        nonlocal n
+        n += 1
+        return "WiFi"
+    text, c = _re.subn(r"Wi[\-‑]Fi", _wifi, text, flags=_re.IGNORECASE)
+
+    # 2. "<num>-en-<num>" / "<num>-in-<num>" -> "<num> en <num>".
+    text, c = _re.subn(r"(\d+)\s*-\s*en\s*-\s*(\d+)", r"\1 en \2", text)
+    n += c
+
+    # 3. Em dash / horizontal bar como puntuacion. Si tiene espacios a los
+    #    lados ("texto — texto") es un inciso -> ". " (punto). Si esta pegado
+    #    ("texto—texto") -> ", ".
+    def _emrepl(m):
+        nonlocal n
+        n += 1
+        left, right = m.group(1), m.group(2)
+        # Inciso con espacios -> punto y mayuscula si parece nueva oracion.
+        return f"{left}. {right}" if (left and right) else (left or right)
+    # con espacios
+    text, c = _re.subn(rf"(\S)\s*[{_EM_DASH}{_HORBAR}]\s*(\S)", _emrepl, text)
+
+    # 4. En dash / minus / figure dash. Entre numeros (rango "10-20") -> "a";
+    #    entre palabras -> espacio (quita el guion). Suelto -> coma.
+    other = f"{_EN_DASH}{_MINUS}{_FIG_DASH}"
+    def _numrange(m):
+        nonlocal n
+        n += 1
+        return f"{m.group(1)} a {m.group(2)}"
+    text, c = _re.subn(rf"(\d)\s*[{other}]\s*(\d)", _numrange, text)
+    def _otherrepl(m):
+        nonlocal n
+        n += 1
+        left, right = m.group(1), m.group(2)
+        return f"{left}, {right}" if (left and right) else (left or right)
+    text, c = _re.subn(rf"(\S)\s*[{other}]\s*(\S)", _otherrepl, text)
+
+    # 5. Guion ASCII '-' entre dos palabras alfabeticas (no codigo, ya filtrado)
+    #    tipo "plug-and-play", "plug-in", "step-by-step" -> espacio. NO toca
+    #    nombres de modelo con digitos (ESP32-C6) ni fechas (no hay aca).
+    def _alphahyphen(m):
+        nonlocal n
+        n += 1
+        return f"{m.group(1)} {m.group(2)}"
+    text, c = _re.subn(r"([A-Za-zÁÉÍÓÚáéíóúÑñ]{2,})-([A-Za-zÁÉÍÓÚáéíóúÑñ]{2,})", _alphahyphen, text)
+
+    return text, n
+
+
+def sanitize_brand_dashes(md: str) -> tuple[str, int]:
+    """Aplica el saneo de guiones de marca preservando code fences, inline
+    code y URLs. Tambien sanea el texto VISIBLE de links/imagenes ([alt],
+    [label]) pero deja la URL intacta.
+
+    Retorna (markdown_saneado, n_cambios_totales).
+    """
+    if not md:
+        return md, 0
+    total = 0
+    out_parts: list[str] = []
+    for seg, protected in _split_protected(md):
+        if protected:
+            out_parts.append(seg)
+            continue
+        # Dentro de prosa puede haber markdown links/imagenes: proteger SOLO
+        # la porcion `](url`. Partimos por esa pieza, saneamos el resto.
+        last = 0
+        sub_parts: list[str] = []
+        for m in _MD_LINK_URL_RE.finditer(seg):
+            pre = seg[last:m.start()]
+            cleaned, n = _sanitize_brand_dashes_prose(pre)
+            total += n
+            sub_parts.append(cleaned)
+            sub_parts.append(m.group(0))  # `](url` intacto
+            last = m.end()
+        tail = seg[last:]
+        cleaned, n = _sanitize_brand_dashes_prose(tail)
+        total += n
+        sub_parts.append(cleaned)
+        out_parts.append("".join(sub_parts))
+    return "".join(out_parts), total
+
+
+def validate_code_blocks(code_blocks) -> list[str]:
+    """Detecta bloques de codigo corruptos en el output de Routine C.
+
+    NO altera nada (el codigo jamas se modifica). Devuelve una lista de
+    problemas humano-legibles; vacia = sano. El caller decide si rechaza o
+    loguea fuerte.
+
+    Detecta:
+      - code es None / null  -> el modelo devolvio null y se stringificaria.
+      - code vacio o solo whitespace.
+      - code == "None"/"null"/"undefined" literal (stringificacion de basura).
+      - #include con angle brackets vaciados: "#include <>" o "#include <"
+        sin cerrar o "#include  " seguido de salto (header borrado).
+    """
+    problems: list[str] = []
+    if not isinstance(code_blocks, list):
+        return problems
+    for i, b in enumerate(code_blocks):
+        if not isinstance(b, dict):
+            continue
+        code = b.get("code")
+        cap = (b.get("caption") or b.get("lang") or f"#{i}")
+        if code is None:
+            problems.append(f"bloque '{cap}': code es None (modelo devolvio null)")
+            continue
+        cstr = str(code)
+        if not cstr.strip():
+            problems.append(f"bloque '{cap}': code vacio")
+            continue
+        if cstr.strip().lower() in ("none", "null", "undefined"):
+            problems.append(f"bloque '{cap}': code es literal '{cstr.strip()}'")
+            continue
+        if _re.search(r"#include\s*<\s*>", cstr):
+            problems.append(f"bloque '{cap}': #include con <> vaciado")
+        elif _re.search(r"#include\s*<[^>\n]*$", cstr, _re.MULTILINE):
+            problems.append(f"bloque '{cap}': #include con < sin cerrar")
+    return problems
+
+
+def body_es_looks_truncated(body_es: str) -> bool:
+    """Heuristica: True si el body_es parece cortado a media palabra.
+
+    Un cuerpo bien terminado cierra con puntuacion, fence, lista, header o
+    cita. Si termina en una letra/numero suelto (palabra incompleta) y NO
+    cierra un fence, es sospechoso de truncado del input al modelo.
+    """
+    if not body_es:
+        return False
+    # Remover bloques cercados COMPLETOS primero. Lo que queda con un opener
+    # de fence al inicio de linea (``` / ~~~) sin cierre = fence truncado.
+    # Esto evita falsos positivos cuando se usan corridas de 3+ backticks
+    # como inline code (ej. "...```\nmas texto.") que no son un fence real.
+    no_fences = _FENCE_RE.sub("", body_es)
+    if _re.search(r"(?m)^[ \t]*(?:```|~~~)", no_fences):
+        return True
+    stripped = body_es.rstrip()
+    if not stripped:
+        return False
+    last = stripped[-1]
+    # Cierres validos: puntuacion, parentesis/comillas/backtick, asterisco
+    # (bold/lista), dos puntos, mayor-que (cita), guion de lista.
+    if last in ".!?)\"'`*:>]_":
+        return False
+    # Termina en letra/digito -> probable palabra cortada.
+    return last.isalnum()
+
 # Pablo 22-may-2026: helper inverso de to_thumb_url (enrich_linked_products.py).
 # Los thumbs de productos vienen como `foto-100x100.webp` (cropeado para card).
 # Para usar como HERO necesitamos la version full-res (foto.webp ~600-1200px)
@@ -226,6 +471,10 @@ def main():
         "errors": 0,
         "editorial_warning": 0,
         "editorial_blocked": 0,
+        # Pablo 30-may-2026 — nuevos guards de integridad del output.
+        "code_corrupt_blocked": 0,
+        "body_truncated_blocked": 0,
+        "brand_dashes_fixed": 0,
     }
 
     # Pablo 20-may-2026: checklist editorial pre-publish.
@@ -376,6 +625,49 @@ def main():
         else:
             print(f"    ⊘ hero limpiado (todo blocklist + sin linked_products score≥0.85)")
 
+        # Pablo 30-may-2026 — GUARD DE INTEGRIDAD DEL CODIGO (hard-reject).
+        # Routine C a veces destruye los bloques de codigo: angle brackets
+        # vaciados (#include <WiFi.h> sin <...>), o el bloque entero como la
+        # palabra "None" (stringificacion de un null del modelo). Persistir
+        # eso es peor que no publicar: un tutorial con codigo que no compila
+        # quema la credibilidad del sitio. Si hay corrupcion, NO publicamos:
+        # rejected con razon clara + log RUIDOSO para que el monitor lo vea.
+        code_problems = validate_code_blocks(tr.get("code_blocks"))
+        if code_problems:
+            stats["code_corrupt_blocked"] += 1
+            reason = "code_corrupt:" + " | ".join(code_problems)[:180]
+            print(f"  ✗✗ CODIGO CORRUPTO ({tid}): {tr.get('title_es','')[:50]}")
+            for p in code_problems:
+                print(f"        - {p}")
+            try:
+                db.execute(
+                    "UPDATE tutorials SET status='rejected', "
+                    "rejected_reason=?, updated_at=datetime('now') WHERE id=?",
+                    [reason, tid],
+                )
+            except Exception as e:
+                print(f"  ✗ no se pudo marcar rejected {tid}: {e}")
+            continue
+
+        # Pablo 30-may-2026 — GUARD DE CUERPO TRUNCADO (hard-reject).
+        # El dump capa el input al modelo (SUBSTR) y, si corta mid-word, el
+        # modelo traduce el fragmento incompleto y el body_es termina a media
+        # palabra. No publicamos un tutorial cortado: rejected + log fuerte.
+        if body_es_looks_truncated(tr.get("body_es") or ""):
+            stats["body_truncated_blocked"] += 1
+            tail = (tr.get("body_es") or "").rstrip()[-60:]
+            print(f"  ✗✗ BODY TRUNCADO ({tid}): {tr.get('title_es','')[:50]}")
+            print(f"        termina en: ...{tail!r}")
+            try:
+                db.execute(
+                    "UPDATE tutorials SET status='rejected', "
+                    "rejected_reason=?, updated_at=datetime('now') WHERE id=?",
+                    ["body_truncated:body_es termina a media palabra", tid],
+                )
+            except Exception as e:
+                print(f"  ✗ no se pudo marcar rejected {tid}: {e}")
+            continue
+
         # Pablo 20-may-2026: aplicar checklist editorial. Si pasa < 3 de 5,
         # rejected con razón editorial (revisar manualmente).
         passed, checks = editorial_score(tr)
@@ -412,6 +704,28 @@ def main():
         # de persistir. Procesa ![alt](url) en body_es y steps[].image_url.
         body_es_final = tr.get("body_es") or ""
         steps_final = tr.get("steps") or []
+
+        # Pablo 30-may-2026 — SANEO DE GUIONES DE MARCA (regla estricta: la
+        # marca NUNCA usa guion). Reemplaza em/en/minus por coma/punto/dos
+        # puntos y normaliza Wi-Fi -> WiFi en title_es/subtitle_es/body_es.
+        # Es CODE-FENCE-AWARE: jamas toca el contenido dentro de ```...```,
+        # inline code (`...`) ni URLs. "a < b" en un fence queda intacto.
+        # Se aplica ANTES del rehost (el rehost solo cambia URLs de imagenes,
+        # que el sanitizer ya protege).
+        title_es_final = tr.get("title_es")
+        subtitle_es_final = tr.get("subtitle_es")
+        if title_es_final:
+            title_es_final, n = sanitize_brand_dashes(title_es_final)
+            stats["brand_dashes_fixed"] += n
+        if subtitle_es_final:
+            subtitle_es_final, n = sanitize_brand_dashes(subtitle_es_final)
+            stats["brand_dashes_fixed"] += n
+        if body_es_final:
+            body_es_final, n = sanitize_brand_dashes(body_es_final)
+            stats["brand_dashes_fixed"] += n
+            if n > 0:
+                print(f"    ✓ guiones de marca saneados: {n}")
+
         if target_status == "published":
             body_es_final, steps_final, n_rehosted = rehost_inline_images(
                 body_es_final, steps_final, tid,
@@ -456,8 +770,8 @@ def main():
                 [
                     editorial_reason,
                     slug_to_use,
-                    tr.get("title_es"),
-                    tr.get("subtitle_es"),
+                    title_es_final,
+                    subtitle_es_final,
                     body_es_final,
                     hero_url,
                     json.dumps(tr.get("materials_list") or [], ensure_ascii=False),

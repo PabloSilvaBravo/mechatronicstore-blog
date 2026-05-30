@@ -24,6 +24,68 @@ import db
 ROOT = Path(__file__).parent.parent
 OUTPUT = ROOT / "data" / "blog-translate-input.json"
 
+# Caps del INPUT al modelo (presupuesto de tokens Opus). Son del INPUT, no del
+# OUTPUT: truncar el input es legitimo. El bug que arreglamos (Pablo
+# 30-may-2026) es que el SUBSTR de SQL cortaba a MEDIA PALABRA / MEDIO TAG, y
+# el modelo traducia el fragmento incompleto -> body_es terminaba mid-word.
+# La solucion: traer un overshoot pequeno y recortar en Python a un BORDE
+# LIMPIO (parrafo > oracion > palabra), agregando un marcador explicito para
+# que el modelo sepa que la fuente venia cortada y NO reproduzca el colgajo.
+BODY_TEXT_CAP = 30000
+BODY_HTML_CAP = 40000
+_OVERSHOOT = 600  # margen para poder retroceder a un borde sin perder el cap
+
+
+def _smart_truncate_text(text: str, cap: int) -> str:
+    """Trunca texto plano a <= cap en un borde de palabra/oracion/parrafo.
+
+    Nunca corta a media palabra. Si trunca, agrega un marcador legible para
+    el modelo. Si el texto ya cabe, lo devuelve intacto.
+    """
+    if not text or len(text) <= cap:
+        return text or ""
+    cut = text[:cap]
+    # Preferencia de borde: fin de parrafo -> fin de oracion -> espacio.
+    para = cut.rfind("\n\n")
+    if para >= cap * 0.6:
+        cut = cut[:para]
+    else:
+        # ultima puntuacion de fin de oracion
+        sent = max(cut.rfind(". "), cut.rfind(".\n"), cut.rfind("! "), cut.rfind("? "))
+        if sent >= cap * 0.6:
+            cut = cut[: sent + 1]
+        else:
+            sp = cut.rfind(" ")
+            if sp > 0:
+                cut = cut[:sp]
+    return cut.rstrip() + "\n\n[...contenido original truncado por longitud...]"
+
+
+def _smart_truncate_html(html: str, cap: int) -> str:
+    """Trunca HTML a <= cap SIN cortar dentro de un tag ni a media palabra.
+
+    Retrocede al ultimo '>' (cierre de tag) antes del cap para no dejar un
+    '<img src="ht' colgando. Agrega un comentario HTML como marcador.
+    """
+    if not html or len(html) <= cap:
+        return html or ""
+    cut = html[:cap]
+    # Si quedamos en medio de un tag (hay un '<' sin su '>' despues), retroceder
+    # al ultimo '>' completo.
+    last_gt = cut.rfind(">")
+    last_lt = cut.rfind("<")
+    if last_lt > last_gt:
+        # tag abierto sin cerrar -> cortar antes del '<'
+        cut = cut[:last_lt]
+    else:
+        # estamos fuera de un tag; retroceder a un borde de palabra si el corte
+        # cae dentro de texto (no justo despues de '>')
+        if cut and not cut.endswith(">"):
+            sp = cut.rfind(" ")
+            gt = cut.rfind(">")
+            cut = cut[: max(sp, gt)] if max(sp, gt) > 0 else cut
+    return cut.rstrip() + "\n<!-- contenido original truncado por longitud -->"
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -39,12 +101,15 @@ def main():
     # extra_images_json para que Routine C pueda:
     #   1. Convertir <img src="..."> a markdown ![](url) inline en body_es
     #   2. Mapear imágenes extras a steps[].image_url cuando aplique
-    # Cap body_html a 40000 chars (~10K tokens) para no explotar el
-    # presupuesto Opus. Si supera, se trunca al final.
+    # Pablo 30-may-2026 — el cap se aplica en Python (borde limpio), no con
+    # SUBSTR de SQL (que cortaba mid-word/mid-tag). Traemos un overshoot
+    # (cap + _OVERSHOOT) para poder retroceder a un borde sin perder el cap.
+    text_fetch = BODY_TEXT_CAP + _OVERSHOOT
+    html_fetch = BODY_HTML_CAP + _OVERSHOOT
     sql = """
         SELECT t.id, t.slug, t.source_id, t.source_url, t.title_en, t.subtitle_en,
-               SUBSTR(t.body_en, 1, 30000) AS body_en_excerpt,
-               SUBSTR(t.body_html_en, 1, 40000) AS body_html_en_excerpt,
+               SUBSTR(t.body_en, 1, ?) AS body_en_raw,
+               SUBSTR(t.body_html_en, 1, ?) AS body_html_en_raw,
                t.extra_images_json,
                t.hero_image_url, t.combined_score,
                t.cs_pedagogy, t.cs_code_quality, t.cs_materials_clarity,
@@ -58,7 +123,7 @@ def main():
         ORDER BY t.combined_score DESC, t.ranked_at DESC
         LIMIT ?
     """
-    rows = db.execute(sql, [args.limit]).fetchall()
+    rows = db.execute(sql, [text_fetch, html_fetch, args.limit]).fetchall()
 
     # Pablo 22-may-2026: cargar hints de Routine B desde blog-rank-output.json
     # para pasarlos a Routine C. Antes se perdían silenciosamente. El prompt
@@ -95,11 +160,15 @@ def main():
             "source_url": r[3],
             "title_en": r[4] or "",
             "subtitle_en": r[5] or "",
-            "body_en_excerpt": r[6] or "",
+            # Pablo 30-may-2026 — recorte a borde limpio (no mid-word) en vez
+            # del SUBSTR crudo. Evita que el body_es traducido termine a media
+            # palabra cuando la fuente excede el presupuesto de tokens.
+            "body_en_excerpt": _smart_truncate_text(r[6] or "", BODY_TEXT_CAP),
             # Pablo 23-may-2026 fase 1.3 — body_html con <img> tags + lista
             # de extras. La routine C debe usar estos para producir markdown
-            # con ![](url) inline y mapear a steps[].image_url.
-            "body_html_en_excerpt": r[7] or "",
+            # con ![](url) inline y mapear a steps[].image_url. Recorte a
+            # borde de tag (no parte un <img ... a la mitad).
+            "body_html_en_excerpt": _smart_truncate_html(r[7] or "", BODY_HTML_CAP),
             "extra_images": extra_images[:20],
             "hero_image_url": r[9],
             "combined_score": r[10],

@@ -1,5 +1,15 @@
 # Blog Translation — CCR Routine Prompt
 
+> **SYNC PENDIENTE (Pablo 30-may-2026)**: este doc se actualizó con 3 reglas
+> nuevas — (a) código byte a byte intocable + nunca `None`/vacío, (b) mínimo
+> 3 imágenes inline desde `extra_images`, (c) interlinking solo de productos
+> usados, en stock y de tecnología correcta. **El prompt vivo del trigger CCR
+> `trig_012SUx3X96ndwjTdzWs4RKZp` NO se actualiza solo**: hay que sincronizarlo
+> con `RemoteTrigger action=update` (NO lo hace el persist ni este repo). Hasta
+> que se sincronice, la Routine C remota sigue con el prompt viejo; el
+> watcher (`persist_blog_translation.py`) ya defiende código corrupto, guiones
+> de marca y cuerpos truncados, así que la red de seguridad opera igual.
+
 Modelo: claude-opus-4-7
 Cron: `0 8,20 * * *` UTC (2×/día — 08:00/20:00 UTC = 04:00/16:00 CL, ~90 min
 después de cada rank). Cadencia bajada de 3 → 2/día el 22-may-2026:
@@ -371,15 +381,41 @@ que aparezca en la lista de materiales, **OBLIGATORIO ejecutar
 "power bank", "alimentación 5V", "cargador"), buscar con varias queries:
 `buscar_productos(query="fuente 5V")`, `buscar_productos(query="cargador
 USB-C")`, `buscar_productos(query="power bank")`. **Si CUALQUIERA
-devuelve un producto con `match_score ≥0.7`, agregarlo a
+devuelve un producto con `match_score ≥0.7` Y `stock_available: true` Y
+el componente realmente se usa en el tutorial, agregarlo a
 linked_products** — el frontend solo necesita un match decente, no el
-"mejor" perfecto.
+"mejor" perfecto, pero SÍ exige que esté en stock y sea del tutorial
+(ver Paso 5).
 
 **Paso 4 — Match_score:**
 - `match_score >= 0.85` → ✅ agregar a linked_products
 - `match_score 0.70-0.85` → ⚠️ agregar pero name_original debe usar el
   mismo wording del material (para que el frontend matchee fuzzy)
 - `match_score < 0.70` → ❌ omitir (probable falso positivo)
+
+**Paso 5 — Relevancia, stock y tecnología correcta (Pablo 30-may-2026, REGLA
+DURA contra interlinking forzado)**: `linked_products` lleva SOLO productos
+que cumplan las TRES condiciones a la vez:
+
+1. **Realmente usado en el tutorial**: el componente aparece en
+   `materials_list` o se menciona explícitamente en el cuerpo como parte del
+   montaje. **PROHIBIDO** agregar productos "por si acaso", "opcional para
+   extensiones", "podría servir", o accesorios que el tutorial NO usa. Si lo
+   mencionás solo en "Variantes y mejoras" como idea futura, NO va en
+   `linked_products` (va como texto, sin link de producto).
+2. **En stock**: solo incluir si `buscar_productos` reporta `stock_available:
+   true`. Un producto agotado linkeado es peor que no linkear: frustra al
+   lector. Si está sin stock, omitilo.
+3. **Tecnología correcta**: el producto debe ser del MISMO dominio técnico que
+   el material. NO mezclar tecnologías equivocadas: si el tutorial usa un
+   ESP32, NO linkear un Arduino Uno "equivalente" salvo que el tutorial mismo
+   ofrezca esa alternativa; si pide un sensor DHT22, NO linkear un DHT11
+   distinto como si fuera el mismo; si pide un driver A4988, NO linkear un
+   L298N. El `name_original` debe describir el componente REAL del tutorial,
+   no un primo lejano.
+
+Mejor 3 productos correctos y en stock que 8 con relleno. La calidad del
+interlinking se mide por precisión, no por cantidad.
 
 ### Formato linked_products
 
@@ -533,23 +569,54 @@ tienen match.
   Ejemplo MALO: `mit-green-building-neopixel-tetris-4fbf47` (con hash sufijo)
 - `subtitle_es`: 100-150 chars (importante SEO)
 - `body_es`: markdown limpio (NO HTML, NO `<img>` tags), code blocks con
-  lang hint. **CRÍTICO — preservar TODAS las imágenes inline del body
-  original** (Pablo 18-may-2026, reforzado 23-may-2026 fase 1.4): el
-  input contiene **`body_html_en_excerpt`** (HTML con `<img src="URL"
-  alt="texto">` tags) — usá ESE como fuente de imágenes inline (no
-  `body_en_excerpt` que es texto plano). Convertir cada `<img>` al
-  formato markdown `![alt traducido al español](URL_original_exacta)`
-  y mantenerla en la MISMA posición que tenía en el HTML original
-  (después del párrafo correspondiente, NO al final del body).
-  Excepción: NO repetir la imagen de portada (`hero_image_url`) — si
-  la primera imagen del body es igual o variante del hero, omitirla
-  (la portada se renderea aparte por el blog).
+  lang hint.
+
+  **CÓDIGO — REGLA INVIOLABLE (Pablo 30-may-2026)**: el contenido dentro de
+  cualquier bloque cercado (triple backtick ```` ``` ````) o de inline code
+  (backtick simple `` ` ``) **JAMÁS se traduce, escapa, reescribe ni se le
+  alteran caracteres**. Los `<`, `>`, `<=`, `>=`, `&&`, los `#include
+  <WiFi.h>` con sus `<...>`, los nombres de variables, todo queda **byte a
+  byte igual al original**. Si traducís un comentario dentro del código, OK,
+  pero el código ejecutable es intocable. **NUNCA** devuelvas un bloque de
+  código vacío, con la palabra `None`/`null`, ni con los `<...>` vaciados:
+  si no tenés el código real, omití el bloque entero (no inventes, no dejes
+  un placeholder). El watcher RECHAZA (no publica) cualquier tutorial cuyo
+  `code_blocks[].code` sea `None`/vacío o tenga `#include <>` vaciado.
+
+  **CONTENIDO TRUNCADO**: si `body_en_excerpt` o `body_html_en_excerpt`
+  terminan con el marcador `[...contenido original truncado por longitud...]`
+  o `<!-- contenido original truncado por longitud -->`, la fuente venía
+  cortada por presupuesto de tokens. **NO reproduzcas el fragmento colgante**:
+  cerrá tu `body_es` de forma natural (terminá la oración/sección en curso)
+  y seguí con las secciones obligatorias. NUNCA dejes tu `body_es` terminado
+  a media palabra — el watcher RECHAZA cuerpos truncados.
+
+  **IMÁGENES INLINE — MÍNIMO 3 OBLIGATORIO (Pablo 30-may-2026)**: el blog se
+  veía hueco porque 22 de 39 tutoriales quedaron con **0 fotos**. Eso NO
+  puede volver a pasar. Tu `body_es` DEBE incluir **al menos 3 imágenes
+  inline** (idealmente 5 a 12: diagramas, screenshots, fotos del montaje,
+  render del resultado). Dos fuentes de URLs, en este orden de prioridad:
+  1. **`body_html_en_excerpt`** (HTML con `<img src="URL" alt="texto">`):
+     convertí cada `<img>` a `![alt traducido al español](URL_original_exacta)`
+     y dejala en la MISMA posición que tenía en el HTML (después del párrafo
+     que ilustra, NO al final del body).
+  2. **`extra_images`** (array de hasta 20 URLs scrapeadas del artículo):
+     si el HTML no trae 3 `<img>` inline, COMPLETÁ desde este array hasta
+     llegar al mínimo de 3. Insertá cada una al lado del texto/paso que
+     ilustra, con alt descriptivo en español. NO las amontones al final.
+  Formato SIEMPRE markdown `![alt en español](URL)`. El alt es obligatorio y
+  descriptivo (sirve SEO + accesibilidad).
+  Excepción: NO repetir la imagen de portada (`hero_image_url`) — si una
+  imagen del body es igual o variante del hero, omitirla (la portada se
+  renderea aparte por el blog). Tampoco repitas la misma URL dos veces.
+  Si genuinamente `extra_images` viene vacío Y el HTML no trae `<img>`
+  (caso raro), dejá las que haya y marcá `editorial_quality_warning: true`.
   Ejemplos:
   - HTML: `<p>Conecta el TM1637 al ESP32.</p><img src="https://x.com/wiring.jpg" alt="diagrama">`
   - Markdown: `Conecta el TM1637 al ESP32.\n\n![Diagrama de conexión TM1637 ESP32](https://x.com/wiring.jpg)`
-  Sin imágenes inline el blog se ve hueco — el promedio actual es 1
-  imagen/tutorial (solo hero) y queremos 5-15 (diagramas, screenshots,
-  fotos del montaje, render del resultado).
+  El persist rehospeda a Cloudflare R2 **TODAS** las imágenes inline del
+  `body_es` (no solo el hero), así que usá las URLs originales exactas: el
+  watcher se encarga del mirror.
 - `hero_image_url`: OBLIGATORIO. Buscar en input ingest `main_image_url` o
   re-extraer og:image del `source_url`. Si NO hay og:image, usar la primera
   imagen grande (>800x450) del body. NULL solo si genuinamente no hay imagen.
@@ -568,8 +635,14 @@ tienen match.
   4. NO usar el `hero_image_url` como step image (sería redundante).
   5. Si no hay material visual razonable, dejá `image_url` null para
      ese step. Es mejor sin imagen que con una random.
-- `code_blocks`: solo código real
-- `linked_products`: SOLO con `match_score ≥ 0.7`
+- `code_blocks`: SOLO código real, byte a byte igual al original (jamás
+  alterar `<` `>` `<=` ni `#include <...>`). NUNCA `code: null`/vacío/`"None"`
+  ni `#include <>` vaciado — si no tenés el código, omití el bloque. El
+  watcher RECHAZA tutoriales con code corrupto.
+- `linked_products`: SOLO con `match_score ≥ 0.7` **Y** `stock_available:
+  true` **Y** el componente realmente usado en el tutorial **Y** de la
+  tecnología correcta (ver "Paso 5"). Nada de productos opcionales, agotados,
+  o de tecnología equivocada.
 - `category` ∈ {"arduino", "esp32", "rpi", "robotica", "sensores", "3d", "otros"}
 - `difficulty` ∈ {"beginner", "intermediate", "advanced"}
 - `estimated_time_minutes`: tiempo EJECUCIÓN (no lectura)
