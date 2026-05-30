@@ -59,7 +59,10 @@ export default function ImageWithSkeleton({
       style={{
         ...style,
         aspectRatio: aspectRatio ?? (style as { aspectRatio?: string })?.aspectRatio,
-        background: loaded || errored ? "transparent" : "var(--bg-elevated)",
+        // Pablo 30-may-2026: si la imagen falla, dejamos el bloque de marca
+        // (no transparente) como fondo para que nunca se vea un recuadro
+        // gris vacío. El bloque de marca se dibuja debajo del <img>.
+        background: loaded ? "transparent" : "var(--bg-elevated)",
       }}
     >
       {!loaded && !errored && (
@@ -73,6 +76,40 @@ export default function ImageWithSkeleton({
             animation: "blog-skel-shimmer 1.4s ease-in-out infinite",
           }}
         />
+      )}
+      {/* Pablo 30-may-2026: fallback de marca cuando la imagen falla en
+          cargar (hotlink-block residual, 404, red). En vez de un hueco
+          transparente, mostramos un degradado sutil con los tokens de marca
+          y el texto alternativo centrado, para que la card degrade con
+          gracia. Reemplaza la antigua caja gris vacía. */}
+      {errored && (
+        <div
+          className="absolute inset-0 flex items-center justify-center p-3"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--bg-elevated) 0%, color-mix(in srgb, var(--brand-purple) 14%, var(--bg-elevated)) 100%)",
+          }}
+        >
+          <span
+            aria-hidden
+            className="absolute"
+            style={{
+              top: "0.55rem",
+              left: "0.6rem",
+              width: "0.5rem",
+              height: "0.5rem",
+              borderRadius: "9999px",
+              background: "var(--brand-purple)",
+              opacity: 0.7,
+            }}
+          />
+          <span
+            className="text-center text-[11px] font-semibold leading-snug line-clamp-3"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {alt || "MechatronicStore"}
+          </span>
+        </div>
       )}
       <img
         ref={imgRef}

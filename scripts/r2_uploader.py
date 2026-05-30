@@ -114,6 +114,23 @@ def is_already_rehosted(url: str) -> bool:
     return urlparse(url).hostname == urlparse(R2_PUBLIC_HOST).hostname
 
 
+def _source_referer(url: str) -> str:
+    """
+    Pablo 30-may-2026: deriva un Referer del ORIGEN del source (scheme+host)
+    para vencer hotlink protection al momento de descargar. Varios CMS
+    (WordPress + plugins anti hotlink, WAFs) sirven la imagen solo cuando el
+    Referer apunta a su propio dominio. Mandar el origen del source como
+    Referer imita una carga desde la misma página de origen.
+    """
+    try:
+        p = urlparse(url)
+        if p.scheme and p.netloc:
+            return f"{p.scheme}://{p.netloc}/"
+    except Exception:
+        pass
+    return ""
+
+
 def _guess_ext(url: str, content_type: str | None) -> str:
     ct = (content_type or "").split(";")[0].strip().lower()
     if ct in MIME_TO_EXT:
@@ -175,14 +192,60 @@ def upload_bytes(key: str, data: bytes, content_type: str) -> str:
     return _public_url(key)
 
 
+def _download_image(source_url: str, timeout: int) -> tuple[bytes, str]:
+    """
+    Descarga la imagen del source con UA de navegador + Referer del origen
+    (vence la mayoría del hotlink protection). Lanza RuntimeError con causa
+    legible si falla la descarga o el content-type no es image/*.
+
+    Pablo 30-may-2026: extraído de rehost_hero para compartirlo entre el
+    modo tolerante (devuelve None) y el modo estricto (lanza excepción).
+    """
+    headers = {"User-Agent": DOWNLOAD_UA, "Accept": "image/*,*/*;q=0.8"}
+    referer = _source_referer(source_url)
+    if referer:
+        headers["Referer"] = referer
+    resp = requests.get(
+        source_url,
+        timeout=timeout,
+        headers=headers,
+        stream=False,
+        allow_redirects=True,
+    )
+    resp.raise_for_status()
+    raw = resp.content
+    ct = resp.headers.get("content-type", "image/jpeg")
+    if not raw:
+        raise RuntimeError(f"respuesta vacía desde {source_url}")
+    if not ct.split(";")[0].strip().startswith("image/"):
+        raise RuntimeError(f"content-type no-imagen {ct!r} en {source_url}")
+    return raw, ct
+
+
+def _upload_image(source_url: str, tutorial_id: str, raw: bytes, ct: str) -> str:
+    """Optimiza a WebP e sube a R2 bajo articles/blog/<tid>/<sha>.<ext>."""
+    optimized, out_ct = _optimize(raw, ct)
+    ext = MIME_TO_EXT.get(out_ct, _guess_ext(source_url, out_ct))
+    digest = hashlib.sha1(optimized).hexdigest()[:16]
+    # Pablo 21-may-2026: el token CF está scoped a prefix `articles/*`.
+    # Usamos `articles/blog/<tid>/...` para reusar el token + bucket de
+    # MechaNoticias sin colisionar con sus keys (que viven bajo
+    # `articles/<article_id>/` directo, no `articles/blog/`).
+    key = f"articles/blog/{tutorial_id}/{digest}.{ext}"
+    if _object_exists(key):
+        return _public_url(key)
+    return upload_bytes(key, optimized, out_ct)
+
+
 def rehost_hero(
     source_url: str,
     tutorial_id: str,
     timeout: int = 15,
 ) -> Optional[str]:
     """
-    Descarga img desde source_url (con UA realista que pasa la mayoría de
-    hotlink-checks), optimiza WebP, sube a R2 bajo tutorials/<tid>/<sha>.<ext>.
+    Descarga img desde source_url (con UA realista + Referer del origen que
+    pasa la mayoría de hotlink-checks), optimiza WebP, sube a R2 bajo
+    articles/blog/<tid>/<sha>.<ext>.
 
     Idempotente: re-llamar con misma img devuelve la misma URL R2 sin re-subir.
 
@@ -190,6 +253,9 @@ def rehost_hero(
       - Creds no configurados (mensaje WARN)
       - Source URL responde 403/404/timeout
       - Content-type no es image/*
+
+    Tolerante a fallos (devuelve None). Para el chokepoint obligatorio del
+    persist usar rehost_hero_strict (que lanza excepción).
     """
     if not source_url:
         return None
@@ -201,43 +267,42 @@ def rehost_hero(
         return source_url
 
     try:
-        resp = requests.get(
-            source_url,
-            timeout=timeout,
-            headers={"User-Agent": DOWNLOAD_UA, "Accept": "image/*,*/*;q=0.8"},
-            stream=False,
-            allow_redirects=True,
-        )
-        resp.raise_for_status()
-        raw = resp.content
-        ct = resp.headers.get("content-type", "image/jpeg")
+        raw, ct = _download_image(source_url, timeout)
     except Exception as e:
         log.warning("download failed for %s: %s", source_url, e)
         return None
 
-    if not raw:
-        return None
-    if not ct.startswith("image/"):
-        log.warning("non-image content-type %s at %s", ct, source_url)
-        return None
-
-    optimized, out_ct = _optimize(raw, ct)
-    ext = MIME_TO_EXT.get(out_ct, _guess_ext(source_url, out_ct))
-    digest = hashlib.sha1(optimized).hexdigest()[:16]
-    # Pablo 21-may-2026: el token CF está scoped a prefix `articles/*`.
-    # Usamos `articles/blog/<tid>/...` para reusar el token + bucket de
-    # MechaNoticias sin colisionar con sus keys (que viven bajo
-    # `articles/<article_id>/` directo, no `articles/blog/`).
-    key = f"articles/blog/{tutorial_id}/{digest}.{ext}"
-
-    if _object_exists(key):
-        return _public_url(key)
-
     try:
-        return upload_bytes(key, optimized, out_ct)
+        return _upload_image(source_url, tutorial_id, raw, ct)
     except Exception as e:
         log.warning("R2 upload failed for %s: %s", source_url, e)
         return None
+
+
+def rehost_hero_strict(
+    source_url: str,
+    tutorial_id: str,
+    timeout: int = 15,
+) -> str:
+    """
+    Igual que rehost_hero pero ESTRICTO: en vez de devolver None ante un
+    fallo, lanza RuntimeError con la causa. Pensado para el chokepoint
+    obligatorio del persist (Pablo 30-may-2026): si el hero no se puede
+    espejar a R2, queremos un fallo RUIDOSO, NO conservar silenciosamente
+    la URL externa hotlink-bloqueada.
+
+    Si la URL ya está en nuestro CDN R2, la devuelve tal cual (no re-sube).
+    """
+    if not source_url:
+        raise RuntimeError("source_url vacío")
+    if not is_configured():
+        raise RuntimeError(
+            "R2 creds ausentes (CLOUDFLARE_API_TOKEN_R2 + CLOUDFLARE_ACCOUNT_ID)"
+        )
+    if is_already_rehosted(source_url):
+        return source_url
+    raw, ct = _download_image(source_url, timeout)
+    return _upload_image(source_url, tutorial_id, raw, ct)
 
 
 if __name__ == "__main__":

@@ -29,8 +29,16 @@ import re as _re
 _R2_INLINE_ENABLED = os.environ.get("R2_REHOST_ENABLED", "1") == "1"
 try:
     from r2_uploader import rehost_hero as _r2_rehost  # type: ignore
+    from r2_uploader import (  # type: ignore
+        rehost_hero_strict as _r2_rehost_strict,
+        is_configured as _r2_is_configured,
+        is_already_rehosted as _r2_is_already_rehosted,
+    )
 except Exception:
     _r2_rehost = None  # type: ignore
+    _r2_rehost_strict = None  # type: ignore
+    _r2_is_configured = None  # type: ignore
+    _r2_is_already_rehosted = None  # type: ignore
     _R2_INLINE_ENABLED = False
 
 # Regex para extraer URLs de markdown ![alt](url) y de plain URLs en src.
@@ -128,6 +136,61 @@ def rehost_inline_images(body_es: str, steps: list, tid: str) -> tuple[str, list
             new_steps.append(step)
 
     return new_body_es, new_steps, n_rehosted
+
+
+def rehost_hero_to_r2(hero_url: str | None, tid: str) -> str | None:
+    """
+    Pablo 30-may-2026 — CHOKEPOINT OBLIGATORIO de espejo del hero a R2.
+
+    Root cause del bug de imágenes rotas en /blog/tutoriales: el persist
+    aplicaba select_best_hero (que solo FILTRA dominios en blocklist) pero
+    NUNCA espejaba el hero a R2. Sources como electroniclinic.com,
+    pimylifeup.com, components101.com y mechatronicstore.cl responden 200 a
+    una descarga server-side pero hotlink-bloquean al navegador (Referer /
+    Sec-Fetch-Site), así que el <img> queda 0x0 y la card sale en blanco.
+
+    Esta función descarga el hero con UA de navegador + Referer del origen
+    (r2_uploader._download_image) y lo sube a R2. Si el rehost FALLA, NO
+    conservamos silenciosamente la URL externa: logueamos RUIDOSO y caemos a
+    los fallbacks de abajo (None → la card usa fallback de marca). Mejor un
+    hero faltante visible que una card rota indetectable.
+
+    Reglas:
+    - Si R2 no está habilitado o no hay creds (caso CCR cloud), devuelve la
+      URL tal cual con WARN. El script LOCAL post_translate_rehost +
+      backfill_blog_heroes_r2 la espejará después.
+    - Si la URL ya está en R2, la devuelve sin tocar (idempotente).
+    """
+    if not hero_url:
+        return hero_url
+    # Sin creds (típico en CCR cloud): no podemos espejar acá. Dejamos la URL
+    # y avisamos fuerte — el rehost local la recuperará.
+    if (
+        not _R2_INLINE_ENABLED
+        or _r2_rehost_strict is None
+        or _r2_is_configured is None
+        or not _r2_is_configured()
+    ):
+        print(
+            "    ⚠ R2 NO configurado: hero externo NO espejado, queda "
+            f"pendiente de rehost local → {hero_url[:80]}"
+        )
+        return hero_url
+    # Ya en nuestro CDN: nada que hacer.
+    if _r2_is_already_rehosted is not None and _r2_is_already_rehosted(hero_url):
+        return hero_url
+    try:
+        r2_url = _r2_rehost_strict(hero_url, tutorial_id=tid)
+        if r2_url and r2_url != hero_url:
+            print(f"    ✓ hero espejado a R2: {r2_url[:80]}")
+        return r2_url
+    except Exception as e:
+        # Fallo RUIDOSO: no conservamos el externo bloqueable.
+        print(
+            f"    ✗ ERROR espejando hero a R2 (NO se conserva el externo): "
+            f"{hero_url[:80]} — {e}"
+        )
+        return None
 
 
 def fetch_og_image(source_url: str) -> str | None:
@@ -355,6 +418,15 @@ def main():
             )
             if n_rehosted > 0:
                 print(f"    ✓ R2 rehost inline: {n_rehosted} imágenes")
+
+            # Pablo 30-may-2026 — CHOKEPOINT OBLIGATORIO: espejar el HERO a R2.
+            # Hasta ahora solo se espejaban las imágenes inline; el hero se
+            # guardaba con su URL externa (hotlink-bloqueable por el navegador),
+            # causando cards en blanco en /blog/tutoriales. Ahora todo hero que
+            # se publica pasa por R2. Si falla, rehost_hero_to_r2 devuelve None
+            # (fallo ruidoso) y la card usará el fallback de marca en vez de
+            # conservar un externo roto.
+            hero_url = rehost_hero_to_r2(hero_url, tid)
 
         try:
             db.execute(
