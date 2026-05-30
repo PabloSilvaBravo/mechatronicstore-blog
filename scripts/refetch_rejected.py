@@ -93,11 +93,27 @@ def main() -> int:
                 # para evitar timeout libsql stream (Hrana). Antes, un commit
                 # único al final perdía toda promoción si el script crasheaba
                 # a la mitad (visto en 19-may con 2 promotes perdidos).
+                #
+                # Bug del limbo (Pablo 30-may-2026): este UPDATE volvía a
+                # status='draft' PERO conservaba el combined_score y los cs_*
+                # del ranking previo. Resultado: la fila era invisible para
+                # ambos dumps. dump_blog_rank_input.py la salta porque pide
+                # combined_score IS NULL; dump_blog_translate_input.py la salta
+                # porque pide status='ranked'. Quedaba varada para siempre y la
+                # cola se moría (publicados/día se desplomó tras 21-may).
+                # Solución: al promover a 'draft' reseteamos TODO el estado de
+                # ranking para que la fila reentre limpia a la cola de rank.
                 try:
                     client.execute(
                         """
                         UPDATE tutorials
                         SET status='draft', rejected_reason=NULL,
+                            combined_score=NULL,
+                            cs_pedagogy=NULL, cs_code_quality=NULL,
+                            cs_materials_clarity=NULL, cs_step_completeness=NULL,
+                            cs_image_quality=NULL,
+                            cs_relevance_to_store_catalog=NULL, cs_novelty=NULL,
+                            ranked_at=NULL, is_blocked=0, blocked_reason=NULL,
                             body_en=?, title_en=COALESCE(NULLIF(?, ''), title_en)
                         WHERE id=?
                         """,
@@ -111,6 +127,12 @@ def main() -> int:
                         """
                         UPDATE tutorials
                         SET status='draft', rejected_reason=NULL,
+                            combined_score=NULL,
+                            cs_pedagogy=NULL, cs_code_quality=NULL,
+                            cs_materials_clarity=NULL, cs_step_completeness=NULL,
+                            cs_image_quality=NULL,
+                            cs_relevance_to_store_catalog=NULL, cs_novelty=NULL,
+                            ranked_at=NULL, is_blocked=0, blocked_reason=NULL,
                             body_en=?, title_en=COALESCE(NULLIF(?, ''), title_en)
                         WHERE id=?
                         """,

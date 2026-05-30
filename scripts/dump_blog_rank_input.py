@@ -21,6 +21,17 @@ def main():
     parser.add_argument("--limit", type=int, default=30)
     args = parser.parse_args()
 
+    # Pablo 30-may-2026 — defensa contra el bug del limbo: además de los
+    # drafts frescos sin score (caso normal), re-reclamamos los "orphaned
+    # score drafts": filas status='draft' con combined_score YA poblado de un
+    # ranking previo. Eso solo pasa si algún script las regresó a 'draft' sin
+    # limpiar las columnas de ranking (p.ej. refetch_rejected.py antes del fix
+    # de hoy). Quedaban invisibles para ambos dumps y mataban la cola. El
+    # filtro ranked_at < now-12h evita carrera con una corrida de rank en
+    # curso: si una fila acaba de ser rankeada y aún no transicionó a
+    # 'ranked', no la tocamos. Si lleva >12h en ese estado anómalo, la
+    # reclamamos para re-rankearla limpia. ORDER BY ingested_at DESC sigue
+    # priorizando lo más reciente; el LIMIT no cambia.
     sql = """
         SELECT t.id, t.slug, t.source_id, t.source_url, t.title_en, t.subtitle_en,
                SUBSTR(t.body_en, 1, 25000) AS body_en_excerpt,
@@ -29,7 +40,11 @@ def main():
         FROM tutorials t
         LEFT JOIN sources s ON s.id = t.source_id
         WHERE t.status = 'draft'
-          AND t.combined_score IS NULL
+          AND (
+                t.combined_score IS NULL
+             OR (t.combined_score IS NOT NULL
+                 AND t.ranked_at < datetime('now', '-12 hours'))
+          )
         ORDER BY t.ingested_at DESC
         LIMIT ?
     """

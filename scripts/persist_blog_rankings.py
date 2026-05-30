@@ -118,6 +118,23 @@ def main():
             reason = f"below_threshold:cs={cs:.3f}<{threshold}(lang={source_lang})"
             stats["persisted_rejected"] += 1
 
+        # Guard anti-limbo (Pablo 30-may-2026): este script JAMÁS debe dejar
+        # una fila en status='draft' con combined_score no-nulo. Esa
+        # combinación es exactamente el estado del limbo: invisible para
+        # dump_blog_rank_input.py (pide combined_score IS NULL) y para
+        # dump_blog_translate_input.py (pide status='ranked'). Hoy el código
+        # solo asigna 'ranked' o 'rejected', pero blindamos la invariante por
+        # si un refactor futuro introduce un path que escriba 'draft'. Si eso
+        # pasa, saltamos la fila y avisamos en stdout en vez de envenenar la
+        # cola.
+        if status == "draft" and cs is not None:
+            print(
+                f"  ↷ skip {tid}: guard anti-limbo — no se persiste "
+                f"status='draft' con combined_score={cs} (estado invisible "
+                "para los dumps de rank y translate)"
+            )
+            continue
+
         # Defense-in-depth: el WHERE incluye el guard también en el UPDATE
         # por si el SELECT/UPDATE corre en transacciones distintas (libsql
         # commit-en-batch). Si una concurrent racea con un workflow de

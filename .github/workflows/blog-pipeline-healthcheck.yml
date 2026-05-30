@@ -1,0 +1,51 @@
+name: Blog Pipeline Limbo Healthcheck
+
+# Watchdog del bug del limbo del pipeline del blog (Pablo 30-may-2026).
+# Cada 6h consulta Turso y manda email CRIT a Pablo via Resend si detecta:
+#   (a) LIMBO: filas status='draft' con combined_score no-nulo y ranked_at
+#       mas viejo que 24h (varadas, invisibles para ambos dumps).
+#   (b) SIN PUBLICAR: cero publicados en las ultimas 48h.
+#   (c) COLA VACIA: cola rankeable mas traducible en cero por mas de 24h.
+#
+# Razon: el bug del limbo desplomo los publicados por dia tras 21-may-2026
+# (de 11/dia a 1/dia) sin ninguna senal. Este watchdog avisa al primer
+# sintoma. Mismo mecanismo de email (Resend) y mismos secrets que
+# pipeline-healthcheck.yml.
+
+on:
+  schedule:
+    # Cada 6 horas: 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+
+      - name: Run blog pipeline limbo healthcheck
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_TO_EMAIL: ${{ secrets.DIGEST_TO_EMAIL }}
+          DIGEST_FROM_EMAIL: ${{ secrets.DIGEST_FROM_EMAIL }}
+        run: python3 scripts/blog_pipeline_healthcheck.py
