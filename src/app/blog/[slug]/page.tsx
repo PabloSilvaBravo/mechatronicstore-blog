@@ -444,8 +444,9 @@ export default async function TutorialPage({ params }: Props) {
         </RevealOnScroll>
       )}
 
-      {/* Code blocks extraídos por LLM */}
-      {tutorial.code_blocks.length > 0 && (
+      {/* Code blocks extraídos por LLM (se ocultan los que vienen sin código,
+          ej. corrupción histórica de Routine C con code=null). */}
+      {tutorial.code_blocks.some((cb) => cb.code && String(cb.code).trim()) && (
         <RevealOnScroll as="section" className="my-12">
           <div className="mb-6">
             <div

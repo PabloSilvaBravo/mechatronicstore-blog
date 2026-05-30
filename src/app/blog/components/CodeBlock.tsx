@@ -5,7 +5,7 @@ interface Props {
   language?: string;
   lang?: string;
   caption?: string;
-  code: string;
+  code?: string | null;
 }
 
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -57,6 +57,12 @@ function prettyLanguageLabel(raw?: string): string {
  * separado) para no marcar todo el bloque como cliente.
  */
 export default async function CodeBlock({ language, lang, caption, code }: Props) {
+  // Pablo 30-may-2026: guard defensivo contra bloques con code null o vacio.
+  // Routine C a veces devolvio code=null (corrupcion del modelo) y renderizar
+  // un bloque sin codigo tiraba 500 en el SSR (highlightCode sobre null). El
+  // persist ahora rechaza esto en origen; este guard cubre los registros
+  // legacy ya guardados. Si no hay codigo, no se renderiza el bloque.
+  if (!code || !String(code).trim()) return null;
   const langHint = language ?? lang;
   const label = prettyLanguageLabel(langHint);
   const shikiHtml = await highlightCode(code, langHint, false);
