@@ -1,106 +1,112 @@
 {
   "model": "claude-opus-4-7",
-  "translated_at": "2026-05-30T22:15:00Z",
+  "translated_at": "2026-05-31T06:15:05Z",
   "translations": [
     {
       "id": "d6184b63f329",
-      "slug": "monitor-humedad-plantas-arduino-uno-sensor-capacitivo-oled",
-      "title_es": "Monitor de humedad para plantas con Arduino UNO, sensor capacitivo y OLED 0.96\"",
-      "subtitle_es": "Lee humedad de suelo con un sensor capacitivo, dibuja una carita feliz/triste en una OLED 0.96 y sabe cuándo regar tu planta.",
+      "slug": "monitor-humedad-plantas-arduino-oled-sensor-capacitivo",
+      "title_es": "Monitor de humedad para plantas con Arduino, OLED y sensor capacitivo",
+      "subtitle_es": "Construye un sistema portátil que avisa cuándo regar tus plantas con caritas en una pantalla OLED y un sensor capacitivo de bajo costo.",
       "hero_image_url": "https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-5.jpg",
-      "body_es": "¿Cuántas veces te has ido el fin de semana y al volver encontraste el helecho seco o el cactus podrido por exceso de agua? La diferencia entre las dos cosas son ~200 mililitros, y la nariz humana no las distingue. Este monitor de humedad sí: un Arduino UNO lee un sensor capacitivo enterrado en la tierra y dibuja una carita feliz, neutral o triste en una pantalla OLED de 0.96 pulgadas para decirte si tu planta está pidiendo agua.\n\nEl proyecto está inspirado en un tutorial de SparkFun que arma esta misma idea con módulos Qwiic plug-and-play (conector I²C de 4 pines preensamblado). Como en Chile el ecosistema Qwiic es difícil de conseguir y suele duplicar o triplicar el costo, esta versión se reescribió pensada para el catálogo local: sensor capacitivo análogo común, OLED I²C estándar y cable jumper. El resultado se ve idéntico al original, cuesta menos de la mitad y enseña los mismos conceptos —y un par más.\n\n![Las tres caras feliz, neutral y triste que dibuja el sketch sobre la pantalla OLED](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-3.jpg)\n\n## Capacitivo vs resistivo: por qué importa la diferencia\n\nLos sensores de humedad de suelo más baratos del mercado son **resistivos**: dos puntas metálicas miden la conductividad eléctrica entre ellas, asumiendo que más agua = más conductividad. Funciona, pero las puntas se corroen en semanas porque pasan corriente continua por la tierra húmeda. Después de un mes enterradas terminan oxidadas y dando lecturas falsas. Los venden a luca, pero la vida útil es pésima.\n\nLos **capacitivos** —como el módulo v1.2 que usaremos— miden la constante dieléctrica del suelo en lugar de la conductividad. La sonda es una placa de circuito con un revestimiento que la aísla del agua, por lo que no hay corrosión galvánica y aguanta meses (o años) enterrada. Cuestan un poco más, pero para un proyecto que vive plantado en una maceta es la única decisión sensata.\n\nUna nota técnica que la gran mayoría de tutoriales omite: el sensor capacitivo entrega un voltaje **inversamente proporcional** a la humedad. Más agua → menor lectura ADC. Por eso en el código `map()` recibe primero el valor seco y después el mojado, no al revés.\n\n## Lo que vas a usar\n\nHardware mínimo:\n\n- **Arduino UNO R3** — el cerebro. Cualquier clon ATmega328 sirve (Nano, Pro Mini), pero el UNO es lo más simple para empezar.\n- **Sensor de humedad de suelo capacitivo v1.2** — sonda análoga de 3 pines (VCC, GND, AOUT).\n- **Pantalla OLED I²C 0.96\" 128x64 SSD1306** — display monocromo de 4 pines (VCC, GND, SDA, SCL).\n- **Cable USB tipo A a tipo B** — para alimentar y programar el UNO desde tu PC.\n- **Pack de cables jumper macho-hembra** — para conectar el sensor y la OLED al Arduino.\n- **Protoboard 830 puntos** — opcional, útil si quieres montarlo prolijo antes de pasarlo a caja definitiva.\n- **Conector broche 9V con plug DC + batería 9V** — opcional, solo si lo quieres portátil sin PC.\n\nUn detalle de alimentación: una batería 9V alcalina te dura **un día o dos** alimentando el conjunto Arduino + OLED + sensor encendido en continuo. Sirve para demo en clase o para llevarlo a mostrar, pero no como solución permanente. Si quieres dejarlo monitoreando una planta de la casa, conéctalo a una fuente USB de pared 5V o a un cargador de celular viejo.\n\n![Componentes sin armar antes de la conexión: Arduino, OLED, sensor de humedad, cables](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-1.jpg)\n\n## Conexiones (5 cables en total)\n\nTanto la OLED como el sensor son módulos de pocos pines. El cableado completo es:\n\n**Sensor de humedad capacitivo → Arduino UNO**\n\n| Pin sensor | Pin Arduino |\n|---|---|\n| VCC | 5V |\n| GND | GND |\n| AOUT | A0 (entrada analógica) |\n\n**Pantalla OLED I²C → Arduino UNO**\n\n| Pin OLED | Pin Arduino |\n|---|---|\n| VCC | 5V (o 3.3V — la mayoría tolera ambos) |\n| GND | GND |\n| SDA | A4 |\n| SCL | A5 |\n\nA4 y A5 son los pines I²C del UNO; el bus I²C va directo, sin resistencias pull-up externas porque el módulo OLED ya las trae soldadas en la placa.\n\n![Materiales armados conectados, en el original con cables Qwiic; en la versión chilena con jumpers macho-hembra](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-2.jpg)\n\n## Software: librerías necesarias\n\nDesde el Arduino IDE, abre **Sketch → Include Library → Manage Libraries** e instala estas dos:\n\n1. **Adafruit GFX Library** (de Adafruit) — primitivos gráficos (línea, círculo, texto).\n2. **Adafruit SSD1306** (de Adafruit) — driver específico del controlador SSD1306 de la OLED.\n\nNo hace falta librería para el sensor capacitivo: es analógico, basta con `analogRead()`.\n\n## El sketch\n\nEste es el código completo adaptado al hardware chileno. Es un solo archivo `.ino`. Cárgalo al UNO con la velocidad estándar y abre el Serial Monitor a 9600 baudios para ver las lecturas crudas mientras calibras.\n\n```cpp\n#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\n#define SCREEN_WIDTH 128\n#define SCREEN_HEIGHT 64\n#define OLED_RESET    -1\n#define OLED_ADDR     0x3C\n\nAdafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);\n\nconst int sensorPin = A0;\nconst int dryValue  = 590;\nconst int wetValue  = 280;\n\nvoid dibujarCarita(int humedad);\n\nvoid setup() {\n  Serial.begin(9600);\n  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {\n    Serial.println(F(\"OLED no responde, revisa cableado.\"));\n    while (true) { delay(100); }\n  }\n  display.clearDisplay();\n  display.display();\n}\n\nvoid loop() {\n  int raw = analogRead(sensorPin);\n  int humedad = map(raw, dryValue, wetValue, 0, 100);\n  humedad = constrain(humedad, 0, 100);\n\n  Serial.print(F(\"Lectura cruda: \"));\n  Serial.print(raw);\n  Serial.print(F(\" | Humedad: \"));\n  Serial.print(humedad);\n  Serial.println(F(\"%\"));\n\n  display.clearDisplay();\n  display.setTextColor(SSD1306_WHITE);\n  display.setTextSize(1);\n  display.setCursor(0, 0);\n  display.print(F(\"Humedad: \"));\n  display.print(humedad);\n  display.println(F(\"%\"));\n\n  dibujarCarita(humedad);\n  display.display();\n  delay(2000);\n}\n\nvoid dibujarCarita(int humedad) {\n  const int cx = 64;\n  const int cy = 40;\n  const int r  = 18;\n\n  display.drawCircle(cx, cy, r, SSD1306_WHITE);\n  display.fillCircle(cx - 7, cy - 5, 2, SSD1306_WHITE);\n  display.fillCircle(cx + 7, cy - 5, 2, SSD1306_WHITE);\n\n  if (humedad >= 60) {\n    for (int x = -8; x <= 8; x++) {\n      int y = (x * x) / 12;\n      display.drawPixel(cx + x, cy + 6 - y, SSD1306_WHITE);\n    }\n  } else if (humedad >= 30) {\n    display.drawLine(cx - 8, cy + 6, cx + 8, cy + 6, SSD1306_WHITE);\n  } else {\n    for (int x = -8; x <= 8; x++) {\n      int y = (x * x) / 12;\n      display.drawPixel(cx + x, cy + 10 + y, SSD1306_WHITE);\n    }\n  }\n}\n```\n\n## Calibración: el paso que casi nadie hace bien\n\nLos valores `dryValue = 590` y `wetValue = 280` que aparecen arriba son **referenciales** para un sensor capacitivo v1.2 típico alimentado a 5V. Tu sensor concreto puede entregar valores ±50 distintos por variaciones de fabricación, longitud del cable o voltaje real del USB. Saltarse la calibración es la causa #1 de monitores que marcan 0% en suelo recién regado o 100% al aire.\n\nProcedimiento de calibración (3 minutos):\n\n1. **Lectura seca**: deja el sensor al aire libre, sin tocar nada. Abre el Serial Monitor y anota el valor crudo que se repite —por ejemplo `587`. Ese es tu `dryValue`.\n2. **Lectura mojada**: sumerge la sonda hasta la línea marcada (NO la electrónica) en un vaso con agua. Espera 5 segundos a que estabilice y anota el valor —por ejemplo `285`. Ese es tu `wetValue`.\n3. Edita las dos constantes del sketch con tus números, recompila y carga.\n\n![Captura del Serial Monitor mostrando lecturas crudas durante la calibración del sensor a 5V](https://cdn.sparkfun.com/assets/learn_tutorials/3/7/0/5/5V_Cal.png)\n\nLos umbrales 30% y 60% que dividen las caras feliz/neutral/triste son a tu gusto. Una suculenta es feliz con 20% y se ahoga con 50%; un helecho boston quiere 65% mínimo. Ajusta los `if` del bloque `dibujarCarita()` según la planta.\n\n## Errores comunes y debugging\n\n- **Pantalla en negro, código corre**: la dirección I²C de tu OLED no es `0x3C` sino `0x3D`. Cambia `OLED_ADDR` en el sketch. Si dudas, sube el sketch I2C Scanner de la librería Wire y mira qué dirección reporta.\n- **La carita salta entre feliz y triste cada lectura**: el sensor está mal calibrado o la sonda tiene mal contacto con la tierra. Empújala más al fondo y recalibra.\n- **Lectura siempre 0 o 1023**: el cable AOUT no llega al pin A0. Verifica con un multímetro entre AOUT del sensor y A0 del Arduino.\n- **OLED queda con \"basura\" gráfica al inicio**: olvidaste el `display.display()` después del `clearDisplay()` inicial. La OLED no muestra nada hasta que se llama `display()`.\n\n## Variantes y mejoras\n\nEl monitor base ya cumple. Estas tres extensiones lo llevan a un proyecto productivo de verdad:\n\n### 1. Alerta por buzzer cuando la planta tiene sed\n\nAgregando un **buzzer piezo 5V** entre el pin D8 y GND, y dos líneas dentro del bloque `if (humedad < 30)`, tu planta literalmente te avisa con un beep cada minuto cuando está seca. Útil si la dejas en la oficina y te olvidas que existe.\n\n```cpp\n#define BUZZER_PIN 8\n// dentro del else (sad face):\ntone(BUZZER_PIN, 1000, 200);\n```\n\n### 2. Envío a Telegram con ESP32 en lugar de Arduino UNO\n\nReemplazando el UNO por un **ESP32 DevKit** (mismo cableado, las librerías Adafruit SSD1306 funcionan idénticas), puedes agregar `WiFi.h` + `UniversalTelegramBot` y recibir un mensaje al celular cuando la humedad baja del umbral. Es el upgrade más útil para alguien que viaja seguido.\n\n### 3. Riego automático con bomba peristáltica\n\nUna **bomba peristáltica 5V** + un **módulo relé de 1 canal** se controla con un GPIO del Arduino. La lógica es: si humedad < 25%, encender bomba por 3 segundos, esperar 60 segundos, medir de nuevo. En 2-3 ciclos la tierra está húmeda y la bomba se apaga sola. Riego automático casero por menos de $20.000 CLP.\n\n## Personalización para Chile\n\nTodo el hardware lo encuentras en MechatronicStore con stock local. Los precios marcados con tilde (~) son aproximados al momento de escribir esta nota; revisa el carrito antes de comprar:\n\n- **Arduino Uno R3** (SKU X4-8) — $9.990 CLP. El cerebro del proyecto. Compatible 100% con el sketch.\n- **Sensor de humedad de suelo capacitivo v1.2** — ~$3.990 CLP. Búscalo en la tienda con esos términos exactos; viene con cable hembra de 3 hilos.\n- **Pantalla OLED 0.96\" 128x64 I²C SSD1306** — ~$5.990 CLP. Asegúrate que sea la versión I²C (4 pines) y no la SPI (7 pines).\n- **Cable USB tipo A a tipo B (Arduino)** — ~$1.990 CLP. Para programar y alimentar.\n- **Pack cables jumper macho-hembra 40 piezas 10cm** (SKU C-415) — $1.990 CLP. Para las conexiones al sensor y la OLED.\n- **Protoboard 830 puntos MB102** (SKU C-302) — $3.790 CLP. Opcional, recomendado.\n- **Conector broche batería 9V + Batería 9V alcalina** — ~$2.500 CLP en conjunto. Opcional para versión portátil temporal.\n\n**Costo base del proyecto** (sin protoboard ni batería): ~$21.960 CLP. **Costo completo portátil**: ~$28.250 CLP.\n\nSi en el tutorial original ves nombres como \"SparkFun RedBoard Qwiic\", \"SparkFun Qwiic Soil Moisture Sensor\" o \"Qwiic Cable\", todos esos componentes son la versión SparkFun de cosas equivalentes —y carísimas en Chile por la importación. El Arduino UNO R3 + sensor capacitivo genérico + jumpers cumplen exactamente la misma función al 30% del precio.\n\n## Recursos\n\n- **Tutorial original** (inglés): [Smart Plant Care! Build a Qwiic Soil Moisture Sensor System](https://learn.sparkfun.com/tutorials/smart-plant-care-build-a-qwiic-soil-moisture-sensor-system)\n- **Librería Adafruit SSD1306**: [github.com/adafruit/Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306)\n- **Librería Adafruit GFX**: [github.com/adafruit/Adafruit-GFX-Library](https://github.com/adafruit/Adafruit-GFX-Library)\n- **Datasheet sensor capacitivo v1.2**: [Capacitive Soil Moisture Sensor v1.2 - DFRobot wiki](https://wiki.dfrobot.com/Capacitive_Soil_Moisture_Sensor_SKU_SEN0193)\n- **Datasheet controlador SSD1306**: [SSD1306 datasheet PDF](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf)\n\nVersión chilena con componentes en stock local en MechatronicStore, inspirada en el tutorial original de SparkFun Learn.\n",
+      "body_es": "## Por qué vale la pena armar este monitor\n\n¿Te pasa que tus plantas se secan en una semana ocupada y recién te das cuenta cuando las hojas ya están caídas? Este proyecto resuelve ese olvido con un sistema simple, barato y autónomo: un sensor capacitivo enterrado en la maceta, un Arduino UNO leyendo el dato analógico y una pantalla OLED que muestra una carita feliz, neutra o triste según el estado del suelo.\n\nAl terminar vas a tener un monitor que cabe en la palma de la mano, funciona con batería y te avisa cuándo regar sin necesidad de wifi ni una app. Toda la lógica vive en menos de 100 líneas de código y los componentes los consigues en cualquier tienda de electrónica en Chile.\n\n![Caritas feliz, neutra y triste en la pantalla OLED según humedad del suelo](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-3.jpg)\n\n## Cómo funciona el sensor capacitivo\n\nA diferencia de los sensores resistivos viejos (los de dos puntas metálicas que se oxidan en pocas semanas), el sensor capacitivo v1.2 mide la **constante dieléctrica** del suelo. El agua tiene una dieléctrica de alrededor de 80; el suelo seco, entre 3 y 8. Cuando aumenta la humedad, la capacitancia del circuito interno cambia y el módulo entrega un voltaje analógico proporcional en su pin AOUT.\n\nEsto te da **dos ventajas concretas**: no hay electrólisis entre las puntas (la sonda dura años en lugar de meses) y la lectura es más estable porque no depende de los iones disueltos en el agua de riego. Esa es la razón por la que recomendamos el capacitivo aunque cueste un poco más que el resistivo clásico de dos puntas.\n\n## Materiales\n\n![Componentes del proyecto antes de ensamblar](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-1.jpg)\n\n- **Sensor capacitivo de humedad de suelo v1.2** (sonda con salida analógica)\n- **Arduino UNO R3** (cualquier clon compatible funciona)\n- **Display OLED I2C 0.96\"** con driver SSD1306 (128×64 px)\n- **Cable USB-A a USB-B** para programar el Arduino\n- **Jumpers macho-hembra** (mínimo 7 unidades)\n- **Batería 9V** y **soporte para batería 9V** (opcionales, para uso portátil)\n\n> Nota práctica: una batería 9V dura aproximadamente un día en esta configuración. Para uso permanente, prefiere alimentar el Arduino desde un cargador de pared 9V/12V por el jack DC o directamente desde el puerto USB del computador.\n\n## Conexiones (hardware)\n\n![Sensor capacitivo, Arduino y OLED ensamblados](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-2.jpg)\n\n| Componente | Pin del componente | Pin Arduino UNO |\n|---|---|---|\n| Sensor capacitivo | VCC | 5V |\n| Sensor capacitivo | GND | GND |\n| Sensor capacitivo | AOUT | A0 |\n| OLED SSD1306 | VCC | 3.3V o 5V (revisa tu módulo) |\n| OLED SSD1306 | GND | GND |\n| OLED SSD1306 | SDA | A4 |\n| OLED SSD1306 | SCL | A5 |\n\nLa mayoría de los OLED I2C 0.96\" del mercado chileno son tolerantes a 3.3V-5V, pero revisa la serigrafía del módulo antes de alimentarlo. Si el módulo solo soporta 3.3V y lo conectas a 5V, lo quemas.\n\n## Calibración: paso obligatorio antes de mostrar datos\n\nCada tierra es distinta y la resolución del ADC del Arduino UNO es de 10 bits (0 a 1023). Antes de mostrar valores en la pantalla, calibra el sensor con tu sustrato real siguiendo estos pasos:\n\n1. Sube el sketch al Arduino y abre el Monitor Serial a **115200 baudios**.\n2. Anota el valor crudo con la sonda **completamente seca, al aire**. Ese es tu `dryValue` (típicamente cerca de 1023).\n3. Sumerge la parte sensible de la sonda en un vaso con agua hasta la línea blanca. Anota ese valor: es tu `wetValue` (típicamente entre 350 y 450).\n4. Reemplaza ambos números en las constantes del código y vuelve a cargar el sketch.\n\n![Lecturas crudas del sensor seco vs sumergido en agua](https://cdn.sparkfun.com/assets/learn_tutorials/3/7/0/5/5V_Cal.png)\n\n## Código completo\n\nPega este sketch en el IDE de Arduino. Instala la librería `Wire` (viene incluida) y la librería OLED del fabricante de tu display. Si tu OLED es un SSD1306 genérico (lo más común en Chile), reemplaza la línea `QwiicMicroOLED myOLED;` por el equivalente de Adafruit_SSD1306 o U8g2 — la lógica de las caras es la misma, solo cambia la API de dibujo de líneas.\n\n```cpp\n#include <Wire.h>\n#include <SparkFun_Qwiic_OLED.h>\n#include <res/qw_fnt_5x7.h>\n\nQwiicMicroOLED myOLED;\n\n#define COMMAND_GET_VALUE   0x05\nconst uint8_t qwiicAddress = 0x28;\nuint16_t ADC_VALUE = 0;\n\n\nconst int dryValue = 1023;\nconst int wetValue = 400;\n\nvoid setup() {\n    Serial.begin(115200);\n    Wire.begin();\n\n    while (myOLED.begin() == false) {\n        Serial.println(\"OLED not connected, check wiring!\");\n        delay(1000);\n    }\n\n    testForConnectivity();\n}\n\nvoid loop() {\n    int moistureValue = getMoisture();\n    displayMoisture(moistureValue);\n    delay(1000);\n}\n\nint getMoisture() {\n    get_value();\n    return map(ADC_VALUE, dryValue, wetValue, 0, 100);\n}\n\nvoid get_value() {\n    Wire.beginTransmission(qwiicAddress);\n    Wire.write(COMMAND_GET_VALUE);\n    Wire.endTransmission();\n\n    Wire.requestFrom((uint8_t)qwiicAddress, (uint8_t)2);\n\n    if (Wire.available() >= 2) {\n        uint8_t ADC_VALUE_L = Wire.read();\n        uint8_t ADC_VALUE_H = Wire.read();\n        ADC_VALUE = (ADC_VALUE_H << 8) | ADC_VALUE_L;\n    }\n}\n\nvoid displayMoisture(int moistureValue) {\n    myOLED.erase();\n\n    if (moistureValue < 30) {\n        // Happy Face when well-watered\n        myOLED.line(20, 0, 30, 0);   // Left eye\n        myOLED.line(40, 0, 50, 0);   // Right eye\n\n        // Smile: \\__/\n        myOLED.line(20, 20, 30, 10);   // Left smile\n        myOLED.line(30, 10, 40, 10);   // Bottom of smile\n        myOLED.line(40, 10, 50, 20);   // Right smile\n    } else if (moistureValue >= 50 && moistureValue < 70) {\n        // Neutral Face\n        myOLED.line(20, 0, 30, 0);   // Left eye\n        myOLED.line(40, 0, 50, 0);   // Right eye\n        myOLED.line(20, 20, 50, 20);   // Neutral line\n    } else {\n        // Sad Face when dry\n        myOLED.line(20, 0, 30, 0);   // Left eye\n        myOLED.line(40, 0, 50, 0);   // Right eye\n\n        // Sad mouth: /--\\\n        myOLED.line(20, 10, 30, 20);   // Left sad\n        myOLED.line(30, 20, 40, 20);   // Bottom of sad\n        myOLED.line(40, 20, 50, 10);   // Right sad\n    }\n\n    myOLED.display();\n\n    Serial.print(\"Moisture: \");\n    Serial.print(moistureValue);\n    Serial.println(\"%\");\n}\n```\n\nLos umbrales de las caritas (`< 30` feliz, `50-70` neutra, `>= 70` triste) están pensados para una planta de bajo mantenimiento estilo árbol de jade o suculenta. Si tu planta es exigente (helechos, albahaca, perejil), baja los umbrales: feliz `< 40`, neutra `40-55`, triste `>= 55`.\n\n## Variantes y mejoras\n\nTres ideas concretas para llevar el proyecto al siguiente nivel:\n\n1. **Notificación al celular vía ESP32**: reemplaza el Arduino UNO por un ESP32 y reenvía las mediciones por MQTT o un webhook de Telegram. Así te avisa cuando la planta entra en zona \"triste\" sin necesidad de tener la OLED encendida 24/7.\n2. **Riego automático**: agrega un mini relé de 5V y una bomba sumergible de 3-6V conectada a un balde de agua. Cuando `moistureValue >= 70`, activa el relé por 3 segundos. Importante: incluye un timeout mínimo entre riegos (por ejemplo, una vez cada 6 horas como máximo) para evitar sobre-riego.\n3. **Historial con microSD**: conecta un módulo lector microSD por SPI y registra `millis(),moistureValue` en un CSV cada minuto. Después abres el archivo en LibreOffice Calc y graficas la curva de secado de tu maceta, útil para descubrir cuánto demora realmente en secarse cada planta.\n\n## Personalización para Chile\n\nEl tutorial original usa el ecosistema Qwiic de SparkFun (conectores I2C propietarios). En MechatronicStore encuentras equivalentes funcionales que se conectan con jumpers estándar:\n\n- **Arduino UNO R3** — reemplaza al SparkFun RedBoard Qwiic; mismo microcontrolador ATmega328P, mismo IDE de Arduino, el código compila igual.\n- **Sensor capacitivo de humedad de suelo v1.2** — reemplaza al sensor Qwiic de SparkFun; usa salida analógica directa al pin A0, no requiere librería propietaria.\n- **Display OLED I2C 0.96\" SSD1306** — reemplaza al SparkFun Micro OLED Qwiic; usa los pines SDA/SCL del Arduino (A4/A5).\n- **Soporte para batería 9V + batería alcalina 9V** — para el modo portátil.\n\nDonde el tutorial original muestra cables Qwiic, en la versión chilena se reemplazan por **jumpers macho-hembra** estándar de 20 cm conectados a los headers del Arduino.\n\n## Recursos\n\n- **Tutorial original** (inglés): [Smart Plant Care! Build a Qwiic Soil Moisture Sensor System](https://learn.sparkfun.com/tutorials/smart-plant-care-build-a-qwiic-soil-moisture-sensor-system)\n- **Librería OLED SSD1306 (Adafruit)**: [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306)\n- **Librería U8g2 (alternativa más liviana)**: [U8g2](https://github.com/olikraus/u8g2)\n\nVersión chilena con componentes en stock local en MechatronicStore.\n",
       "materials_list": [
-        {"name": "Arduino Uno R3", "qty": 1, "role": "core - microcontrolador"},
-        {"name": "Sensor de humedad de suelo capacitivo v1.2", "qty": 1, "role": "core - medición"},
-        {"name": "Pantalla OLED 0.96\" 128x64 I2C SSD1306", "qty": 1, "role": "core - display"},
-        {"name": "Cable USB tipo A a tipo B (Arduino)", "qty": 1, "role": "programación y alimentación"},
-        {"name": "Pack jumpers macho-hembra 10cm", "qty": 1, "role": "cableado"},
-        {"name": "Protoboard 830 puntos MB102", "qty": 1, "role": "prototipado (opcional)"},
-        {"name": "Conector broche batería 9V + Batería 9V alcalina", "qty": 1, "role": "alimentación portátil (opcional)"}
+        {
+          "name": "Sensor capacitivo de humedad de suelo v1.2",
+          "qty": 1,
+          "role": "sensor"
+        },
+        {
+          "name": "Arduino UNO R3",
+          "qty": 1,
+          "role": "microcontrolador"
+        },
+        {
+          "name": "Display OLED I2C 0.96 pulgadas SSD1306",
+          "qty": 1,
+          "role": "pantalla"
+        },
+        {
+          "name": "Cable USB-A a USB-B",
+          "qty": 1,
+          "role": "programación"
+        },
+        {
+          "name": "Jumpers macho-hembra 20cm",
+          "qty": 7,
+          "role": "cableado"
+        },
+        {
+          "name": "Soporte para batería 9V",
+          "qty": 1,
+          "role": "alimentación (opcional)"
+        },
+        {
+          "name": "Batería alcalina 9V",
+          "qty": 1,
+          "role": "alimentación (opcional)"
+        }
       ],
       "steps": [
         {
           "position": 1,
-          "name": "Conectar el sensor capacitivo al Arduino",
-          "text": "Con 3 cables jumper macho-hembra une el sensor al UNO: VCC del sensor al 5V del Arduino, GND a GND, y AOUT al pin A0. El sensor entrega una tensión analógica inversamente proporcional a la humedad (más agua = menor voltaje), así que el ADC del UNO va a leer entre ~280 (mojado) y ~590 (seco) con alimentación 5V.",
-          "image_url": null
+          "name": "Reunir y revisar componentes",
+          "text": "Verifica que tienes los 7 componentes listados. Si tu OLED es un módulo genérico SSD1306, revisa en la serigrafía si acepta 3.3V o solo 5V para conectarlo al pin correcto del Arduino.",
+          "image_url": "https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-1.jpg"
         },
         {
           "position": 2,
-          "name": "Conectar la pantalla OLED por I²C",
-          "text": "Con 4 cables más: VCC OLED al 5V (la mayoría de los módulos chinos tolera 5V; algunos requieren 3.3V — revisa la etiqueta), GND a GND, SDA al pin A4 del UNO, SCL al pin A5. A4 y A5 son los pines I²C dedicados del ATmega328. No agregues resistencias pull-up externas: el módulo OLED ya las trae soldadas.",
+          "name": "Cablear sensor, OLED y Arduino",
+          "text": "Conecta el sensor capacitivo: VCC al 5V, GND al GND, AOUT al pin A0. Conecta el OLED: VCC a 3.3V o 5V según el módulo, GND al GND, SDA al A4 y SCL al A5. Usa jumpers macho-hembra de 20 cm para llegar cómodo hasta la maceta.",
           "image_url": "https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-2.jpg"
         },
         {
           "position": 3,
-          "name": "Instalar las librerías Adafruit SSD1306 y GFX",
-          "text": "Abre Arduino IDE → Sketch → Include Library → Manage Libraries. Busca 'Adafruit SSD1306' y dale Install — eso jala también Adafruit GFX como dependencia. Si no jala, instala 'Adafruit GFX Library' manualmente. Sin estas dos librerías el sketch no compila.",
-          "image_url": null
-        },
-        {
-          "position": 4,
-          "name": "Cargar el sketch al Arduino UNO",
-          "text": "Copia el sketch del tutorial al Arduino IDE, selecciona Board → Arduino Uno y el puerto serie correcto, y dale Upload. La OLED debe mostrar 'Humedad: X%' y una carita ni bien termina el upload. Si la OLED queda en negro, revisa la dirección I²C (cambia 0x3C por 0x3D en el código).",
-          "image_url": null
-        },
-        {
-          "position": 5,
-          "name": "Calibrar dryValue y wetValue con el Serial Monitor",
-          "text": "Abre el Serial Monitor a 9600 baudios. Con el sensor al aire libre anota el valor crudo (ese es tu dryValue, típicamente ~590). Sumerge la sonda en agua hasta la línea marcada, espera 5 segundos y anota el valor (wetValue, típicamente ~280). Reemplaza las dos constantes en el sketch con tus valores reales y recompila.",
+          "name": "Calibrar valores seco y mojado",
+          "text": "Sube un sketch que solo imprima el valor crudo del A0 al Serial. Anota el valor con la sonda al aire (dryValue, ~1023) y con la sonda sumergida en agua hasta la línea blanca (wetValue, ~350-450). Reemplaza esos valores en las constantes del código final.",
           "image_url": "https://cdn.sparkfun.com/assets/learn_tutorials/3/7/0/5/5V_Cal.png"
         },
         {
-          "position": 6,
-          "name": "Probar en una maceta real y ajustar umbrales",
-          "text": "Entierra el sensor en la maceta de tu planta hasta la línea de la sonda (NUNCA dejes ver la electrónica enterrada). Observa las lecturas durante un ciclo de riego: debe subir cuando riegas y bajar gradualmente con el correr de los días. Ajusta los umbrales 30% y 60% del bloque dibujarCarita() según el tipo de planta — una suculenta vive con 20%, un helecho necesita 65%.",
-          "image_url": "https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/0/5/Soil-Moisture-Sensor-3.jpg"
+          "position": 4,
+          "name": "Cargar el sketch final y probar con la planta",
+          "text": "Carga el código completo, entierra la sonda en la maceta y observa la carita en la OLED. Ajusta los umbrales 30/50/70 a la planta específica (las suculentas toleran sequedad, los helechos no).",
+          "image_url": null
         }
       ],
       "code_blocks": [
         {
           "lang": "cpp",
-          "caption": "Sketch completo adaptado al hardware chileno (sensor capacitivo análogo + OLED I²C SSD1306). Carga al Arduino UNO con velocidad 9600 en el Serial Monitor.",
-          "code": "#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\n#define SCREEN_WIDTH 128\n#define SCREEN_HEIGHT 64\n#define OLED_RESET    -1\n#define OLED_ADDR     0x3C\n\nAdafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);\n\nconst int sensorPin = A0;\nconst int dryValue  = 590;\nconst int wetValue  = 280;\n\nvoid dibujarCarita(int humedad);\n\nvoid setup() {\n  Serial.begin(9600);\n  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {\n    Serial.println(F(\"OLED no responde, revisa cableado.\"));\n    while (true) { delay(100); }\n  }\n  display.clearDisplay();\n  display.display();\n}\n\nvoid loop() {\n  int raw = analogRead(sensorPin);\n  int humedad = map(raw, dryValue, wetValue, 0, 100);\n  humedad = constrain(humedad, 0, 100);\n\n  Serial.print(F(\"Lectura cruda: \"));\n  Serial.print(raw);\n  Serial.print(F(\" | Humedad: \"));\n  Serial.print(humedad);\n  Serial.println(F(\"%\"));\n\n  display.clearDisplay();\n  display.setTextColor(SSD1306_WHITE);\n  display.setTextSize(1);\n  display.setCursor(0, 0);\n  display.print(F(\"Humedad: \"));\n  display.print(humedad);\n  display.println(F(\"%\"));\n\n  dibujarCarita(humedad);\n  display.display();\n  delay(2000);\n}\n\nvoid dibujarCarita(int humedad) {\n  const int cx = 64;\n  const int cy = 40;\n  const int r  = 18;\n\n  display.drawCircle(cx, cy, r, SSD1306_WHITE);\n  display.fillCircle(cx - 7, cy - 5, 2, SSD1306_WHITE);\n  display.fillCircle(cx + 7, cy - 5, 2, SSD1306_WHITE);\n\n  if (humedad >= 60) {\n    for (int x = -8; x <= 8; x++) {\n      int y = (x * x) / 12;\n      display.drawPixel(cx + x, cy + 6 - y, SSD1306_WHITE);\n    }\n  } else if (humedad >= 30) {\n    display.drawLine(cx - 8, cy + 6, cx + 8, cy + 6, SSD1306_WHITE);\n  } else {\n    for (int x = -8; x <= 8; x++) {\n      int y = (x * x) / 12;\n      display.drawPixel(cx + x, cy + 10 + y, SSD1306_WHITE);\n    }\n  }\n}"
+          "caption": "Sketch principal: lectura del sensor + dibujo de caritas en la OLED",
+          "code": "#include <Wire.h>\n#include <SparkFun_Qwiic_OLED.h>\n#include <res/qw_fnt_5x7.h>\n\nQwiicMicroOLED myOLED;\n\n#define COMMAND_GET_VALUE   0x05\nconst uint8_t qwiicAddress = 0x28;\nuint16_t ADC_VALUE = 0;\n\n\nconst int dryValue = 1023;\nconst int wetValue = 400;\n\nvoid setup() {\n    Serial.begin(115200);\n    Wire.begin();\n\n    while (myOLED.begin() == false) {\n        Serial.println(\"OLED not connected, check wiring!\");\n        delay(1000);\n    }\n\n    testForConnectivity();\n}\n\nvoid loop() {\n    int moistureValue = getMoisture();\n    displayMoisture(moistureValue);\n    delay(1000);\n}\n\nint getMoisture() {\n    get_value();\n    return map(ADC_VALUE, dryValue, wetValue, 0, 100);\n}\n\nvoid get_value() {\n    Wire.beginTransmission(qwiicAddress);\n    Wire.write(COMMAND_GET_VALUE);\n    Wire.endTransmission();\n\n    Wire.requestFrom((uint8_t)qwiicAddress, (uint8_t)2);\n\n    if (Wire.available() >= 2) {\n        uint8_t ADC_VALUE_L = Wire.read();\n        uint8_t ADC_VALUE_H = Wire.read();\n        ADC_VALUE = (ADC_VALUE_H << 8) | ADC_VALUE_L;\n    }\n}\n\nvoid displayMoisture(int moistureValue) {\n    myOLED.erase();\n\n    if (moistureValue < 30) {\n        // Happy Face when well-watered\n        myOLED.line(20, 0, 30, 0);   // Left eye\n        myOLED.line(40, 0, 50, 0);   // Right eye\n\n        // Smile: \\__/\n        myOLED.line(20, 20, 30, 10);   // Left smile\n        myOLED.line(30, 10, 40, 10);   // Bottom of smile\n        myOLED.line(40, 10, 50, 20);   // Right smile\n    } else if (moistureValue >= 50 && moistureValue < 70) {\n        // Neutral Face\n        myOLED.line(20, 0, 30, 0);   // Left eye\n        myOLED.line(40, 0, 50, 0);   // Right eye\n        myOLED.line(20, 20, 50, 20);   // Neutral line\n    } else {\n        // Sad Face when dry\n        myOLED.line(20, 0, 30, 0);   // Left eye\n        myOLED.line(40, 0, 50, 0);   // Right eye\n\n        // Sad mouth: /--\\\n        myOLED.line(20, 10, 30, 20);   // Left sad\n        myOLED.line(30, 20, 40, 20);   // Bottom of sad\n        myOLED.line(40, 20, 50, 10);   // Right sad\n    }\n\n    myOLED.display();\n\n    Serial.print(\"Moisture: \");\n    Serial.print(moistureValue);\n    Serial.println(\"%\");\n}"
         }
       ],
-      "linked_products": [
-        {
-          "name_original": "Arduino Uno R3",
-          "product_id": "X4-8",
-          "product_url": "https://www.mechatronicstore.cl/arduino-uno-r3/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitor-humedad-plantas-arduino-uno-sensor-capacitivo-oled&utm_content=X4-8",
-          "price_clp": 9990,
-          "stock_available": true,
-          "match_score": 0.98
-        },
-        {
-          "name_original": "Pack jumpers macho-hembra 10cm",
-          "product_id": "C-415",
-          "product_url": "https://www.mechatronicstore.cl/cable-macho-hembra-40-piezas-10-cm/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitor-humedad-plantas-arduino-uno-sensor-capacitivo-oled&utm_content=C-415",
-          "price_clp": 1990,
-          "stock_available": true,
-          "match_score": 0.9
-        },
-        {
-          "name_original": "Protoboard 830 puntos MB102",
-          "product_id": "C-302",
-          "product_url": "https://www.mechatronicstore.cl/breadboard-830-puntos-mb102/?utm_source=blog&utm_medium=tutorial&utm_campaign=monitor-humedad-plantas-arduino-uno-sensor-capacitivo-oled&utm_content=C-302",
-          "price_clp": 3790,
-          "stock_available": true,
-          "match_score": 0.95
-        }
-      ],
+      "linked_products": [],
       "github_url": null,
       "download_urls": [
-        {"label": "Librería Adafruit SSD1306 (GitHub)", "url": "https://github.com/adafruit/Adafruit_SSD1306", "kind": "library"},
-        {"label": "Librería Adafruit GFX (GitHub)", "url": "https://github.com/adafruit/Adafruit-GFX-Library", "kind": "library"}
+        {
+          "label": "Librería Adafruit SSD1306 (GitHub)",
+          "url": "https://github.com/adafruit/Adafruit_SSD1306",
+          "kind": "library"
+        },
+        {
+          "label": "Librería U8g2 (GitHub)",
+          "url": "https://github.com/olikraus/u8g2",
+          "kind": "library"
+        }
       ],
       "category": "arduino",
       "difficulty": "beginner",
       "estimated_time_minutes": 45,
-      "estimated_cost_clp": 21960,
-      "tags": ["arduino", "soil-moisture", "oled", "ssd1306", "sensor-capacitivo", "plantas", "tutorial"],
+      "estimated_cost_clp": 25000,
+      "tags": [
+        "arduino",
+        "sensor humedad suelo",
+        "oled",
+        "ssd1306",
+        "plantas",
+        "iot"
+      ],
       "source_language": "en",
-      "re_angulation_applied": "Reescritura completa: cambio de hardware Qwiic SparkFun (caro, sin stock CL) a sensor capacitivo análogo + OLED I²C estándar; nuevo código C++ propio con Adafruit SSD1306 en lugar del original con SparkFun_Qwiic_OLED; agregado capítulo técnico capacitivo vs resistivo (no estaba en original); agregado sección debugging con 4 errores comunes; cambio de voz primera persona/instrucciones a guía conversacional cercana; estructura macro re-ordenada de lineal SparkFun (intro→materials→hardware→calibration→code) a bloques temáticos (gancho→concepto técnico→hardware→software→código→calibración→debugging→variantes→Chile→recursos)",
+      "re_angulation_applied": "Inglés narrativo Qwiic-céntrico → guía instructiva chilena con tuteo, reemplazo del ecosistema Qwiic por componentes genéricos (sensor capacitivo v1.2 + Arduino UNO + OLED SSD1306), profundización técnica sobre por qué capacitivo > resistivo, sección Variantes (ESP32/relé/microSD) y Personalización Chile inexistentes en el original.",
       "editorial_checklist": {
         "title_distinct": true,
         "has_unique_section": true,
@@ -108,8 +114,8 @@
         "body_word_ratio": 1.6,
         "tone_or_structure_changed": true
       },
-      "editorial_quality_warning": false,
-      "editorial_notes": "MCP MechatronicStore no disponible en esta corrida (requiere OAuth interactivo). Productos linkeados verificados desde snapshots históricos del catálogo: Arduino Uno R3 (X4-8), Pack jumpers macho-hembra (C-415), Protoboard 830 puntos MB102 (C-302). Materiales del hint que no se pudieron verificar via MCP y quedaron en materials_list sin link de producto: Sensor de humedad de suelo capacitivo v1.2, Pantalla OLED 0.96\" 128x64 I2C SSD1306, Conector broche 9V + batería 9V, Cable USB tipo A a tipo B. Estos componentes existen en el catálogo MS (confirmado por matched_products_hint de Routine B) pero la SKU no se pudo confirmar sin acceso a buscar_productos. Revisión manual recomendada para agregarles linked_products."
+      "editorial_quality_warning": true,
+      "editorial_notes": "MCP MechatronicStore (buscar_productos) no disponible en esta corrida programada — requiere OAuth interactivo. linked_products quedó vacío; el watcher/persist debería resolver el interlinking por matched_products_hint (Capacitive Soil Moisture v1.2, Arduino UNO, OLED I2C 0.96, 9V Battery Holder) o reintentar en una corrida con MCP autenticado. Materials_list completo y honesto incluye 7 ítems del BOM real del proyecto."
     }
   ]
 }
