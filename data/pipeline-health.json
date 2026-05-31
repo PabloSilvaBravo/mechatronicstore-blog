@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-05-31T17:12:11.428131+00:00",
+  "checked_at": "2026-05-31T19:23:22.590161+00:00",
   "metrics": {
     "drafts_pending": 10,
-    "published_24h": 3,
+    "published_24h": 4,
     "ranked_stuck": 1,
-    "rejected_ratio_48h": 0.3,
-    "published_48h": 42,
+    "rejected_ratio_48h": 0.295,
+    "published_48h": 43,
     "rejected_48h": 18,
     "sources_active": 43,
     "sources_silent_48h": 0,
@@ -17,15 +17,15 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/0374f2eb1a4e/0696a3773294d553.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/97265dc38684/adc43cc0518dd7c4.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/5d7a0aa10e39/a1ce788779fd3f2e.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
       },
       {
         "status": 403,
@@ -45,27 +45,27 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/97265dc38684/adc43cc0518dd7c4.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/077cc6e117a4/396bb1cf932690c6.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5ac98e994275/91506eb569f30a40.png"
+        "url": "https://images.mechatronicstore.cl/articles/blog/175efb849587/033576340cc1914f.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/b79f5bdce4c8/29141f1581970a6c.webp"
       }
     ],
-    "ranked_aging_hours": 4,
-    "published_7d": 6,
+    "ranked_aging_hours": 6,
+    "published_7d": 7,
     "rank_runs_24h": 1,
     "translate_runs_24h": 4,
     "counts_by_status": {
       "draft": 10,
-      "published": 42,
+      "published": 43,
       "ranked": 1,
       "rejected": 500,
-      "staged": 73
+      "staged": 72
     }
   },
   "alerts": [
@@ -79,9 +79,9 @@
     {
       "severity": "warning",
       "metric": "published_7d",
-      "value": 6,
+      "value": 7,
       "threshold": 15,
-      "message": "Solo 6 publicaciones en 7d (baseline pre-bajada 22-may era ~35/7d). Si sostenido 3+ días, revertir cadencia a 3/día via RemoteTrigger (cron viejo en AGENTS.md)."
+      "message": "Solo 7 publicaciones en 7d (baseline pre-bajada 22-may era ~35/7d). Si sostenido 3+ días, revertir cadencia a 3/día via RemoteTrigger (cron viejo en AGENTS.md)."
     }
   ],
   "status": "warning"
