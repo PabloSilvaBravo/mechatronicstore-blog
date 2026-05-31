@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-05-31T12:32:24Z",
+  "ranked_at": "2026-05-31T20:34:24Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,8 +25,40 @@
   },
   "rankings": [
     {
-      "id": "33a3c0eb46b0",
-      "source_language": "es",
+      "id": "ec222f39e606",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 3,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 5
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 6,
+        "value_added": 8,
+        "originality_potential": 7
+      },
+      "verdict": "Proyecto aplicado de sensor de distancia para garage con buenos downloadables (3 repos GitHub y librería). Idea concreta y re-angulable, pero el módulo Qwiic ultrasónico es específico de SparkFun y poco común en nuestro catálogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Sensor ultrasónico HC-SR04",
+        "Arduino Uno",
+        "Display OLED I2C 1.3\""
+      ],
+      "re_angulation_hint": "Re-hacer con HC-SR04 + ESP32 + buzzer en lugar del kit Qwiic",
+      "combined_score": 0.71
+    },
+    {
+      "id": "619b68164caf",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -37,104 +69,276 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 7,
-        "code_quality": 3,
+        "pedagogy": 6,
+        "code_quality": 4,
+        "materials_clarity": 5,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 3,
+        "value_added": 3,
+        "originality_potential": 4
+      },
+      "verdict": "Calibración muy específica del Qwiic Optical Tracking Odometry Sensor de SparkFun (producto exclusivo y costoso). Sin downloadables y muy difícil de re-angular hacia productos de nuestro catálogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Encoder rotativo",
+        "Arduino Uno"
+      ],
+      "re_angulation_hint": "Adaptar la calibración a encoders ópticos genéricos para robots con tracción diferencial",
+      "combined_score": 0.42
+    },
+    {
+      "id": "84880ae24357",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 4,
         "materials_clarity": 6,
         "step_completeness": 6,
-        "relevance_to_store_catalog": 5,
+        "relevance_to_store_catalog": 4,
+        "value_added": 3,
+        "originality_potential": 5
+      },
+      "verdict": "Tutorial centrado en el boost AP3012K Qwiic de SparkFun. El concepto de level shifting/boost es útil pero el contenido depende del producto específico; sin downloadables y originalidad media-baja.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Conversor de nivel lógico bidireccional",
+        "Step-up MT3608",
+        "Raspberry Pi Pico"
+      ],
+      "re_angulation_hint": "Guía genérica de conversión 3.3V↔5V con level shifter común y step-up MT3608",
+      "combined_score": 0.465
+    },
+    {
+      "id": "867cf45d6cc8",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 2,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 2,
+        "pdf_schemas": 0,
+        "total_distinct": 4
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 8,
+        "materials_clarity": 6,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 4,
+        "value_added": 7,
+        "originality_potential": 6
+      },
+      "verdict": "Buenas librerías GitHub y código compilable, pero depende del Qwiic Twist y del decoder MY1690 (no comunes en MechatronicStore). Originalidad media: el concepto encoder+audio se puede reusar.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "DFPlayer Mini",
+        "Encoder rotativo KY-040",
+        "Arduino Nano"
+      ],
+      "re_angulation_hint": "Reemplazar Qwiic Twist por KY-040 y el MY1690 por DFPlayer Mini con SD",
+      "combined_score": 0.625
+    },
+    {
+      "id": "f1e0f86268a4",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 0
+      },
+      "scores": {
+        "pedagogy": 6,
+        "code_quality": 4,
+        "materials_clarity": 5,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 3,
         "value_added": 3,
         "originality_potential": 6
       },
-      "combined_score": 0.505,
-      "verdict": "Narrativa en primera persona sobre soldador de puntos casero con transformador de microondas y controlador NY-D01. Sin downloadables ni esquemático. Fuente en español incrementa riesgo de plagio. Productos centrales fuera del catálogo MechatronicStore.",
+      "verdict": "Detector de CO2 con el STC31 (sensor Sensirion específico y de gama alta no presente en catálogo). Sin downloadables, pero el caso de uso de medir CO2 es re-angulable con sensores más comunes.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["Pulsador", "Pedal"],
-      "re_angulation_hint": "Reescribir como guía técnica con BOM, esquema KiCad propio y video"
+      "matched_products_hint": [
+        "Sensor MH-Z19B CO2",
+        "ESP32",
+        "Display OLED 0.96\""
+      ],
+      "re_angulation_hint": "Hacer detector de CO2 ambiental con MH-Z19B + ESP32 y alerta visual/sonora",
+      "combined_score": 0.45
     },
     {
-      "id": "febd64909a17",
-      "source_language": "de",
+      "id": "3ebbf7b13bd9",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 2
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 6,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 5,
+        "value_added": 6,
+        "originality_potential": 6
+      },
+      "verdict": "Proyecto DIY de indicador de luz ambiental con sketch y librería. Producto SparkFun Qwiic ALS específico pero el concepto se reemplaza fácil con BH1750. Originalidad correcta como base para extender.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Sensor luz BH1750",
+        "Tira LED WS2812",
+        "Arduino Nano"
+      ],
+      "re_angulation_hint": "Versión con BH1750 + tira WS2812 que cambia color según lux",
+      "combined_score": 0.615
+    },
+    {
+      "id": "c701b27c6ea5",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
         "code_files": 0,
         "pcb_files": 0,
         "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
+        "pdf_schemas": 2,
+        "total_distinct": 2
       },
       "scores": {
-        "pedagogy": 7,
+        "pedagogy": 5,
         "code_quality": 3,
-        "materials_clarity": 8,
-        "step_completeness": 5,
-        "relevance_to_store_catalog": 7,
-        "value_added": 3,
-        "originality_potential": 5
+        "materials_clarity": 7,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 6,
+        "value_added": 5,
+        "originality_potential": 3
       },
-      "combined_score": 0.540,
-      "verdict": "Buyer guide comercial con afiliados Amazon para netzteils de Pi 4/5. Contenido técnico decente sobre USB-PD y caída de tensión, pero formato review sin proyecto técnico reproducible ni downloadables.",
-      "is_blocked": true,
-      "blocked_reason": "Review comercial de productos con afiliados Amazon, sin proyecto técnico reproducible. Filosofía editorial Pablo 20-may-2026: el blog no debe ser agregador de comparativas.",
-      "matched_products_hint": ["Raspberry Pi 5", "Raspberry Pi 4", "Fuente USB-C 5V 3A"],
-      "re_angulation_hint": "Reescribir como guía técnica midiendo undervoltage con multímetro propio"
+      "verdict": "Quickstart de un kit comercial de PSU para protoboard: es prácticamente manual de producto, sin código y sin ángulo único. Originalidad muy baja.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Módulo PSU MB-V2 protoboard",
+        "Protoboard 830 puntos"
+      ],
+      "re_angulation_hint": "Reseña comparativa de módulos PSU genéricos MB-V2 con mediciones reales",
+      "combined_score": 0.5
     },
     {
-      "id": "870c57f2bd46",
-      "source_language": "de",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 3,
-        "materials_clarity": 8,
-        "step_completeness": 5,
-        "relevance_to_store_catalog": 7,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "combined_score": 0.540,
-      "verdict": "Buyer guide comercial con afiliados Amazon para coolers del Pi 5. Tabla térmica útil y datos de throttling, pero formato review sin proyecto reproducible ni downloadables propios.",
-      "is_blocked": true,
-      "blocked_reason": "Review comercial de productos con afiliados Amazon, sin proyecto técnico reproducible. Filosofía editorial Pablo 20-may-2026: el blog no debe ser agregador de comparativas.",
-      "matched_products_hint": ["Raspberry Pi 5", "Disipador Pi 5", "Cooler activo Pi 5"],
-      "re_angulation_hint": "Convertir en benchmark propio con script Python que mida throttling real"
-    },
-    {
-      "id": "fb83cea1b216",
-      "source_language": "de",
+      "id": "d3076eabc3ed",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 1,
         "stl_files": 0,
-        "code_files": 2,
+        "code_files": 0,
         "pcb_files": 0,
         "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 3
+        "pdf_schemas": 1,
+        "total_distinct": 2
       },
       "scores": {
-        "pedagogy": 9,
-        "code_quality": 8,
-        "materials_clarity": 9,
-        "step_completeness": 9,
-        "relevance_to_store_catalog": 9,
-        "value_added": 7,
-        "originality_potential": 8
+        "pedagogy": 5,
+        "code_quality": 2,
+        "materials_clarity": 4,
+        "step_completeness": 3,
+        "relevance_to_store_catalog": 2,
+        "value_added": 5,
+        "originality_potential": 3
       },
-      "combined_score": 0.835,
-      "verdict": "Tutorial RFID RC522 en Pi 5 con ángulo único: resuelve la incompatibilidad de RPi.GPIO con el chip RP1 usando spidev+gpiod. Incluye clase Python completa, repo GitHub, tabla de wiring, ejemplo de control de acceso y troubleshooting. Productos 100% en catálogo.",
+      "verdict": "Artículo de comparación entre dos receptores GNSS u-blox de gama alta sin proyecto técnico construible. Producto fuera del catálogo de MechatronicStore.",
+      "is_blocked": true,
+      "blocked_reason": "Comparativa/review comercial de productos sin proyecto técnico construible",
+      "matched_products_hint": [
+        "Módulo GPS NEO-6M",
+        "Módulo GPS NEO-M8N"
+      ],
+      "re_angulation_hint": "Comparativa práctica de módulos GPS accesibles NEO-6M vs NEO-M8N con pruebas",
+      "combined_score": 0.35
+    },
+    {
+      "id": "66c5dc463984",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 2,
+        "total_distinct": 2
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 3,
+        "materials_clarity": 6,
+        "step_completeness": 5,
+        "relevance_to_store_catalog": 3,
+        "value_added": 5,
+        "originality_potential": 3
+      },
+      "verdict": "Overview de un BFF de Adafruit para QT Py/Xiao (boards específicos no comunes en nuestro catálogo). Es página de producto sin proyecto, originalidad muy baja.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi 5", "RFID RC522", "Jumper hembra-hembra", "Protoboard 400p"],
-      "re_angulation_hint": "Extender con integración Home Assistant + relé para cerradura inteligente"
+      "matched_products_hint": [
+        "Bornera atornillable 3.5mm",
+        "Raspberry Pi Pico"
+      ],
+      "re_angulation_hint": "Tutorial general de borneras atornillables y por qué usarlas en proyectos finales",
+      "combined_score": 0.42
+    },
+    {
+      "id": "bf1478a5dc5c",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 1,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 4,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 5,
+        "value_added": 5,
+        "originality_potential": 7
+      },
+      "verdict": "Proyecto de alerta de heladas con caso de uso concreto y bien explicado, aunque depende de la plataforma Adafruit IO/WipperSnapper (no-code propietario). Re-angulable con ESP32+MQTT propio.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": [
+        "Sensor DHT22",
+        "ESP32",
+        "Buzzer activo"
+      ],
+      "re_angulation_hint": "Versión con ESP32 + DHT22 + MQTT a Home Assistant en lugar de Adafruit IO",
+      "combined_score": 0.59
     }
   ]
 }
