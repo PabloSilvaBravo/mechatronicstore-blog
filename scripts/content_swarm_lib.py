@@ -90,6 +90,39 @@ def gen_unique_slug(title_es: str, tid: str) -> str:
         cand = f"{base}-{n}"
 
 
+def _norm(s: str) -> str:
+    s = unicodedata.normalize("NFKD", str(s or ""))
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return s.lower().strip()
+
+
+def validate_product_coherence(materials, linked_products):
+    """Devuelve (clean, dropped). Un producto se MANTIENE si:
+      - tiene matched_material que coincide (normalizado) con algun material, o
+      - (legacy, sin matched_material) comparte >=1 token significativo (>=4 chars)
+        con algun material.
+    Cualquier otro producto es BASURA y se descarta.
+    """
+    mats = [_norm(m.get("name", "")) for m in (materials or [])]
+    mat_tokens = set()
+    for m in mats:
+        for t in re.split(r"[^a-z0-9]+", m):
+            if len(t) >= 4:
+                mat_tokens.add(t)
+    clean, dropped = [], []
+    for p in (linked_products or []):
+        mm = p.get("matched_material")
+        if mm and _norm(mm) in mats:
+            clean.append(p); continue
+        if not mm:
+            pn = _norm(p.get("name_original", ""))
+            ptoks = {t for t in re.split(r"[^a-z0-9]+", pn) if len(t) >= 4}
+            if ptoks & mat_tokens:
+                clean.append(p); continue
+        dropped.append(p)
+    return clean, dropped
+
+
 def cmd_getrec(tid: str) -> int:
     cols = ", ".join(READ_FIELDS)
     rows = db.execute(
@@ -188,6 +221,21 @@ def cmd_publish(tid: str, raw_json: str) -> int:
     except Exception as e:
         print(f"WARN: no se pudo sanear guiones ({e}); sigo igual.", file=sys.stderr)
 
+    # Gate de coherencia de productos (Pablo 2-jun-2026): descartar basura
+    # (productos que no corresponden a ningun material del tutorial).
+    try:
+        _mats = data.get("materials_list_json")
+        _mats = json.loads(_mats) if isinstance(_mats, str) else (_mats or [])
+        _prods = data.get("linked_products_json")
+        _prods = json.loads(_prods) if isinstance(_prods, str) else (_prods or [])
+        _clean, _dropped = validate_product_coherence(_mats, _prods)
+        if _dropped:
+            print(f"WARN: gate descarto {len(_dropped)} producto(s) basura: "
+                  f"{[p.get('name_original') for p in _dropped]}", file=sys.stderr)
+            data["linked_products_json"] = json.dumps(_clean, ensure_ascii=False)
+    except Exception as e:
+        print(f"WARN: gate de coherencia fallo ({e}); sigo sin filtrar.", file=sys.stderr)
+
     sets, vals = [], []
     for k, v in data.items():
         if k not in PUBLISH_FIELDS:
@@ -251,6 +299,21 @@ def cmd_stage(tid: str, raw_json: str) -> int:
             data[k], _ = sanitize_brand_dashes(str(data[k]))
     except Exception as e:
         print(f"WARN: no se pudo sanear guiones ({e}); sigo igual.", file=sys.stderr)
+
+    # Gate de coherencia de productos (Pablo 2-jun-2026): descartar basura
+    # (productos que no corresponden a ningun material del tutorial).
+    try:
+        _mats = data.get("materials_list_json")
+        _mats = json.loads(_mats) if isinstance(_mats, str) else (_mats or [])
+        _prods = data.get("linked_products_json")
+        _prods = json.loads(_prods) if isinstance(_prods, str) else (_prods or [])
+        _clean, _dropped = validate_product_coherence(_mats, _prods)
+        if _dropped:
+            print(f"WARN: gate descarto {len(_dropped)} producto(s) basura: "
+                  f"{[p.get('name_original') for p in _dropped]}", file=sys.stderr)
+            data["linked_products_json"] = json.dumps(_clean, ensure_ascii=False)
+    except Exception as e:
+        print(f"WARN: gate de coherencia fallo ({e}); sigo sin filtrar.", file=sys.stderr)
 
     sets, vals = [], []
     for k, v in data.items():
