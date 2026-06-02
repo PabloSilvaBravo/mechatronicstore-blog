@@ -298,15 +298,18 @@ def main():
     """).fetchone()
     rank_runs_24h = r[0] or 0
     report["metrics"]["rank_runs_24h"] = rank_runs_24h
-    if rank_runs_24h < ALERTS["rank_commits_24h_min"]:
+    # Pablo 2-jun-2026: el drip ahora alimenta el sitio. Una routine CCR idle
+    # por COLA VACIA no es emergencia. Solo alerta (warning) si hay drafts
+    # esperando rank y aun asi no corrio. El check critico real es published_24h.
+    if rank_runs_24h < ALERTS["rank_commits_24h_min"] and drafts_pending > 0:
         report["alerts"].append({
-            "severity": "critical",
+            "severity": "warning",
             "metric": "rank_runs_24h",
             "value": rank_runs_24h,
             "threshold": ALERTS["rank_commits_24h_min"],
             "message": (
-                f"Cero corridas de Ranking en 24h (debería ser 2/día). "
-                f"Verificar trigger CCR trig_018awZKUDjfX8JqWmh5x5Mi4 enabled."
+                f"{drafts_pending} drafts esperando pero 0 corridas de Ranking "
+                f"en 24h. Verificar trigger CCR trig_018awZKUDjfX8JqWmh5x5Mi4 enabled."
             ),
         })
 
@@ -317,15 +320,18 @@ def main():
     """).fetchone()
     translate_runs_24h = r[0] or 0
     report["metrics"]["translate_runs_24h"] = translate_runs_24h
-    if translate_runs_24h < ALERTS["translate_commits_24h_min"]:
+    # Pablo 2-jun-2026: warning (no critical) y solo si hay ranked EN COLA
+    # esperando traduccion. Con cola vacia + drip alimentando, 0 corridas es
+    # esperado, no una emergencia.
+    if translate_runs_24h < ALERTS["translate_commits_24h_min"] and ranked_stuck > 0:
         report["alerts"].append({
-            "severity": "critical",
+            "severity": "warning",
             "metric": "translate_runs_24h",
             "value": translate_runs_24h,
             "threshold": ALERTS["translate_commits_24h_min"],
             "message": (
-                f"Cero corridas de Translation en 24h (debería ser 2/día). "
-                f"Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
+                f"{ranked_stuck} ranked esperando pero 0 corridas de Translation "
+                f"en 24h. Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
             ),
         })
 
@@ -334,6 +340,24 @@ def main():
         db.execute("SELECT status, COUNT(*) FROM tutorials GROUP BY status").fetchall()
     )
     report["metrics"]["counts_by_status"] = counts
+
+    # === Métrica 11: Cola del drip (Pablo 2-jun-2026) ===
+    # Los tutoriales 'staged' son la cola que el drip (blog-drip-publish.yml)
+    # publica de a ~5/dia. Si se agota, hay que autorear mas con el swarm
+    # (content_swarm_lib stage). Aviso temprano cuando quedan pocos.
+    staged_backlog = counts.get("staged", 0)
+    report["metrics"]["staged_backlog"] = staged_backlog
+    if 0 < staged_backlog < 5:
+        report["alerts"].append({
+            "severity": "warning",
+            "metric": "staged_backlog",
+            "value": staged_backlog,
+            "threshold": 5,
+            "message": (
+                f"Quedan {staged_backlog} tutoriales en la cola del drip. "
+                f"Autorear mas (swarm content_swarm_lib.py stage) antes de que se agote."
+            ),
+        })
 
     # Determinar status overall
     severities = [a["severity"] for a in report["alerts"]]
