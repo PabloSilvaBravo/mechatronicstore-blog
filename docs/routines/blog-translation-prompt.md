@@ -427,7 +427,37 @@ que cumplan las TRES condiciones a la vez:
 Mejor 3 productos correctos y en stock que 8 con relleno. La calidad del
 interlinking se mide por precisión, no por cantidad.
 
+### Sustitución (regla dura)
+
+Sustituye solo por un equivalente TÉCNICAMENTE válido:
+
+- **Prohibido** ofrecer un OLED o TFT como reemplazo de un e-ink en un tutorial
+  que trata de e-ink: son tecnologías opuestas con distinto caso de uso. Lo mismo
+  aplica a cualquier par de tecnologías no intercambiables (sensor analógico vs
+  digital, controlador de pasos vs driver PWM, etc.).
+- Si el componente central no se vende pero existe un equivalente real que SÍ
+  permite el proyecto (ejemplo: visión con IA, usar HuskyLens 2 o Grove Vision
+  AI V2), puedes re-angular el alcance del tutorial y declararlo. En ese caso
+  marca `is_alternative: true` en el producto y explica en `alternative_note`
+  en qué difiere ("alternativa con IA embebida, no es e-ink").
+- Si no hay equivalente honesto, deja el material SIN producto en
+  `linked_products` (modo educativo). NUNCA rellenes con un producto barato
+  no relacionado solo para no dejar el campo vacío.
+
 ### Formato linked_products
+
+Cada objeto en `linked_products` DEBE incluir los siguientes campos:
+
+- **`matched_material`**: el nombre EXACTO (copiado tal cual de `materials_list`)
+  del material al que corresponde este producto. Si un producto no corresponde a
+  NINGÚN material de la lista, NO lo incluyas: es relleno y el gate determinista
+  lo descarta de todas formas (no sirve de nada y daña la precisión del interlinking).
+- **`is_alternative`**: `true` si es un sustituto (no el componente exacto que
+  el tutorial especifica), `false` u omitir si es match directo.
+- **`alternative_note`**: solo si `is_alternative: true`, una línea honesta que
+  explique el porqué de la sustitución ("alternativa más simple, no es e-ink",
+  "driver diferente, mismo protocolo paso a paso"). Si `is_alternative` es
+  `false` o no está, omitir este campo.
 
 ```json
 {
@@ -436,7 +466,25 @@ interlinking se mide por precisión, no por cantidad.
   "product_url": "https://www.mechatronicstore.cl/<slug-producto>/?utm_source=blog&utm_medium=tutorial&utm_campaign={tutorial_slug}&utm_content={product_id}",
   "price_clp": 7990,
   "stock_available": true,
-  "match_score": 0.92
+  "match_score": 0.92,
+  "matched_material": "Placa ESP32 DevKit V1",
+  "is_alternative": false
+}
+```
+
+Ejemplo con sustitución honesta declarada:
+
+```json
+{
+  "name_original": "Grove Vision AI V2",
+  "product_id": "G-VAI2",
+  "product_url": "https://www.mechatronicstore.cl/grove-vision-ai-v2/?utm_source=blog&utm_medium=tutorial&utm_campaign=detector-objetos-sbc&utm_content=G-VAI2",
+  "price_clp": 34990,
+  "stock_available": true,
+  "match_score": 0.78,
+  "matched_material": "Módulo de visión con IA",
+  "is_alternative": true,
+  "alternative_note": "alternativa con IA embebida disponible en tienda, el tutorial original usa HuskyLens"
 }
 ```
 
@@ -540,7 +588,9 @@ tienen match.
           "product_url": "https://www.mechatronicstore.cl/producto/esp32-cyd?utm_source=blog&utm_medium=tutorial&utm_campaign=esp32-cyd-pantalla-touchscreen-microsd&utm_content=12345",
           "price_clp": 12990,
           "stock_available": true,
-          "match_score": 0.92
+          "match_score": 0.92,
+          "matched_material": "ESP32-2432S028R (CYD)",
+          "is_alternative": false
         }
       ],
 
