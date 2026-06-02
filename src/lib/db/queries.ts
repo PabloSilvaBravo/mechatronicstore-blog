@@ -30,6 +30,16 @@ export interface TutorialPublished {
     wc_id?: number;
     /** Thumb del producto (~100x100). Del MCP o og:image del store. */
     image_url?: string;
+    /** Nombre exacto del material de la lista al que este producto corresponde.
+     *  Generado por el pipeline AI al armar linked_products. Si está presente
+     *  el frontend lo usa como match exacto (evita falsos positivos fuzzy). */
+    matched_material?: string | null;
+    /** Score de relevancia (0-1) del match material→producto. */
+    relevance?: number | null;
+    /** true si este producto es alternativa, no el recomendado principal. */
+    is_alternative?: boolean | null;
+    /** Nota editorial sobre la alternativa (ej: "versión más económica"). */
+    alternative_note?: string | null;
   }>;
   github_url: string | null;
   download_urls: Array<{ label: string; url: string; kind: string }>;
