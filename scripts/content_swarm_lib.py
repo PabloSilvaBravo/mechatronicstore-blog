@@ -96,28 +96,150 @@ def _norm(s: str) -> str:
     return s.lower().strip()
 
 
+# ---------------------------------------------------------------------------
+# Fuzzy match R1-R5 — port fiel de src/lib/materials-matching.ts
+# ---------------------------------------------------------------------------
+
+# Keywords tecnicos UNICOS: si aparece UNO en ambos lados -> match (R3)
+_UNIQUE_TECH_KEYWORDS = frozenset({
+    # Microcontroladores
+    "esp32", "esp8266", "esp32c3", "esp32s3", "esp32s2", "esp32c6",
+    "arduino", "raspberry", "rpi", "pico", "rp2040", "rp2350",
+    "atmega", "attiny", "stm32", "samd21", "nrf52",
+    # Drivers display 7-seg / LED matrix
+    "tm1637", "max7219", "ht16k33",
+    # Pantallas OLED/LCD
+    "ssd1306", "ssh1106", "hd44780", "pcd8544",
+    # TFT
+    "ili9341", "st7735", "st7789", "st7796", "gc9a01",
+    # LEDs direccionables
+    "ws2812", "ws2812b", "ws2811", "sk6812", "neopixel", "apa102",
+    # Sensores
+    "dht11", "dht22", "ds18b20", "bme280", "bmp280", "bme680",
+    "mpu6050", "mpu9250", "mlx90614", "max30100", "max30102",
+    "hc-sr04", "hcsr04", "vl53l0x", "tcs34725", "tcrt5000",
+    "mq2", "mq3", "mq4", "mq6", "mq7", "mq135",
+    # Drivers motor
+    "l298n", "l293d", "a4988", "drv8825", "tmc2208", "tmc2209", "tmc5160",
+    # Modulos
+    "nrf24l01", "hc05", "hc06", "rfid", "rc522", "pn532",
+    "max31855", "max31865", "ads1115", "mcp23017", "pca9685",
+    # Camaras
+    "ov2640", "ov7670", "ov5640",
+})
+
+# Componentes GENERICOS comunes: solo matchean si comparten tambien un valor
+# (R4), o si el material tiene <=2 tokens y es generico (R5)
+_GENERIC_COMPONENTS = frozenset({
+    "led", "leds", "resistencia", "resistencias", "resistor",
+    "diodo", "diodos", "transistor", "transistores",
+    "capacitor", "capacitores", "condensador", "condensadores",
+    "potenciometro", "potenciometro", "trimpot",
+    "protoboard", "breadboard", "matriz", "jumper", "jumpers",
+    "boton", "boton", "pulsador", "pulsadores", "switch", "rele", "rele",
+    "servo", "servomotor", "motor", "stepper", "encoder",
+    "buzzer", "altavoz", "speaker", "microfono", "microfono",
+    "fuente", "fuentes", "regulador", "reguladores",
+    "bateria", "bateria", "baterias", "baterias",
+    "cargador", "cargadores", "powerbank", "pila", "pilas",
+    "cable", "cables", "header", "headers", "conector", "conectores",
+    "modulo", "modulo", "modulos", "modulos",
+    "antena", "antenas",
+})
+
+# Tokens numericos / valores: 220, 220k, 5mm, 10uf, 3v3, etc.
+# Puerto fiel de /^\d+(?:[a-zA-Z]+|[.,]\d+)?$/ del TS
+_VALUE_RE = re.compile(r"^\d+(?:[a-zA-Z]+|[.,]\d+)?$")
+
+
+def _tokenize(s: str) -> list[str]:
+    """Port de la funcion tokenize() del TS.
+
+    Divide por no-alfanumericos (incluyendo vocales acentuadas como separadoras
+    de tokens, igual que el split del TS /[^a-zaeioun0-9]+/i) y sintetiza
+    el token compuesto digito+alfa adyacente ("5","mm" -> tambien "5mm").
+    """
+    # El TS usa /[^a-záéíóúñ0-9]+/i como separador, es decir que las letras
+    # acentuadas SON parte de los tokens. Normalizamos la entrada primero
+    # (quitamos diacriticos) para unificar "resistencia" vs "resistência".
+    normalized = unicodedata.normalize("NFKD", str(s or ""))
+    normalized = "".join(c for c in normalized if not unicodedata.combining(c))
+    normalized = normalized.lower()
+
+    raw = [t for t in re.split(r"[^a-z0-9]+", normalized) if t]
+
+    # Sintetizar token digito+alfa adyacente: "5" + "mm" -> agregar "5mm"
+    synthesized: list[str] = []
+    for i, tok in enumerate(raw):
+        synthesized.append(tok)
+        if re.fullmatch(r"\d+", tok) and i + 1 < len(raw) and re.fullmatch(r"[a-z]+", raw[i + 1]):
+            synthesized.append(tok + raw[i + 1])
+
+    return synthesized
+
+
+def _fuzzy_matches(material_name: str, product_name: str) -> bool:
+    """Devuelve True si product_name matchea material_name por alguna de R1-R5.
+
+    Port fiel de fuzzyMatch() en src/lib/materials-matching.ts.
+    """
+    ml = _norm(material_name)
+    pl = _norm(product_name)
+
+    # R1: exact match
+    if pl == ml:
+        return True
+
+    ml_tokens_all = _tokenize(ml)
+    pl_tokens_all = _tokenize(pl)
+
+    ml_tokens4 = {t for t in ml_tokens_all if len(t) >= 4}
+    pl_tokens4 = {t for t in pl_tokens_all if len(t) >= 4}
+
+    # R2: >=2 tokens de 4+ chars compartidos
+    overlap4 = ml_tokens4 & pl_tokens4
+    if len(overlap4) >= 2:
+        return True
+
+    # R3: >=1 keyword tecnico unico compartido
+    ml_tech = {t for t in ml_tokens_all if t in _UNIQUE_TECH_KEYWORDS}
+    pl_tech = {t for t in pl_tokens_all if t in _UNIQUE_TECH_KEYWORDS}
+    if ml_tech & pl_tech:
+        return True
+
+    # R4: >=1 componente generico + >=1 valor numerico compartidos
+    ml_generic = {t for t in ml_tokens_all if t in _GENERIC_COMPONENTS}
+    pl_generic = {t for t in pl_tokens_all if t in _GENERIC_COMPONENTS}
+    ml_values = {t for t in ml_tokens_all if _VALUE_RE.fullmatch(t)}
+    pl_values = {t for t in pl_tokens_all if _VALUE_RE.fullmatch(t)}
+    if (ml_generic & pl_generic) and (ml_values & pl_values):
+        return True
+
+    # R5: material es UN solo token GENERICO -> matchea cualquier producto
+    #     con ese mismo token generico
+    if len(ml_tokens_all) <= 2 and ml_generic:
+        if ml_generic & pl_generic:
+            return True
+
+    return False
+
+
 def validate_product_coherence(materials, linked_products):
     """Devuelve (clean, dropped). Un producto se MANTIENE si:
       - tiene matched_material que coincide (normalizado) con algun material, o
-      - (legacy, sin matched_material) comparte >=1 token significativo (>=4 chars)
-        con algun material.
+      - (legacy, sin matched_material) matchea algun material por R1-R5 (mismo
+        criterio que el frontend en src/lib/materials-matching.ts).
     Cualquier otro producto es BASURA y se descarta.
     """
     mats = [_norm(m.get("name", "")) for m in (materials or [])]
-    mat_tokens = set()
-    for m in mats:
-        for t in re.split(r"[^a-z0-9]+", m):
-            if len(t) >= 4:
-                mat_tokens.add(t)
     clean, dropped = [], []
     for p in (linked_products or []):
         mm = p.get("matched_material")
         if mm and _norm(mm) in mats:
             clean.append(p); continue
         if not mm:
-            pn = _norm(p.get("name_original", ""))
-            ptoks = {t for t in re.split(r"[^a-z0-9]+", pn) if len(t) >= 4}
-            if ptoks & mat_tokens:
+            prod_name = p.get("name_original", "")
+            if any(_fuzzy_matches(mat_raw, prod_name) for mat_raw in (m.get("name", "") for m in (materials or []))):
                 clean.append(p); continue
         dropped.append(p)
     return clean, dropped
