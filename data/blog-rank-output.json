@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-06-03T12:32:25Z",
+  "ranked_at": "2026-06-04T12:32:25Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,8 +25,8 @@
   },
   "rankings": [
     {
-      "id": "4c28c7ffd541",
-      "source_language": "es",
+      "id": "7f1ceb967c2b",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -37,23 +37,23 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 5,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 5,
-        "value_added": 3,
-        "originality_potential": 5
+        "pedagogy": 2,
+        "code_quality": 1,
+        "materials_clarity": 2,
+        "step_completeness": 1,
+        "relevance_to_store_catalog": 4,
+        "value_added": 2,
+        "originality_potential": 2
       },
-      "combined_score": 0.555,
-      "verdict": "Tutorial de migracion Zigbee bien estructurado pero sin descargables propios. Nicho de coordinadores Sonoff/SLZB con encaje limitado al catalogo. Fuente espanola eleva riesgo de plagio directo.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi", "Sonoff Zigbee Dongle", "Cable Ethernet"],
-      "re_angulation_hint": "Guia generica backup/restore Zigbee2MQTT con script bash propio y test en CC2652P"
+      "combined_score": 0.220,
+      "verdict": "Review comercial de un multitool Kickstarter (PolyCast5 por RoboticWorx) sin proyecto DIY, sin codigo publicado, sin downloadables. Ademas incluye tecnicas sensibles (deauth, WiFi sniffing) que no encajan con la linea editorial.",
+      "is_blocked": true,
+      "blocked_reason": "review comercial de hardware (PolyCast5 en Kickstarter) sin proyecto tecnico reproducible; firmware aun no publicado; incluye contenido sensible de deauth y packet sniffing",
+      "matched_products_hint": ["ESP32"],
+      "re_angulation_hint": "No re-angulable: producto comercial cerrado sin firmware ni esquemas publicos"
     },
     {
-      "id": "40fc26eb360b",
+      "id": "10e32f8c8dbf",
       "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
@@ -67,46 +67,18 @@
       "scores": {
         "pedagogy": 4,
         "code_quality": 3,
-        "materials_clarity": 5,
-        "step_completeness": 2,
-        "relevance_to_store_catalog": 7,
-        "value_added": 2,
-        "originality_potential": 8
+        "materials_clarity": 3,
+        "step_completeness": 3,
+        "relevance_to_store_catalog": 6,
+        "value_added": 4,
+        "originality_potential": 6
       },
-      "combined_score": 0.460,
-      "verdict": "Showcase periodistico de un reloj de lentejuelas con Arduino Nano sin pasos ni codigo. Concepto unico pero falta tutorial reproducible y descargables.",
+      "combined_score": 0.440,
+      "verdict": "Showcase de un reloj con difraccion de luz roja/azul sobre LED matrix (Moritz Von Sivers en Instructables). El articulo solo describe la idea y deriva al Instructable. Sin downloadables propios ni pasos detallados; concepto optico interesante pero requiere reconstruir todo.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["Arduino Nano", "CNC Shield", "A4988 Driver", "Sensor Hall", "Sensor IR"],
-      "re_angulation_hint": "Tutorial Pico + 2 steppers con display flip-dot DIY incluyendo codigo y STL del soporte"
-    },
-    {
-      "id": "0bc14813d57f",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 5,
-        "code_quality": 3,
-        "materials_clarity": 4,
-        "step_completeness": 2,
-        "relevance_to_store_catalog": 3,
-        "value_added": 2,
-        "originality_potential": 4
-      },
-      "combined_score": 0.325,
-      "verdict": "Review comercial del dev board ELM11 (Lua sobre FPGA) sin proyecto tecnico reproducible. Producto no esta en catalogo MechatronicStore.",
-      "is_blocked": true,
-      "blocked_reason": "review comercial de hardware sin proyecto tecnico ni tutorial reproducible",
-      "matched_products_hint": [],
-      "re_angulation_hint": "Comparativa Lua vs MicroPython en ESP32 con benchmark de loop y memoria"
+      "matched_products_hint": ["LED Matrix", "ESP32", "Arduino"],
+      "re_angulation_hint": "Tutorial completo de optica + LED Matrix con codigo y guia de la rejilla de difraccion"
     }
   ]
 }
