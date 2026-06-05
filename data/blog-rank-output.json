@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-06-04T12:32:25Z",
+  "ranked_at": "2026-06-05T12:32:29Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,8 +25,8 @@
   },
   "rankings": [
     {
-      "id": "7f1ceb967c2b",
-      "source_language": "en",
+      "id": "0d8aff96b6bb",
+      "source_language": "de",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -37,48 +37,48 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 2,
-        "code_quality": 1,
-        "materials_clarity": 2,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 4,
-        "value_added": 2,
-        "originality_potential": 2
+        "pedagogy": 8,
+        "code_quality": 6,
+        "materials_clarity": 7,
+        "step_completeness": 8,
+        "relevance_to_store_catalog": 7,
+        "value_added": 3,
+        "originality_potential": 5
       },
-      "combined_score": 0.220,
-      "verdict": "Review comercial de un multitool Kickstarter (PolyCast5 por RoboticWorx) sin proyecto DIY, sin codigo publicado, sin downloadables. Ademas incluye tecnicas sensibles (deauth, WiFi sniffing) que no encajan con la linea editorial.",
-      "is_blocked": true,
-      "blocked_reason": "review comercial de hardware (PolyCast5 en Kickstarter) sin proyecto tecnico reproducible; firmware aun no publicado; incluye contenido sensible de deauth y packet sniffing",
-      "matched_products_hint": ["ESP32"],
-      "re_angulation_hint": "No re-angulable: producto comercial cerrado sin firmware ni esquemas publicos"
-    },
-    {
-      "id": "10e32f8c8dbf",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 4,
-        "code_quality": 3,
-        "materials_clarity": 3,
-        "step_completeness": 3,
-        "relevance_to_store_catalog": 6,
-        "value_added": 4,
-        "originality_potential": 6
-      },
-      "combined_score": 0.440,
-      "verdict": "Showcase de un reloj con difraccion de luz roja/azul sobre LED matrix (Moritz Von Sivers en Instructables). El articulo solo describe la idea y deriva al Instructable. Sin downloadables propios ni pasos detallados; concepto optico interesante pero requiere reconstruir todo.",
+      "combined_score": 0.605,
+      "verdict": "Guia de troubleshooting bien estructurada con tabla LED-status y 8 pasos claros, pero sin ningun downloadable (cero GitHub, cero STL, cero PDF) y tema super generico que ya existe en decenas de blogs EN y ES. Bajo valor anadido editorial.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["LED Matrix", "ESP32", "Arduino"],
-      "re_angulation_hint": "Tutorial completo de optica + LED Matrix con codigo y guia de la rejilla de difraccion"
+      "matched_products_hint": ["Raspberry Pi 5", "Raspberry Pi 4", "MicroSD SanDisk 32GB", "Fuente oficial USB-C 27W", "Fuente oficial USB-C 15W"],
+      "re_angulation_hint": "Re-angular como diagnostico Pi 5 + NVMe-boot con arbol de decision visual y video"
+    },
+    {
+      "id": "0576d58539f4",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 6,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 9,
+        "value_added": 4,
+        "originality_potential": 4
+      },
+      "combined_score": 0.625,
+      "verdict": "Tutorial basico Pico+Relay con buena explicacion de NO/NC, optoacoplador y jumper JD-VCC, pero codigo trivial (toggle GPIO con sleep), solo snippet inline sin GitHub ni schema PDF. Tema saturado en internet, dificil de re-angular con originalidad.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Raspberry Pi Pico", "Raspberry Pi Pico W", "Modulo Rele 2 canales", "Modulo Rele 1 canal", "Fuente DC 12V"],
+      "re_angulation_hint": "Re-angular como Pico W + rele + MQTT + dashboard Home Assistant con codigo y schema completo"
     }
   ]
 }
