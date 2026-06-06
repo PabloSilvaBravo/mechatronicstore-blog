@@ -1,6 +1,6 @@
 {
-  "dumped_at": "2026-06-05T21:48:59.674967+00:00",
-  "n_candidates": 0,
+  "dumped_at": "2026-06-06T06:55:06.363638+00:00",
+  "n_candidates": 1,
   "config": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -23,5 +23,19 @@
     },
     "model": "claude-opus-4-7"
   },
-  "candidates": []
+  "candidates": [
+    {
+      "id": "d7a3e90cdca9",
+      "slug": "mermaid-in-the-shell-d7a3e9",
+      "source_id": "magpi",
+      "source_url": "https://magazine.raspberrypi.com/articles/mermaid-in-the-shell",
+      "title_en": "Mermaid in the shell — Raspberry Pi Official Magazine",
+      "subtitle_en": "Satin and real freshwater pearls complete the look for the mermaid who needs root access in style",
+      "body_en_excerpt": "Mermaid in the shell By Andrew Gregory .\n        Posted 1 day ago. We’re used to the post-apocalyptic designs of most cyberdecks: rugged aluminium or pelican cases, chunky battery packs, cool green-on-black scrolling text, Matrix -style. What we have here is something different. Instead of running around the burned out remains of a power station or hiding from killer robots, the owner of this cyberdeck is more likely to be found under the sea, hanging out with a friendly singing crab called Sebastian. Advertisement Issue 166, June 2026 out now! Make beautiful beats with the complete Raspberry Pi music production toolkit. Buy print edition or free PDF for contributors Bimbotech’s Claudia has always wanted to put a computer in a Polly Pocket toy. With this compact build, she’s pretty much done just that. The pink clamshell clutch purse that she’s chosen to house the cyberdeck doesn’t have a great deal of room in it, so she’s used a Raspberry Pi 3 Model A+ – this was the last of the square Raspberry Pi computers, and takes up even less space than the rectangular boards. A 3.5-inch touchscreen, ZitaoTech BB Q10 Bluetooth keyboard and touchpad, and a 3000mAh battery pack complete the electronics. With just 512MB of RAM, the Raspberry Pi model Claudia chose doesn’t have enough oomph for a graphical operating system, but it’s fine for the command line – she says on her blog that she’s planning to upgrade the battery to 10000mAh, which should be enough to power a 12-hour shift of ocean-floor hacking. Share this post Like Raspberry Pi Official Magazine on Facebook Follow Raspberry Pi Official Magazine on X Andrew Gregory Features Editor Andrew trawls the internet for Cool Stuff while keeping the magazine running smoothly. Subscribe to Raspberry Pi Official Magazine Save up to 37% off the cover price and get a FREE Raspberry Pi Pico 2 W with a subscription to Raspberry Pi Official Magazine. Subscribe More articles Sequino clock This tricky build was inspired by a child’s t-shirt Read more → Use a robot to build a robot This glorious, (mostly) 3D printed robot has six degrees of freedom. Read more → Make Music With Raspberry Pi in Official Raspberry Pi Magazine issue 166 Music production is an esoteric world of chin stroking and arguing over what kind of valve makes the best sound in a guitar amplifier – at least, it can be. Load up on software, bring your friends, and record your latest masterpiece on Raspberry Pi. We bring news from the world of 3D printing, where […] Read more → Read more articles",
+      "hero_image_url": "https://images.mechatronicstore.cl/articles/blog/d7a3e90cdca9/b776fcc407fd0c3a.webp",
+      "ingested_at": "2026-06-06 06:54:53",
+      "source_name": "magpi",
+      "source_tier": 3
+    }
+  ]
 }
