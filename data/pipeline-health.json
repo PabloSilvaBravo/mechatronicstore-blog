@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-06-06T03:54:27.538418+00:00",
+  "checked_at": "2026-06-06T06:56:26.206406+00:00",
   "metrics": {
-    "drafts_pending": 0,
+    "drafts_pending": 1,
     "published_24h": 4,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.7,
+    "rejected_ratio_48h": 0.769,
     "published_48h": 9,
-    "rejected_48h": 21,
+    "rejected_48h": 30,
     "sources_active": 43,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,15 +17,19 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5fba58b3b224/fd90987f794199a4.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/6d0ce0ee0844/bf0493dee2ab96ae.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/726efc22d64f/8eab970c4fbc9bb1.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/57f027e0f878/6e44ac248bf94426.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/68fec80c4ba7/8b60641696a5ebdd.webp"
       },
       {
         "status": 403,
@@ -37,19 +41,15 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/726efc22d64f/8eab970c4fbc9bb1.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/68fec80c4ba7/8b60641696a5ebdd.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/6d0ce0ee0844/bf0493dee2ab96ae.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4bf1ac9d80cf/3995e4a05d6d7868.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4d223e5226bb/f7f24c16d60dd004.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/56372eb9a162/ca280ba35692486a.webp"
       },
       {
         "status": 403,
@@ -61,8 +61,9 @@
     "rank_runs_24h": 1,
     "translate_runs_24h": 0,
     "counts_by_status": {
+      "draft": 1,
       "published": 65,
-      "rejected": 566,
+      "rejected": 575,
       "staged": 50
     },
     "staged_backlog": 50
