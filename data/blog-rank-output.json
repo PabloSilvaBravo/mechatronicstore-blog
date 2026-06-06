@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-06-05T12:32:29Z",
+  "ranked_at": "2026-06-06T07:30:00Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,8 +25,8 @@
   },
   "rankings": [
     {
-      "id": "0d8aff96b6bb",
-      "source_language": "de",
+      "id": "d7a3e90cdca9",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -37,48 +37,20 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 8,
-        "code_quality": 6,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 7,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "combined_score": 0.605,
-      "verdict": "Guia de troubleshooting bien estructurada con tabla LED-status y 8 pasos claros, pero sin ningun downloadable (cero GitHub, cero STL, cero PDF) y tema super generico que ya existe en decenas de blogs EN y ES. Bajo valor anadido editorial.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi 5", "Raspberry Pi 4", "MicroSD SanDisk 32GB", "Fuente oficial USB-C 27W", "Fuente oficial USB-C 15W"],
-      "re_angulation_hint": "Re-angular como diagnostico Pi 5 + NVMe-boot con arbol de decision visual y video"
-    },
-    {
-      "id": "0576d58539f4",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 1,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 1
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 6,
-        "materials_clarity": 7,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 9,
-        "value_added": 4,
+        "pedagogy": 3,
+        "code_quality": 1,
+        "materials_clarity": 4,
+        "step_completeness": 2,
+        "relevance_to_store_catalog": 5,
+        "value_added": 2,
         "originality_potential": 4
       },
-      "combined_score": 0.625,
-      "verdict": "Tutorial basico Pico+Relay con buena explicacion de NO/NC, optoacoplador y jumper JD-VCC, pero codigo trivial (toggle GPIO con sleep), solo snippet inline sin GitHub ni schema PDF. Tema saturado en internet, dificil de re-angular con originalidad.",
+      "combined_score": 0.305,
+      "verdict": "Articulo feature de revista que muestra un cyberdeck tematico con Raspberry Pi 3A+ en una Polly Pocket. No es tutorial: sin pasos reproducibles, sin codigo, sin BOM completa, sin downloadables. Solo descripcion narrativa de la build de un tercero.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi Pico", "Raspberry Pi Pico W", "Modulo Rele 2 canales", "Modulo Rele 1 canal", "Fuente DC 12V"],
-      "re_angulation_hint": "Re-angular como Pico W + rele + MQTT + dashboard Home Assistant con codigo y schema completo"
+      "matched_products_hint": ["Raspberry Pi 3 Model A+", "Pantalla tactil 3.5 pulgadas", "Bateria power bank 3000mAh"],
+      "re_angulation_hint": "Convertir en guia paso a paso de cyberdeck portatil con RPi Zero 2W y carcasa STL custom"
     }
   ]
 }
