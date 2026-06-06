@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-06-06T13:53:06.495197+00:00",
+  "checked_at": "2026-06-06T15:19:23.812656+00:00",
   "metrics": {
     "drafts_pending": 0,
-    "published_24h": 4,
+    "published_24h": 5,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.64,
-    "published_48h": 9,
+    "rejected_ratio_48h": 0.615,
+    "published_48h": 10,
     "rejected_48h": 16,
     "sources_active": 43,
     "sources_silent_48h": 0,
@@ -17,11 +17,15 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/5fba58b3b224/fd90987f794199a4.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/68fec80c4ba7/8b60641696a5ebdd.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/57f027e0f878/6e44ac248bf94426.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/6d0ce0ee0844/bf0493dee2ab96ae.webp"
       },
       {
         "status": 403,
@@ -33,7 +37,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/6d0ce0ee0844/bf0493dee2ab96ae.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/8b10af171a63/b7e7557eb99ab87c.webp"
       },
       {
         "status": 403,
@@ -41,7 +45,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/68fec80c4ba7/8b60641696a5ebdd.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/5fba58b3b224/fd90987f794199a4.webp"
       },
       {
         "status": 403,
@@ -49,23 +53,19 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/4bf1ac9d80cf/3995e4a05d6d7868.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/43be93fdd11a/5e43fb94f3d7c46f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/56372eb9a162/ca280ba35692486a.webp"
       }
     ],
     "ranked_aging_hours": 0,
-    "published_7d": 26,
+    "published_7d": 27,
     "rank_runs_24h": 1,
     "translate_runs_24h": 0,
     "counts_by_status": {
-      "published": 65,
+      "published": 66,
       "rejected": 576,
-      "staged": 50
+      "staged": 49
     },
-    "staged_backlog": 50
+    "staged_backlog": 49
   },
   "alerts": [
     {
