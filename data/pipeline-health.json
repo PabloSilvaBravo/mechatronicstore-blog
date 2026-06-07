@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-06-07T14:03:25.119344+00:00",
+  "checked_at": "2026-06-07T17:22:40.847358+00:00",
   "metrics": {
     "drafts_pending": 11,
     "published_24h": 3,
     "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.611,
-    "published_48h": 7,
+    "rejected_ratio_48h": 0.647,
+    "published_48h": 6,
     "rejected_48h": 11,
     "sources_active": 43,
     "sources_silent_48h": 0,
@@ -17,10 +17,6 @@
     "heros_broken_urls": [
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/8b10af171a63/b7e7557eb99ab87c.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/96b4dab26e1d/d9a64c558684f040.webp"
       },
       {
@@ -29,15 +25,15 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/726efc22d64f/8eab970c4fbc9bb1.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/68fec80c4ba7/8b60641696a5ebdd.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/8b10af171a63/b7e7557eb99ab87c.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/726efc22d64f/8eab970c4fbc9bb1.webp"
       },
       {
         "status": 403,
@@ -46,6 +42,10 @@
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/7edcb50bbecf/fe9321dffd79e4e0.png"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/9ba5e28ad436/411634dad4fb8892.webp"
       },
       {
         "status": 403,
@@ -62,11 +62,11 @@
     "translate_runs_24h": 0,
     "counts_by_status": {
       "draft": 11,
-      "published": 68,
+      "published": 69,
       "rejected": 566,
-      "staged": 47
+      "staged": 46
     },
-    "staged_backlog": 47
+    "staged_backlog": 46
   },
   "alerts": [
     {
