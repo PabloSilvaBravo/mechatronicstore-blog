@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-06-06T07:30:00Z",
+  "ranked_at": "2026-06-07T20:35:24Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,7 +25,203 @@
   },
   "rankings": [
     {
-      "id": "d7a3e90cdca9",
+      "id": "0576d58539f4",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 1,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 8,
+        "value_added": 5,
+        "originality_potential": 5
+      },
+      "combined_score": 0.660,
+      "verdict": "Tutorial Pico+rele en MicroPython bien explicado y con productos del catalogo, pero codigo trivial tipo LED blink y existen cientos de versiones identicas en la web — baja originalidad.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Raspberry Pi Pico", "Modulo rele 5V", "Modulo rele 2 canales"],
+      "re_angulation_hint": "Extender con control via web server MicroPython y comparativa rele optoacoplado vs no aislado"
+    },
+    {
+      "id": "ec222f39e606",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 3,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 3,
+        "pdf_schemas": 0,
+        "total_distinct": 4
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 8,
+        "materials_clarity": 7,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 4,
+        "value_added": 7,
+        "originality_potential": 6
+      },
+      "combined_score": 0.635,
+      "verdict": "Sensor de garaje con TCT40 y ecosistema Qwiic SparkFun: codigo solido y tres librerias en GitHub, pero usa OLED Qwiic, Twist y RedBoard Qwiic que no estan en el catalogo MechatronicStore.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Sensor ultrasonico HC-SR04", "Arduino UNO", "Display OLED 0.96 I2C", "Encoder rotativo KY-040"],
+      "re_angulation_hint": "Reimplementar con HC-SR04 + Arduino UNO + OLED I2C generico y encoder KY-040"
+    },
+    {
+      "id": "619b68164caf",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 1,
+        "stl_files": 0,
+        "code_files": 2,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 2
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 5,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 3,
+        "value_added": 6,
+        "originality_potential": 6
+      },
+      "combined_score": 0.555,
+      "verdict": "Calibracion OTOS PAA5160E1 de SparkFun (USD 84.95): sensor especifico FTC, sin equivalente directo en catalogo y poco util para audiencia general MechatronicStore.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Encoder optico", "Arduino UNO", "IMU MPU6050"],
+      "re_angulation_hint": "Pivotear a guia generica de calibracion encoder + IMU MPU6050 para robots diferenciales DIY"
+    },
+    {
+      "id": "84880ae24357",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 6,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 3,
+        "value_added": 4,
+        "originality_potential": 5
+      },
+      "combined_score": 0.515,
+      "verdict": "Boost 3.3V a 5V con Qwiic AP3012K + Sensirion SEN55: producto y sensor muy especificos de SparkFun, sin librerias publicas claras y muy poco encaje con catalogo.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Convertidor logico bidireccional TXS0108E", "ESP32", "Modulo boost MT3608"],
+      "re_angulation_hint": "Reescribir como guia de level shifting I2C 3.3V a 5V con TXS0108E generico"
+    },
+    {
+      "id": "867cf45d6cc8",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 2,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 2,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 3,
+        "value_added": 7,
+        "originality_potential": 6
+      },
+      "combined_score": 0.585,
+      "verdict": "Player MP3 MY1690X-16S + Twist SparkFun: librerias en GitHub disponibles pero hardware muy nicho — el reemplazo con DFPlayer Mini seria un proyecto practicamente nuevo, no una adaptacion.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["DFPlayer Mini", "Arduino UNO", "Encoder rotativo KY-040", "Parlante 0.5W 8ohm"],
+      "re_angulation_hint": "Reimplementar audio player con DFPlayer Mini y encoder KY-040 sobre Arduino UNO"
+    },
+    {
+      "id": "f1e0f86268a4",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 1,
+        "stl_files": 0,
+        "code_files": 2,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 2
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 6,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 4,
+        "value_added": 6,
+        "originality_potential": 6
+      },
+      "combined_score": 0.585,
+      "verdict": "Detector CO2 alta concentracion con STC31 (USD 124.95): sensor industrial caro y de aplicacion nicho, no encaja con un blog DIY de catalogo general aunque tiene libreria Arduino y MicroPython.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["ESP32", "Sensor CO2 MH-Z19", "Sensor SCD30", "Sensor SCD41"],
+      "re_angulation_hint": "Pivotear a medidor CO2 ambiental 400-5000ppm con MH-Z19 economico + ESP32"
+    },
+    {
+      "id": "3ebbf7b13bd9",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 2,
+        "stl_files": 0,
+        "code_files": 1,
+        "pcb_files": 0,
+        "libraries": 2,
+        "pdf_schemas": 0,
+        "total_distinct": 3
+      },
+      "scores": {
+        "pedagogy": 7,
+        "code_quality": 7,
+        "materials_clarity": 7,
+        "step_completeness": 6,
+        "relevance_to_store_catalog": 4,
+        "value_added": 6,
+        "originality_potential": 5
+      },
+      "combined_score": 0.570,
+      "verdict": "Indicador luz ambiente con VEML7700 + Qwiic Button: proyecto simple con dos librerias, pero idea muy basica (mapear lux a brillo de LED) y dependiente del boton Qwiic propietario SparkFun.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["Sensor VEML7700", "Modulo BH1750", "Arduino UNO", "Boton pulsador 12mm"],
+      "re_angulation_hint": "Extender con histeresis y control PWM de tira LED WS2812B segun luz ambiente"
+    },
+    {
+      "id": "c701b27c6ea5",
       "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
@@ -33,24 +229,108 @@
         "code_files": 0,
         "pcb_files": 0,
         "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
+        "pdf_schemas": 1,
+        "total_distinct": 1
       },
       "scores": {
-        "pedagogy": 3,
-        "code_quality": 1,
-        "materials_clarity": 4,
-        "step_completeness": 2,
-        "relevance_to_store_catalog": 5,
-        "value_added": 2,
+        "pedagogy": 6,
+        "code_quality": 4,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 6,
+        "value_added": 5,
         "originality_potential": 4
       },
-      "combined_score": 0.305,
-      "verdict": "Articulo feature de revista que muestra un cyberdeck tematico con Raspberry Pi 3A+ en una Polly Pocket. No es tutorial: sin pasos reproducibles, sin codigo, sin BOM completa, sin downloadables. Solo descripcion narrativa de la build de un tercero.",
+      "combined_score": 0.545,
+      "verdict": "Kit fuente breadboard LM317 3.3V/5V: ensamble de soldadura claro con esquematico PDF, pero sin codigo ni STL, y el diseno LM317 con switches es un kit hipergenerico que abunda en internet.",
       "is_blocked": false,
       "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi 3 Model A+", "Pantalla tactil 3.5 pulgadas", "Bateria power bank 3000mAh"],
-      "re_angulation_hint": "Convertir en guia paso a paso de cyberdeck portatil con RPi Zero 2W y carcasa STL custom"
+      "matched_products_hint": ["LM317", "Condensador electrolitico 100uF", "Protoboard 400p", "Jack DC hembra"],
+      "re_angulation_hint": "Convertir en guia comparativa LM317 vs AMS1117 vs MP1584 para alimentar breadboards"
+    },
+    {
+      "id": "d3076eabc3ed",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 1,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 1,
+        "pdf_schemas": 0,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 4,
+        "materials_clarity": 5,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 3,
+        "value_added": 4,
+        "originality_potential": 3
+      },
+      "combined_score": 0.395,
+      "verdict": "Comparativa comercial entre dos modulos RTK SparkFun ZED-F9P y ZED-X20P: solo tabla de specs y diferencias de hardware, sin proyecto reproducible para el lector.",
+      "is_blocked": true,
+      "blocked_reason": "Review comercial comparativo de dos productos SparkFun GNSS RTK sin proyecto tecnico reproducible — solo tabla de specs y notas de migracion de firmware",
+      "matched_products_hint": ["Modulo GPS NEO-6M", "ESP32"],
+      "re_angulation_hint": "No re-angular: descartar por ser review de specs sin proyecto"
+    },
+    {
+      "id": "66c5dc463984",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 0,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 1,
+        "total_distinct": 1
+      },
+      "scores": {
+        "pedagogy": 5,
+        "code_quality": 3,
+        "materials_clarity": 6,
+        "step_completeness": 4,
+        "relevance_to_store_catalog": 3,
+        "value_added": 4,
+        "originality_potential": 3
+      },
+      "combined_score": 0.385,
+      "verdict": "Pagina de producto del Terminal Block BFF de Adafruit (USD 10.95) para QT Py/Xiao: marcado explicitamente como 'Product guide', no incluye proyecto ni codigo — solo overview, pinouts y downloads.",
+      "is_blocked": true,
+      "blocked_reason": "Pagina de producto Adafruit sin proyecto tecnico — etiquetada como 'Guide type: Product guide' con solo Overview/Pinouts/Downloads, hardware nicho Adafruit no presente en catalogo",
+      "matched_products_hint": ["Bornera atornillable 2.54mm", "Tiras de pines macho 40p"],
+      "re_angulation_hint": "No re-angular: pagina de producto sin proyecto"
+    },
+    {
+      "id": "bf1478a5dc5c",
+      "source_language": "en",
+      "downloadables_detected": {
+        "github_repos": 0,
+        "stl_files": 1,
+        "code_files": 0,
+        "pcb_files": 0,
+        "libraries": 0,
+        "pdf_schemas": 1,
+        "total_distinct": 2
+      },
+      "scores": {
+        "pedagogy": 8,
+        "code_quality": 5,
+        "materials_clarity": 8,
+        "step_completeness": 7,
+        "relevance_to_store_catalog": 4,
+        "value_added": 7,
+        "originality_potential": 7
+      },
+      "combined_score": 0.660,
+      "verdict": "Alerta antiheladas para almacigos con QT Py ESP32-S3 + Adafruit IO+ con archivos STL y PDF: angulo original y atractivo, pero el flujo no-code depende de suscripcion paga Adafruit IO+ (USD 99/anio) que bloquea reproducibilidad real.",
+      "is_blocked": false,
+      "blocked_reason": null,
+      "matched_products_hint": ["ESP32", "NeoPixel WS2812B", "Sensor DHT22", "Filamento PLA"],
+      "re_angulation_hint": "Reimplementar con ESP32 + OpenWeatherMap API y broker MQTT propio, sin Adafruit IO+ pago"
     }
   ]
 }
