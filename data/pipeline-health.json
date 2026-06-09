@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-06-09T11:25:51.868193+00:00",
+  "checked_at": "2026-06-09T12:35:03.441987+00:00",
   "metrics": {
-    "drafts_pending": 5,
+    "drafts_pending": 0,
     "published_24h": 4,
-    "ranked_stuck": 0,
-    "rejected_ratio_48h": 0.774,
+    "ranked_stuck": 1,
+    "rejected_ratio_48h": 0.8,
     "published_48h": 7,
-    "rejected_48h": 24,
+    "rejected_48h": 28,
     "sources_active": 43,
     "sources_silent_48h": 0,
     "sources_silent_pct": 0.0,
@@ -17,6 +17,14 @@
     "heros_broken_urls": [
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/c22aeb8cc79f/c217f1739bb17ad2.png"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3da86141f44/073c9c4fd17f4dbb.webp"
+      },
+      {
+        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/af6d9fd382f7/d669f3f27c4b294f.webp"
       },
       {
@@ -25,23 +33,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/add5d0829f43/e1b3e48c6009fd22.jpg"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3da86141f44/073c9c4fd17f4dbb.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/a7dcd1016a62/e94a1728fa7f7b95.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/96b4dab26e1d/d9a64c558684f040.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/c22aeb8cc79f/c217f1739bb17ad2.png"
       },
       {
         "status": 403,
@@ -49,21 +41,29 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/96b4dab26e1d/d9a64c558684f040.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/8b10af171a63/b7e7557eb99ab87c.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/726efc22d64f/8eab970c4fbc9bb1.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/7edcb50bbecf/fe9321dffd79e4e0.png"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
       }
     ],
-    "ranked_aging_hours": 0,
+    "ranked_aging_hours": 4,
     "published_7d": 27,
-    "rank_runs_24h": 0,
+    "rank_runs_24h": 1,
     "translate_runs_24h": 0,
     "counts_by_status": {
-      "draft": 5,
       "published": 75,
-      "rejected": 590,
+      "ranked": 1,
+      "rejected": 594,
       "staged": 40
     },
     "staged_backlog": 40
@@ -78,10 +78,10 @@
     },
     {
       "severity": "warning",
-      "metric": "rank_runs_24h",
+      "metric": "translate_runs_24h",
       "value": 0,
       "threshold": 1,
-      "message": "5 drafts esperando pero 0 corridas de Ranking en 24h. Verificar trigger CCR trig_018awZKUDjfX8JqWmh5x5Mi4 enabled."
+      "message": "1 ranked esperando pero 0 corridas de Translation en 24h. Verificar trigger CCR trig_012SUx3X96ndwjTdzWs4RKZp enabled."
     }
   ],
   "status": "warning"
