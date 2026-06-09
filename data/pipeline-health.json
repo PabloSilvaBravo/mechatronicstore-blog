@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-06-08T23:14:20.152796+00:00",
+  "checked_at": "2026-06-09T03:56:43.733422+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 4,
@@ -17,6 +17,10 @@
     "heros_broken_urls": [
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/b3da86141f44/073c9c4fd17f4dbb.webp"
+      },
+      {
+        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/9ba5e28ad436/411634dad4fb8892.webp"
       },
       {
@@ -25,11 +29,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/a7dcd1016a62/e94a1728fa7f7b95.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/af6d9fd382f7/d669f3f27c4b294f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/add5d0829f43/e1b3e48c6009fd22.jpg"
       },
       {
         "status": 403,
@@ -37,15 +37,15 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/b3da86141f44/073c9c4fd17f4dbb.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/add5d0829f43/e1b3e48c6009fd22.jpg"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/bef179f2ac2f/39a0275a25a9b7b7.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/af6d9fd382f7/d669f3f27c4b294f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/a7dcd1016a62/e94a1728fa7f7b95.webp"
       },
       {
         "status": 403,
@@ -53,7 +53,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/7fab3ecf66e7/0aef18babf463a2b.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/726efc22d64f/8eab970c4fbc9bb1.webp"
       }
     ],
     "ranked_aging_hours": 0,
