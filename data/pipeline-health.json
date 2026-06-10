@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-06-10T10:10:31.351798+00:00",
+  "checked_at": "2026-06-10T15:48:38.281806+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 6,
@@ -21,27 +21,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/98ac84c13757/dadbdc77fc9020b0.webp"
-      },
-      {
-        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/ee522656e1a3/303a9b06eaae639f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/deffac046dcf/57e5d74703488c3f.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/bef179f2ac2f/39a0275a25a9b7b7.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/c22aeb8cc79f/c217f1739bb17ad2.png"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/cde8b1156ab7/358037796940a867.webp"
       },
       {
         "status": 403,
@@ -49,11 +29,31 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/add5d0829f43/e1b3e48c6009fd22.jpg"
+        "url": "https://images.mechatronicstore.cl/articles/blog/cde8b1156ab7/358037796940a867.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/bef179f2ac2f/39a0275a25a9b7b7.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/deffac046dcf/57e5d74703488c3f.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/c22aeb8cc79f/c217f1739bb17ad2.png"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/98ac84c13757/dadbdc77fc9020b0.webp"
       },
       {
         "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/b3da86141f44/073c9c4fd17f4dbb.webp"
+      },
+      {
+        "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/a7dcd1016a62/e94a1728fa7f7b95.webp"
       }
     ],
     "ranked_aging_hours": 0,
