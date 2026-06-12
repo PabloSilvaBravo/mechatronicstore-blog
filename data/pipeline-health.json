@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-06-11T23:27:56.242342+00:00",
+  "checked_at": "2026-06-12T04:23:41.833930+00:00",
   "metrics": {
     "drafts_pending": 0,
     "published_24h": 5,
@@ -17,15 +17,19 @@
     "heros_broken_urls": [
       {
         "status": 403,
+        "url": "https://images.mechatronicstore.cl/articles/blog/14df942bc8db/5bc1487cf98e8fb9.webp"
+      },
+      {
+        "status": 403,
         "url": "https://images.mechatronicstore.cl/articles/blog/3b068e757564/50400d6fd69a5a39.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/fbcc19d938c6/f858b362614f5596.jpg"
+        "url": "https://images.mechatronicstore.cl/articles/blog/fc1c5b140c20/74812d2122c6c3b4.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/ff529de1b003/9e33e8761e6fe82f.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/fbcc19d938c6/f858b362614f5596.jpg"
       },
       {
         "status": 403,
@@ -37,15 +41,11 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/14df942bc8db/5bc1487cf98e8fb9.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/084748f9d1f2/2aef1bd975a2e49b.webp"
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/fc1c5b140c20/74812d2122c6c3b4.webp"
-      },
-      {
-        "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/fbea5c5530e2/a86ec6dc2d76a4a3.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/ff529de1b003/9e33e8761e6fe82f.webp"
       },
       {
         "status": 403,
@@ -53,7 +53,7 @@
       },
       {
         "status": 403,
-        "url": "https://images.mechatronicstore.cl/articles/blog/e1b42e3bb6ff/78367b719143eae6.webp"
+        "url": "https://images.mechatronicstore.cl/articles/blog/ee522656e1a3/303a9b06eaae639f.webp"
       }
     ],
     "ranked_aging_hours": 0,
