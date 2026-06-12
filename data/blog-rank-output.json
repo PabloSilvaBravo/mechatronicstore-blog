@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-7",
-  "ranked_at": "2026-06-11T12:33:02Z",
+  "ranked_at": "2026-06-12T12:32:19Z",
   "config_snapshot": {
     "threshold_cs": 0.78,
     "dimensions": [
@@ -25,8 +25,8 @@
   },
   "rankings": [
     {
-      "id": "03a9abe6e0f2",
-      "source_language": "es",
+      "id": "b542c11f8a7a",
+      "source_language": "en",
       "downloadables_detected": {
         "github_repos": 0,
         "stl_files": 0,
@@ -37,160 +37,20 @@
         "total_distinct": 0
       },
       "scores": {
-        "pedagogy": 5,
+        "pedagogy": 3,
         "code_quality": 0,
-        "materials_clarity": 4,
-        "step_completeness": 3,
-        "relevance_to_store_catalog": 2,
+        "materials_clarity": 0,
+        "step_completeness": 0,
+        "relevance_to_store_catalog": 4,
         "value_added": 2,
         "originality_potential": 3
       },
-      "combined_score": 0.255,
-      "verdict": "Review comercial comparativa de cerraduras Nuki con código de afiliación, sin proyecto técnico ni downloadables. Producto fuera del catálogo MechatronicStore.",
+      "combined_score": 0.210,
+      "verdict": "Cronica narrativa de Maker Faire Prague 2026 sin tutorial reproducible, sin codigo, sin lista de materiales ni downloadables. Contenido de eventos/noticias, no aporta valor tecnico al catalogo.",
       "is_blocked": true,
-      "blocked_reason": "Review comercial sin proyecto tecnico (comparativa de producto con codigo de afiliacion HOMEASSISTANTFACIL).",
+      "blocked_reason": "Contenido de noticias/eventos (cronica de Maker Faire Prague 2026) sin proyecto tecnico reproducible, sin codigo, sin BOM ni downloadables. No es publicable como tutorial.",
       "matched_products_hint": [],
-      "re_angulation_hint": "No re-angulable, es contenido comercial puro"
-    },
-    {
-      "id": "9a501675410d",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 4,
-        "code_quality": 3,
-        "materials_clarity": 5,
-        "step_completeness": 3,
-        "relevance_to_store_catalog": 7,
-        "value_added": 3,
-        "originality_potential": 7
-      },
-      "combined_score": 0.475,
-      "verdict": "Showcase de wearable con Pi Zero, GPS, e-paper y OpenSky API. Idea unica y re-angulable, pero sin tutorial paso a paso ni downloadables (no STL ni GitHub).",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi Zero", "GPS module", "e-paper display", "Bateria LiPo 5000mAh"],
-      "re_angulation_hint": "Convertir en tutorial paso a paso con codigo y STL del case 3D"
-    },
-    {
-      "id": "b870beb3d9bd",
-      "source_language": "en",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 1,
-        "code_quality": 0,
-        "materials_clarity": 1,
-        "step_completeness": 1,
-        "relevance_to_store_catalog": 2,
-        "value_added": 1,
-        "originality_potential": 2
-      },
-      "combined_score": 0.130,
-      "verdict": "Nota corporativa presentando a un nuevo empleado del equipo de documentacion de Raspberry Pi. No es contenido tecnico ni tutorial.",
-      "is_blocked": true,
-      "blocked_reason": "Noticia/entrevista corporativa sin proyecto tecnico.",
-      "matched_products_hint": [],
-      "re_angulation_hint": "No re-angulable como tutorial tecnico"
-    },
-    {
-      "id": "10a7910fa5e0",
-      "source_language": "es",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 7,
-        "code_quality": 0,
-        "materials_clarity": 6,
-        "step_completeness": 7,
-        "relevance_to_store_catalog": 7,
-        "value_added": 3,
-        "originality_potential": 5
-      },
-      "combined_score": 0.510,
-      "verdict": "Tutorial de reparacion de atornillador IKEA con celda 18650 y modulo USB. Pasos claros pero sin downloadables. Fuente en espanol aumenta riesgo de duplicacion.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Bateria 18650", "Modulo cargador TP4056", "Soldadura", "Silicona caliente"],
-      "re_angulation_hint": "Generalizar a guia DIY de modernizacion de herramientas con USB-C y BMS"
-    },
-    {
-      "id": "f5ba1246d845",
-      "source_language": "de",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 6,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 8,
-        "value_added": 4,
-        "originality_potential": 6
-      },
-      "combined_score": 0.660,
-      "verdict": "Tutorial solido de swap en Raspberry Pi con comandos y tabla por modelo. Buen encaje con catalogo Pi, pero sin downloadables tangibles ni angulo unico.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi 4", "Raspberry Pi 5", "MicroSD 64GB", "SSD USB"],
-      "re_angulation_hint": "Extender con script de monitor de swap y alertas via Telegram bot"
-    },
-    {
-      "id": "52a621ffa7ae",
-      "source_language": "de",
-      "downloadables_detected": {
-        "github_repos": 0,
-        "stl_files": 0,
-        "code_files": 0,
-        "pcb_files": 0,
-        "libraries": 0,
-        "pdf_schemas": 0,
-        "total_distinct": 0
-      },
-      "scores": {
-        "pedagogy": 8,
-        "code_quality": 7,
-        "materials_clarity": 7,
-        "step_completeness": 8,
-        "relevance_to_store_catalog": 8,
-        "value_added": 4,
-        "originality_potential": 6
-      },
-      "combined_score": 0.670,
-      "verdict": "Tutorial completo de Portainer en Pi con docker run detallado y FAQ. Buen encaje de catalogo pero tema muy cubierto y sin compose downloadable.",
-      "is_blocked": false,
-      "blocked_reason": null,
-      "matched_products_hint": ["Raspberry Pi 5", "Raspberry Pi 4 8GB", "SSD portable", "MicroSD"],
-      "re_angulation_hint": "Agregar stack docker-compose listo con Pi-hole + Home Assistant + Nextcloud"
+      "re_angulation_hint": "No re-angulable como tutorial tecnico; descartar candidato."
     }
   ]
 }
